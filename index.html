@@ -900,16 +900,25 @@ function stateBtn(cid,field,val){
   const cls=s===''?'state-empty':s==='alerta'?'state-alert':'state-ok';
   const icon=s===''?'○':s==='alerta'?'⚠':'✓';
   const title=s===''?'Vazio – clique para marcar alerta':s==='alerta'?'Alerta – clique para marcar OK':'OK – clique para limpar';
-  return `<button class="state-btn ${cls}" onclick="cycleState(${cid},'${field}','${s}')" title="${title}">${icon}</button>`;
+  return `<button class="state-btn ${cls}" data-state-cid="${cid}" data-state-field="${field}" onclick="cycleState(${cid},'${field}','${s}')" title="${title}">${icon}</button>`;
 }
 async function cycleState(cid,field,current){
   const next=current===''?'alerta':current==='alerta'?'ok':'';
-  await ctPatch(cid,field,next);
-  // Atualizar só o botão sem re-renderizar tudo
+  await patch('contas',cid,field,next);
   const ct=Contas.find(x=>x.id===cid);
   if(ct)ct[field]=next;
-  // Re-render só a linha afetada: mais eficiente re-render contas
-  renderContas();
+  // Atualizar só o botão clicado sem re-renderizar a tabela inteira
+  const allBtns=document.querySelectorAll(`[data-state-cid="${cid}"][data-state-field="${field}"]`);
+  allBtns.forEach(btn=>{
+    const s=next;
+    const cls=s===''?'state-empty':s==='alerta'?'state-alert':'state-ok';
+    const icon=s===''?'○':s==='alerta'?'⚠':'✓';
+    const title=s===''?'Vazio – clique para marcar alerta':s==='alerta'?'Alerta – clique para marcar OK':'OK – clique para limpar';
+    btn.className='state-btn '+cls;
+    btn.innerHTML=icon;
+    btn.title=title;
+    btn.setAttribute('onclick',`cycleState(${cid},'${field}','${s}')`);
+  });
 }
 
 
