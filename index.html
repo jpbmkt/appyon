@@ -2,311 +2,763 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>IG Manager</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:system-ui,-apple-system,sans-serif;background:#0f0f0f;color:#e8e8e8;min-height:100vh}
-.app{display:flex;flex-direction:column;min-height:100vh}
-.topbar{background:#161616;border-bottom:1px solid #2a2a2a;padding:0 24px;display:flex;align-items:center;gap:16px;height:52px;position:sticky;top:0;z-index:100}
-.logo{font-size:15px;font-weight:600;color:#fff;display:flex;align-items:center;gap:8px}
-.logo i{color:#E1306C;font-size:18px}
-.nav{display:flex;gap:2px;margin-left:16px}
-.nav-btn{padding:6px 14px;border-radius:6px;border:none;background:transparent;cursor:pointer;font-size:13px;color:#888;transition:all .15s;display:flex;align-items:center;gap:6px}
-.nav-btn.active{background:#242424;color:#fff}
-.nav-btn:hover:not(.active){background:#1e1e1e;color:#ccc}
-.status-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;margin-left:auto}
-.status-dot.err{background:#ef4444}
-.content{padding:24px;flex:1}
+.topbar{background:#161616;border-bottom:1px solid #2a2a2a;padding:0 20px;display:flex;align-items:center;gap:10px;height:50px;position:sticky;top:0;z-index:200;flex-wrap:wrap}
+.logo{font-size:14px;font-weight:600;color:#fff;display:flex;align-items:center;gap:7px;flex-shrink:0}
+.logo i{color:#E1306C;font-size:17px}
+.nav{display:flex;gap:2px;flex-wrap:wrap}
+.nb{padding:5px 11px;border-radius:6px;border:none;background:transparent;cursor:pointer;font-size:12px;color:#777;transition:all .15s;display:flex;align-items:center;gap:5px}
+.nb.active{background:#242424;color:#fff}
+.nb:hover:not(.active){background:#1e1e1e;color:#bbb}
+.dot{width:7px;height:7px;border-radius:50%;background:#22c55e;margin-left:auto;flex-shrink:0}
+.dot.err{background:#ef4444}
+.content{padding:20px}
 .tab{display:none}.tab.active{display:block}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:24px}
-.stat-card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px}
-.stat-label{font-size:11px;color:#666;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
-.stat-value{font-size:24px;font-weight:600;color:#fff}
-.toolbar{display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
-.toolbar input,.toolbar select{font-size:13px;padding:7px 12px;border-radius:8px;border:1px solid #2a2a2a;background:#1a1a1a;color:#e8e8e8;outline:none}
-.toolbar input:focus,.toolbar select:focus{border-color:#444}
-.toolbar input{flex:1;min-width:160px}
-.btn{padding:7px 16px;border-radius:8px;border:1px solid #2a2a2a;background:transparent;cursor:pointer;font-size:13px;color:#e8e8e8;font-weight:500;transition:all .15s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:18px}
+.stat{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:9px;padding:12px 14px}
+.sl{font-size:10px;color:#555;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.sv{font-size:22px;font-weight:600;color:#fff}
+
+/* TOOLBAR */
+.toolbar{display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
+.toolbar input,.toolbar select{font-size:13px;padding:6px 10px;border-radius:7px;border:1px solid #2a2a2a;background:#1a1a1a;color:#e8e8e8;outline:none}
+.toolbar input{flex:1;min-width:140px}
+
+/* BUTTONS */
+.btn{padding:6px 13px;border-radius:7px;border:1px solid #2a2a2a;background:transparent;cursor:pointer;font-size:12px;color:#e8e8e8;font-weight:500;transition:all .15s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .btn:hover{background:#242424}
-.btn-primary{background:#E1306C;color:#fff;border-color:#E1306C}
-.btn-primary:hover{background:#c4255c;border-color:#c4255c}
-.btn-sm{padding:4px 10px;font-size:12px}
-.btn-danger{color:#ef4444;border-color:#3a1a1a}
-.btn-danger:hover{background:#1f0f0f}
-.add-form{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:18px;margin-bottom:20px}
-.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px}
-.field{display:flex;flex-direction:column;gap:5px}
-.field label{font-size:11px;color:#666;font-weight:500;text-transform:uppercase;letter-spacing:.4px}
-.field input,.field select,.field textarea{font-size:13px;padding:7px 10px;border-radius:8px;border:1px solid #2a2a2a;background:#111;color:#e8e8e8;width:100%;outline:none}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:#444}
-.field textarea{resize:vertical;min-height:60px}
-.table-wrap{border-radius:10px;border:1px solid #2a2a2a;overflow:hidden;overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:600px}
-th{background:#1a1a1a;padding:9px 12px;text-align:left;font-weight:500;font-size:11px;color:#666;border-bottom:1px solid #2a2a2a;white-space:nowrap;text-transform:uppercase;letter-spacing:.4px}
-td{padding:8px 12px;border-bottom:1px solid #1e1e1e;color:#ccc;vertical-align:middle;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bp{background:#E1306C;color:#fff;border-color:#E1306C}.bp:hover{background:#c4255c}
+.bg{background:#166534;color:#4ade80;border-color:#166534}.bg:hover{background:#14532d}
+.bsm{padding:3px 8px;font-size:11px}
+.bd{color:#ef4444;border-color:transparent}.bd:hover{background:#1f0f0f}
+
+/* PANEL / FORM */
+.panel{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:11px;padding:16px;margin-bottom:16px}
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:9px;margin-bottom:12px}
+.f{display:flex;flex-direction:column;gap:4px}
+.f label{font-size:10px;color:#555;font-weight:500;text-transform:uppercase;letter-spacing:.4px}
+.f input,.f select,.f textarea{font-size:13px;padding:6px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;width:100%;outline:none}
+.f input:focus,.f select:focus,.f textarea:focus{border-color:#3a3a3a}
+.f textarea{resize:vertical;min-height:56px}
+.bulk-area{font-size:12px;padding:8px 10px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;width:100%;min-height:90px;resize:vertical;outline:none;font-family:ui-monospace,monospace}
+
+/* TABLE */
+.tw{border-radius:9px;border:1px solid #2a2a2a;overflow:hidden;overflow-x:auto;margin-bottom:4px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#1a1a1a;padding:8px 10px;text-align:left;font-weight:500;font-size:10px;color:#555;border-bottom:1px solid #222;white-space:nowrap;text-transform:uppercase;letter-spacing:.4px}
+td{padding:5px 8px;border-bottom:1px solid #1c1c1c;color:#bbb;vertical-align:middle}
 tr:last-child td{border-bottom:none}
-tr:hover td{background:#1a1a1a}
-.badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:500}
-.b-disponivel{background:#14291a;color:#4ade80}
-.b-emuso{background:#2a1f0a;color:#fb923c}
-.b-bloqueado,.b-suspenso,.b-removido{background:#2a0f0f;color:#f87171}
-.b-inativo,.b-rascunho{background:#1e1e1e;color:#888}
-.b-aquecimento{background:#2a1f0a;color:#fbbf24}
-.b-crescimento{background:#14291a;color:#4ade80}
-.b-venda{background:#0f1f2a;color:#60a5fa}
-.b-criado{background:#1f0f2a;color:#c084fc}
-.b-publicado{background:#14291a;color:#4ade80}
-.b-agendado{background:#0f1f2a;color:#60a5fa}
-.pc-grid{display:grid;gap:16px}
-.pc{background:#161616;border:1px solid #2a2a2a;border-radius:14px;overflow:hidden}
-.pc-header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #222;background:#1a1a1a}
-.pc-name{font-weight:600;font-size:14px;color:#fff;display:flex;align-items:center;gap:8px}
-.pc-sub{font-size:12px;color:#555;margin-top:3px}
-.pc-body{padding:16px 18px}
-.eng-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
-.eng-cell{background:#1a1a1a;border:1px solid #222;border-radius:10px;padding:10px;text-align:center}
-.eng-num{font-size:18px;font-weight:600;color:#fff}
-.eng-lbl{font-size:11px;color:#555;margin-top:3px}
-.prog-wrap{margin-bottom:10px}
-.prog-labels{display:flex;justify-content:space-between;font-size:12px;color:#555;margin-bottom:5px}
-.prog-bar{height:5px;background:#222;border-radius:999px;overflow:hidden}
-.prog-fill{height:100%;border-radius:999px;background:#E1306C;transition:width .4s}
-.prog-fill.done{background:#22c55e}
-.goal-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 14px;background:#111;border-radius:10px;border:1px solid #222;flex-wrap:wrap}
-.goal-row label{font-size:12px;color:#555;white-space:nowrap}
-.goal-row input{width:70px;font-size:13px;padding:5px 8px;border-radius:7px;border:1px solid #2a2a2a;background:#1a1a1a;color:#e8e8e8;outline:none}
-.log-header{display:grid;grid-template-columns:1fr 90px 80px 90px 70px 70px 80px 36px;gap:6px;font-size:11px;color:#555;font-weight:500;text-transform:uppercase;letter-spacing:.4px;padding:6px 0 8px;border-bottom:1px solid #222}
-.log-row{display:grid;grid-template-columns:1fr 90px 80px 90px 70px 70px 80px 36px;gap:6px;padding:8px 0;border-bottom:1px solid #1e1e1e;font-size:12px;align-items:center;color:#aaa}
-.log-row:last-child{border-bottom:none}
-.apf{display:none;padding:16px 18px;border-top:1px solid #222;background:#111}
-.apf.open{display:block}
-.apf-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px}
-.apf-eng{display:grid;grid-template-columns:repeat(4,1fr) 1fr 1fr;gap:8px;margin-bottom:12px}
-.empty{text-align:center;padding:36px;color:#444;font-size:13px}
-.loading{text-align:center;padding:32px;color:#555;font-size:13px}
-.mono{font-family:ui-monospace,monospace;font-size:11px;color:#888}
+tr:hover td{background:#181818}
+
+/* INLINE EDIT */
+.ie{background:#111;border:1px solid #2a2a2a;border-radius:5px;color:#e8e8e8;font-size:12px;padding:3px 6px;outline:none;width:100%}
+.ie:focus{border-color:#444}
+select.ie{cursor:pointer}
+
+/* BADGES */
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:500}
+.ba{background:#2a1f0a;color:#fbbf24} /* aquecimento */
+.bc{background:#14291a;color:#4ade80} /* crescimento */
+.bv{background:#0f1f2a;color:#60a5fa} /* venda */
+.bdi{background:#1e1e1e;color:#555}   /* outros */
+.bdis{background:#14291a;color:#4ade80}
+.buso{background:#2a1f0a;color:#fb923c}
+.bblq{background:#2a0f0f;color:#f87171}
+
+/* STOCK */
+.s0{display:inline-block;background:#111;border:1px solid #222;border-radius:5px;padding:2px 8px;font-size:12px;font-weight:700;color:#333}
+.s1{color:#f87171;font-weight:700;font-size:12px}
+.s2{color:#fbbf24;font-weight:700;font-size:12px}
+.s3{color:#4ade80;font-weight:700;font-size:12px}
+
+/* POSTAGENS */
+.sit-block{margin-bottom:28px}
+.sit-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #222}
+.sit-title{font-size:14px;font-weight:600;color:#fff}
+.sit-count{font-size:12px;color:#555}
+.pt{width:100%;border-collapse:collapse;font-size:12px}
+.pt th{background:#1a1a1a;padding:7px 8px;text-align:center;font-size:10px;color:#555;border-bottom:1px solid #222;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.pt th:first-child{text-align:left;min-width:130px}
+.pt th:nth-child(2){text-align:left;min-width:90px}
+.pt td{padding:6px 8px;border-bottom:1px solid #1c1c1c;vertical-align:middle;text-align:center}
+.pt td:first-child{text-align:left}
+.pt td:nth-child(2){text-align:left}
+.pt tr:last-child td{border-bottom:none}
+.pt tr:hover td{background:#181818}
+.chk{width:26px;height:26px;border-radius:6px;border:1px solid #2a2a2a;background:transparent;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;line-height:1}
+.chk:hover{background:#1e1e1e}
+.chk.on{background:#14291a;border-color:#4ade80;color:#4ade80}
+.chk.today{border-color:#555}
+.prog-bar{height:4px;background:#222;border-radius:999px;overflow:hidden;margin-top:3px;width:60px}
+.prog-fill{height:100%;border-radius:999px}
+.pf-aq{background:#fbbf24}
+.pf-cr{background:#E1306C}
+.pf-vd{background:#60a5fa}
+
+.empty{text-align:center;padding:28px;color:#444;font-size:12px}
+.loading{text-align:center;padding:28px;color:#444;font-size:12px}
+.mono{font-family:ui-monospace,monospace;font-size:11px;color:#666}
+.tip{font-size:11px;color:#555;margin-bottom:10px}
+
+/* DRIVE PANEL */
+.drive-panel{background:#111;border:1px solid #1e3a1e;border-radius:9px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.drive-panel i{color:#4ade80;font-size:18px}
+.drive-info{flex:1}
+.drive-info p{font-size:12px;color:#aaa}
+.drive-info small{font-size:11px;color:#555}
 </style>
 </head>
 <body>
-<div class="app">
-  <div class="topbar">
-    <div class="logo"><i class="ti ti-brand-instagram"></i> IG Manager</div>
-    <div class="nav">
-      <button class="nav-btn active" onclick="showTab('emails',this)"><i class="ti ti-mail"></i> E-mails</button>
-      <button class="nav-btn" onclick="showTab('proxies',this)"><i class="ti ti-server"></i> Proxies</button>
-      <button class="nav-btn" onclick="showTab('contas',this)"><i class="ti ti-brand-instagram"></i> Contas IG</button>
-      <button class="nav-btn" onclick="showTab('postagens',this)"><i class="ti ti-calendar-stats"></i> Postagens</button>
-    </div>
-    <div id="conn-dot" class="status-dot" title="Conectado"></div>
+
+<div class="topbar">
+  <div class="logo"><i class="ti ti-brand-instagram"></i> IG Manager</div>
+  <div class="nav">
+    <button class="nb active" onclick="showTab('emails',this)"><i class="ti ti-mail"></i> E-mails</button>
+    <button class="nb" onclick="showTab('proxies',this)"><i class="ti ti-server"></i> Proxies</button>
+    <button class="nb" onclick="showTab('avatares',this)"><i class="ti ti-user-circle"></i> Avatares</button>
+    <button class="nb" onclick="showTab('contas',this)"><i class="ti ti-layout-dashboard"></i> Gestão de Contas</button>
+    <button class="nb" onclick="showTab('postagens',this)"><i class="ti ti-calendar-check"></i> Postagens</button>
   </div>
-  <div class="content">
-    <div class="tab active" id="tab-emails">
-      <div class="stats" id="stats-emails"><div class="loading">Carregando...</div></div>
-      <div class="toolbar">
-        <input type="text" placeholder="Buscar e-mail..." oninput="renderEmails(this.value)">
-        <button class="btn btn-primary" onclick="toggleForm('form-email')"><i class="ti ti-plus"></i> Adicionar</button>
-      </div>
-      <div class="add-form" id="form-email" style="display:none">
-        <div class="form-grid">
-          <div class="field"><label>E-mail</label><input id="em-email" type="email" placeholder="conta@gmail.com"></div>
-          <div class="field"><label>Senha</label><input id="em-senha" placeholder="senha123"></div>
-          <div class="field"><label>Status</label><select id="em-status"><option>Disponível</option><option>Em uso</option><option>Bloqueado</option></select></div>
-          <div class="field"><label>Recovery</label><input id="em-recovery" placeholder="recovery@gmail.com"></div>
-          <div class="field"><label>Telefone</label><input id="em-tel" placeholder="+55 11 9..."></div>
-          <div class="field"><label>Observações</label><input id="em-obs" placeholder="..."></div>
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="addEmail()">Salvar</button>
-        <button class="btn btn-sm" style="margin-left:8px" onclick="toggleForm('form-email')">Cancelar</button>
-      </div>
-      <div class="table-wrap"><table>
-        <thead><tr><th>E-mail</th><th>Senha</th><th>Status</th><th>Recovery</th><th>Telefone</th><th>Obs</th><th></th></tr></thead>
-        <tbody id="tb-emails"><tr><td colspan="7" class="loading">Carregando...</td></tr></tbody>
-      </table></div>
-    </div>
-    <div class="tab" id="tab-proxies">
-      <div class="stats" id="stats-proxies"></div>
-      <div class="toolbar">
-        <input type="text" placeholder="Buscar proxy..." oninput="renderProxies(this.value)">
-        <button class="btn btn-primary" onclick="toggleForm('form-proxy')"><i class="ti ti-plus"></i> Adicionar</button>
-      </div>
-      <div class="add-form" id="form-proxy" style="display:none">
-        <div class="form-grid">
-          <div class="field"><label>IP:Porta</label><input id="px-ip" placeholder="192.168.1.1:8080"></div>
-          <div class="field"><label>Usuário</label><input id="px-user" placeholder="user123"></div>
-          <div class="field"><label>Senha</label><input id="px-pass" placeholder="senha123"></div>
-          <div class="field"><label>Tipo</label><select id="px-tipo"><option>HTTP</option><option>HTTPS</option><option>SOCKS5</option><option>Residencial</option><option>Datacenter</option></select></div>
-          <div class="field"><label>País</label><input id="px-pais" placeholder="BR"></div>
-          <div class="field"><label>Status</label><select id="px-status"><option>Disponível</option><option>Em uso</option><option>Inativo</option></select></div>
-          <div class="field"><label>Conta IG</label><input id="px-conta" placeholder="@username"></div>
-          <div class="field"><label>Validade</label><input id="px-val" type="date"></div>
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="addProxy()">Salvar</button>
-        <button class="btn btn-sm" style="margin-left:8px" onclick="toggleForm('form-proxy')">Cancelar</button>
-      </div>
-      <div class="table-wrap"><table>
-        <thead><tr><th>IP:Porta</th><th>Usuário</th><th>Tipo</th><th>País</th><th>Status</th><th>Conta IG</th><th>Validade</th><th></th></tr></thead>
-        <tbody id="tb-proxies"><tr><td colspan="8" class="loading">Carregando...</td></tr></tbody>
-      </table></div>
-    </div>
-    <div class="tab" id="tab-contas">
-      <div class="stats" id="stats-contas"></div>
-      <div class="toolbar">
-        <input type="text" placeholder="Buscar conta..." oninput="filterContas('q',this.value)">
-        <select onchange="filterContas('sit',this.value)">
-          <option value="">Todas as situações</option>
-          <option>Criado</option><option>Aquecimento</option><option>Crescimento</option><option>Venda</option><option>Inativo</option><option>Suspenso</option>
-        </select>
-        <button class="btn btn-primary" onclick="toggleForm('form-conta')"><i class="ti ti-plus"></i> Adicionar</button>
-      </div>
-      <div class="add-form" id="form-conta" style="display:none">
-        <div class="form-grid">
-          <div class="field"><label>User IG</label><input id="ct-user" placeholder="@username"></div>
-          <div class="field"><label>Senha IG</label><input id="ct-senhaig" placeholder="senha123"></div>
-          <div class="field"><label>E-mail</label><input id="ct-email" placeholder="conta@gmail.com"></div>
-          <div class="field"><label>Senha e-mail</label><input id="ct-senhaemail" placeholder="senha123"></div>
-          <div class="field"><label>Dispositivo</label><input id="ct-disp" placeholder="iPhone 14 / PC"></div>
-          <div class="field"><label>Situação</label><select id="ct-sit"><option>Criado</option><option>Aquecimento</option><option>Crescimento</option><option>Venda</option><option>Inativo</option><option>Suspenso</option></select></div>
-          <div class="field"><label>Página Facebook</label><input id="ct-fbpage" placeholder="URL da página"></div>
-          <div class="field"><label>Perfil Facebook</label><input id="ct-fbperfil" placeholder="URL do perfil"></div>
-          <div class="field"><label>FB Page</label><select id="ct-fbpagestatus"><option>Não</option><option>Sim</option></select></div>
-          <div class="field"><label>MB Suite</label><select id="ct-mb"><option>Não</option><option>Sim</option></select></div>
-          <div class="field"><label>Automação</label><select id="ct-auto"><option>Não</option><option>Sim</option></select></div>
-          <div class="field"><label>Avatar</label><select id="ct-avatar"><option>Não</option><option>Sim</option></select></div>
-          <div class="field"><label>Voz</label><select id="ct-voz"><option>Não</option><option>Sim</option></select></div>
-          <div class="field"><label>Proxy</label><input id="ct-proxy" placeholder="IP:Porta"></div>
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="addConta()">Salvar</button>
-        <button class="btn btn-sm" style="margin-left:8px" onclick="toggleForm('form-conta')">Cancelar</button>
-      </div>
-      <div class="table-wrap"><table>
-        <thead><tr><th>User IG</th><th>E-mail</th><th>Dispositivo</th><th>Situação</th><th>MB</th><th>Auto</th><th>Avatar</th><th>Voz</th><th>Proxy</th><th></th></tr></thead>
-        <tbody id="tb-contas"><tr><td colspan="10" class="loading">Carregando...</td></tr></tbody>
-      </table></div>
-    </div>
-    <div class="tab" id="tab-postagens">
-      <p style="font-size:13px;color:#555;margin-bottom:20px">Contas com situação <strong style="color:#888">Aquecimento</strong>, <strong style="color:#888">Crescimento</strong> ou <strong style="color:#888">Venda</strong></p>
-      <div class="pc-grid" id="post-cards"><div class="loading">Carregando...</div></div>
-    </div>
-  </div>
+  <div id="cdot" class="dot" title="Conectado"></div>
 </div>
+
+<div class="content">
+
+<!-- ===== EMAILS ===== -->
+<div class="tab active" id="tab-emails">
+  <div class="stats" id="stats-em"></div>
+  <div class="toolbar">
+    <input type="text" placeholder="Buscar e-mail..." oninput="renderEmails(this.value)">
+    <button class="btn bp" onclick="tog('padd-em')"><i class="ti ti-plus"></i> Adicionar</button>
+    <button class="btn" onclick="tog('pbulk-em')"><i class="ti ti-list"></i> Em massa</button>
+  </div>
+  <div class="panel" id="padd-em" style="display:none">
+    <div class="fg">
+      <div class="f"><label>E-mail</label><input id="em-e" type="email" placeholder="conta@gmail.com"></div>
+      <div class="f"><label>Senha</label><input id="em-s" placeholder="senha123"></div>
+      <div class="f"><label>Status</label><select id="em-st"><option>Disponível</option><option>Em uso</option><option>Bloqueado</option></select></div>
+      <div class="f"><label>Recovery</label><input id="em-r" placeholder="recovery@gmail.com"></div>
+      <div class="f"><label>Telefone</label><input id="em-t" placeholder="+55 11 9..."></div>
+      <div class="f"><label>Observações</label><input id="em-o" placeholder="..."></div>
+    </div>
+    <button class="btn bp bsm" onclick="addEmail()">Salvar</button>
+    <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-em')">Cancelar</button>
+  </div>
+  <div class="panel" id="pbulk-em" style="display:none">
+    <p class="tip">Uma por linha: <span class="mono">email:senha</span> ou <span class="mono">email:senha:recovery:telefone</span></p>
+    <textarea class="bulk-area" id="bulk-em" placeholder="email1@gmail.com:senha1&#10;email2@gmail.com:senha2:rec@gmail.com"></textarea>
+    <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+      <label style="font-size:12px;color:#555">Status:</label>
+      <select id="bulk-em-st" style="font-size:12px;padding:5px 8px;border-radius:6px;border:1px solid #2a2a2a;background:#1a1a1a;color:#e8e8e8">
+        <option>Disponível</option><option>Em uso</option><option>Bloqueado</option>
+      </select>
+      <button class="btn bp bsm" onclick="bulkEmails()"><i class="ti ti-upload"></i> Importar</button>
+      <button class="btn bsm" onclick="tog('pbulk-em')">Cancelar</button>
+    </div>
+  </div>
+  <div class="tw"><table>
+    <thead><tr><th style="min-width:180px">E-mail</th><th style="min-width:100px">Senha</th><th style="min-width:90px">Status</th><th style="min-width:160px">Recovery</th><th style="min-width:120px">Telefone</th><th style="min-width:140px">Obs</th><th style="width:40px"></th></tr></thead>
+    <tbody id="tb-em"><tr><td colspan="7" class="loading">Carregando...</td></tr></tbody>
+  </table></div>
+</div>
+
+<!-- ===== PROXIES ===== -->
+<div class="tab" id="tab-proxies">
+  <div class="stats" id="stats-px"></div>
+  <div class="toolbar">
+    <input type="text" placeholder="Buscar proxy / pedido / conta..." oninput="renderProxies(this.value)">
+    <button class="btn bp" onclick="tog('padd-px')"><i class="ti ti-plus"></i> Adicionar</button>
+    <button class="btn" onclick="tog('pbulk-px')"><i class="ti ti-list"></i> Em massa</button>
+  </div>
+  <div class="panel" id="padd-px" style="display:none">
+    <div class="fg">
+      <div class="f"><label>Nº Pedido</label><input id="px-ped" placeholder="PED-001"></div>
+      <div class="f"><label>IP:Porta</label><input id="px-ip" placeholder="192.168.1.1:8080"></div>
+      <div class="f"><label>Usuário</label><input id="px-u" placeholder="user123"></div>
+      <div class="f"><label>Senha</label><input id="px-s" placeholder="senha123"></div>
+      <div class="f"><label>Tipo</label><select id="px-t"><option>HTTP</option><option>HTTPS</option><option>SOCKS5</option><option>Residencial</option><option>Datacenter</option></select></div>
+      <div class="f"><label>País</label><input id="px-p" placeholder="BR" style="max-width:80px"></div>
+      <div class="f"><label>Status</label><select id="px-st"><option>Disponível</option><option>Em uso</option><option>Inativo</option></select></div>
+      <div class="f"><label>Validade</label><input id="px-v" type="date"></div>
+    </div>
+    <button class="btn bp bsm" onclick="addProxy()">Salvar</button>
+    <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-px')">Cancelar</button>
+  </div>
+  <div class="panel" id="pbulk-px" style="display:none">
+    <p class="tip">Uma por linha: <span class="mono">ip:porta:usuario:senha</span> ou <span class="mono">pedido:ip:porta:usuario:senha</span></p>
+    <textarea class="bulk-area" id="bulk-px" placeholder="192.168.1.1:8080:user1:pass1&#10;PED001:10.0.0.2:3128:user2:pass2"></textarea>
+    <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+      <label style="font-size:12px;color:#555">Tipo:</label>
+      <select id="bulk-px-t" style="font-size:12px;padding:5px 8px;border-radius:6px;border:1px solid #2a2a2a;background:#1a1a1a;color:#e8e8e8">
+        <option>HTTP</option><option>HTTPS</option><option>SOCKS5</option><option>Residencial</option><option>Datacenter</option>
+      </select>
+      <button class="btn bp bsm" onclick="bulkProxies()"><i class="ti ti-upload"></i> Importar</button>
+      <button class="btn bsm" onclick="tog('pbulk-px')">Cancelar</button>
+    </div>
+  </div>
+  <div class="tw"><table>
+    <thead><tr><th style="min-width:90px">Nº Pedido</th><th style="min-width:150px">IP:Porta</th><th style="min-width:90px">Usuário</th><th style="min-width:90px">Tipo</th><th style="width:50px">País</th><th style="min-width:90px">Status</th><th style="min-width:120px">Conta IG</th><th style="min-width:100px">Validade</th><th style="width:40px"></th></tr></thead>
+    <tbody id="tb-px"><tr><td colspan="9" class="loading">Carregando...</td></tr></tbody>
+  </table></div>
+</div>
+
+<!-- ===== AVATARES ===== -->
+<div class="tab" id="tab-avatares">
+  <div class="toolbar">
+    <button class="btn bp" onclick="tog('padd-av')"><i class="ti ti-plus"></i> Novo avatar</button>
+  </div>
+  <div class="panel" id="padd-av" style="display:none">
+    <div class="fg">
+      <div class="f"><label>Nome / código</label><input id="av-n" placeholder="Maria Silva / AV-01"></div>
+      <div class="f"><label>Características</label><input id="av-c" placeholder="28 anos, morena, lifestyle..."></div>
+    </div>
+    <div class="f" style="margin-bottom:12px"><label>Prompt</label><textarea id="av-p" placeholder="Você é Maria, uma jovem de 28 anos..."></textarea></div>
+    <button class="btn bp bsm" onclick="addAvatar()">Salvar</button>
+    <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-av')">Cancelar</button>
+  </div>
+  <div class="tw"><table>
+    <thead><tr><th style="min-width:160px">Nome / código</th><th style="min-width:200px">Características</th><th style="min-width:200px">Prompt</th><th style="min-width:160px">Status de uso</th><th style="width:50px;text-align:center">Qtd</th><th style="width:40px"></th></tr></thead>
+    <tbody id="tb-av"><tr><td colspan="3" class="loading">Carregando...</td></tr></tbody>
+  </table></div>
+</div>
+
+<!-- ===== CONTAS IG ===== -->
+<div class="tab" id="tab-contas">
+  <div class="stats" id="stats-ct"></div>
+  <div class="toolbar">
+    <input type="text" placeholder="Buscar conta..." oninput="filterContas('q',this.value)">
+    <select onchange="filterContas('sit',this.value)">
+      <option value="">Todas as situações</option>
+      <option>Criado</option><option>Aquecimento</option><option>Crescimento</option><option>Venda</option><option>Inativo</option><option>Suspenso</option>
+    </select>
+    <button class="btn bp" onclick="tog('padd-ct')"><i class="ti ti-plus"></i> Adicionar</button>
+  </div>
+  <div class="panel" id="padd-ct" style="display:none">
+    <div class="fg">
+      <div class="f"><label>User IG</label><input id="ct-u" placeholder="@username"></div>
+      <div class="f"><label>Senha IG</label><input id="ct-si" placeholder="senha123"></div>
+      <div class="f"><label>E-mail</label><input id="ct-e" placeholder="conta@gmail.com"></div>
+      <div class="f"><label>Senha e-mail</label><input id="ct-se" placeholder="senha123"></div>
+      <div class="f"><label>Dispositivo</label><input id="ct-d" placeholder="iPhone 14 / PC"></div>
+      <div class="f"><label>Situação</label><select id="ct-sit"><option>Criado</option><option>Aquecimento</option><option>Crescimento</option><option>Venda</option><option>Inativo</option><option>Suspenso</option></select></div>
+      <div class="f"><label>Proxy</label><select id="ct-px"><option value="">— sem proxy —</option></select></div>
+      <div class="f"><label>Avatar</label><select id="ct-av"><option value="">— sem avatar —</option></select></div>
+      <div class="f"><label>Voz</label><input id="ct-vz" placeholder="Voz jovem feminina..."></div>
+      <div class="f"><label>MB Suite</label><select id="ct-mb"><option>Não</option><option>Sim</option></select></div>
+      <div class="f"><label>Automação</label><select id="ct-au"><option>Não</option><option>Sim</option></select></div>
+      <div class="f"><label>FB Page criada</label><select id="ct-fp"><option>Não</option><option>Sim</option></select></div>
+      <div class="f"><label>Página Facebook</label><input id="ct-fbpg" placeholder="URL da página"></div>
+      <div class="f"><label>Perfil Facebook</label><input id="ct-fbpr" placeholder="URL do perfil"></div>
+      <div class="f"><label>Link venda IG</label><input id="ct-lig" placeholder="https://..."></div>
+      <div class="f"><label>Link venda FB</label><input id="ct-lfb" placeholder="https://..."></div>
+      <div class="f"><label>ID pasta Drive</label><input id="ct-drv" placeholder="1aBcDeFgHiJkLmN..."></div>
+    </div>
+    <button class="btn bp bsm" onclick="addConta()">Salvar</button>
+    <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-ct')">Cancelar</button>
+  </div>
+  <div class="tw"><table>
+    <thead><tr>
+      <th style="min-width:120px">User IG</th>
+      <th style="min-width:160px">E-mail</th>
+      <th style="min-width:90px">Situação</th>
+      <th style="min-width:130px">Proxy</th>
+      <th style="min-width:100px">Avatar</th>
+      <th style="min-width:120px">Voz</th>
+      <th style="width:45px">MB</th>
+      <th style="width:45px">Auto</th>
+      <th style="width:45px">FB</th>
+      <th style="min-width:80px">Link IG</th>
+      <th style="min-width:80px">Link FB</th>
+      <th style="min-width:90px">Estoque vídeos</th>
+      <th style="width:40px"></th>
+    </tr></thead>
+    <tbody id="tb-ct"><tr><td colspan="13" class="loading">Carregando...</td></tr></tbody>
+  </table></div>
+</div>
+
+<!-- ===== POSTAGENS ===== -->
+<div class="tab" id="tab-postagens">
+  <div class="drive-panel">
+    <i class="ti ti-brand-google-drive"></i>
+    <div class="drive-info">
+      <p>Sincronização automática com Google Drive</p>
+      <small>O estoque é atualizado ao clicar em "Sincronizar". Requer autenticação OAuth do Google.</small>
+    </div>
+    <button class="btn bg bsm" onclick="syncDrive()"><i class="ti ti-refresh"></i> Sincronizar estoque</button>
+  </div>
+  <div id="post-sections"><div class="loading">Carregando...</div></div>
+</div>
+
+</div><!-- /content -->
+
 <script>
-const SB_URL='https://celnqfvjucollfcuwxrn.supabase.co';
-const SB_KEY='sb_publishable_NKRCmfTzf9giPR7v4eHLXg_jlZMci05';
-async function sb(table,method='GET',body=null,extra=''){
-  const res=await fetch(`${SB_URL}/rest/v1/${table}${extra}`,{
-    method,
-    headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':method==='POST'?'return=representation':''},
-    body:body?JSON.stringify(body):null
-  });
-  if(!res.ok){const e=await res.text();throw new Error(e);}
+const SB='https://celnqfvjucollfcuwxrn.supabase.co';
+const KEY='sb_publishable_NKRCmfTzf9giPR7v4eHLXg_jlZMci05';
+// Google OAuth — substitua pelo seu Client ID do Google Cloud Console
+const GCLIENT='SEU_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+let gToken=null;
+
+async function api(tbl,method='GET',body=null,qs=''){
+  const h={'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+KEY};
+  if(method==='POST')h['Prefer']='return=representation';
+  if(method==='PATCH')h['Prefer']='return=representation';
+  const r=await fetch(`${SB}/rest/v1/${tbl}${qs}`,{method,headers:h,body:body?JSON.stringify(body):null});
+  if(!r.ok){const e=await r.text();throw new Error(e);}
   if(method==='DELETE')return null;
-  const txt=await res.text();
-  return txt?JSON.parse(txt):null;
+  const t=await r.text();return t?JSON.parse(t):null;
 }
-let allEmails=[],allProxies=[],allContas=[],allPosts=[],allMetas=[];
-let contaQ='',contaSit='';
-function setConn(ok){const d=document.getElementById('conn-dot');d.className='status-dot'+(ok?'':' err');d.title=ok?'Conectado':'Erro de conexão';}
+
+let Emails=[],Proxies=[],Avatares=[],Contas=[],Checks=[];
+let cQ='',cSit='';
+const today=new Date().toISOString().slice(0,10);
+
+// days of current week Mon-Sun
+function weekDays(){
+  const d=new Date();
+  const day=d.getDay();
+  const mon=new Date(d);
+  mon.setDate(d.getDate()-(day===0?6:day-1));
+  return Array.from({length:7},(_,i)=>{const x=new Date(mon);x.setDate(mon.getDate()+i);return x.toISOString().slice(0,10);});
+}
+
 async function loadAll(){
   try{
-    [allEmails,allProxies,allContas,allPosts,allMetas]=await Promise.all([
-      sb('emails?order=id.desc'),
-      sb('proxies?order=id.desc'),
-      sb('contas?order=id.desc'),
-      sb('posts?order=data_hora.desc'),
-      sb('metas')
+    [Emails,Proxies,Avatares,Contas,Checks]=await Promise.all([
+      api('emails','GET',null,'?order=id.desc'),
+      api('proxies','GET',null,'?order=id.desc'),
+      api('avatares','GET',null,'?order=id.desc'),
+      api('contas','GET',null,'?order=id.desc'),
+      api('checks_postagem','GET',null,'?order=data.desc')
     ]);
-    setConn(true);
-    renderEmails();renderProxies();renderContas();
-  }catch(e){setConn(false);console.error(e);}
+    document.getElementById('cdot').className='dot';
+    renderEmails();renderProxies();renderAvatares();renderContas();
+    fillSelects();
+  }catch(e){document.getElementById('cdot').className='dot err';console.error(e);}
 }
+
 function showTab(t,btn){
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(x=>x.classList.remove('active'));
   document.getElementById('tab-'+t).classList.add('active');
   btn.classList.add('active');
   if(t==='postagens')renderPostagens();
 }
-function toggleForm(id){const f=document.getElementById(id);f.style.display=f.style.display==='none'?'block':'none';}
-function v(id){const el=document.getElementById(id);return el?el.value:'';}
-function sbadge(s){
-  const map={Disponível:'disponivel','Em uso':'emuso',Bloqueado:'bloqueado',Inativo:'inativo',Aquecimento:'aquecimento',Crescimento:'crescimento',Venda:'venda',Criado:'criado',Suspenso:'suspenso',Publicado:'publicado',Agendado:'agendado',Rascunho:'rascunho',Removido:'removido'};
-  return `<span class="badge b-${map[s]||'inativo'}">${s}</span>`;
+function tog(id){const p=document.getElementById(id);if(p)p.style.display=p.style.display==='none'?'block':'none';}
+function g(id){const el=document.getElementById(id);return el?el.value:'';}
+function clr(ids){ids.forEach(id=>{const el=document.getElementById(id);if(el)el.value='';})}
+
+function stockEl(n){
+  n=Number(n||0);
+  if(n===0)return`<span class="s0">0 ⚫</span>`;
+  if(n<=2)return`<span class="s1">🔴 ${n}</span>`;
+  if(n<=4)return`<span class="s2">🟡 ${n}</span>`;
+  return`<span class="s3">🟢 ${n}</span>`;
 }
-function yn(val){return val==='Sim'?'<span style="color:#4ade80">✓</span>':'<span style="color:#333">—</span>';}
-function num(n){return Number(n||0).toLocaleString('pt-BR');}
+
+function sitBadge(s){
+  const cls={Aquecimento:'ba',Crescimento:'bc',Venda:'bv'}[s]||'bdi';
+  return`<span class="badge ${cls}">${s}</span>`;
+}
+function emBadge(s){
+  const cls={Disponível:'bdis','Em uso':'buso',Bloqueado:'bblq'}[s]||'bdi';
+  return`<span class="badge ${cls}">${s}</span>`;
+}
+function yn(v){return v==='Sim'?`<span style="color:#4ade80;font-size:13px">✓</span>`:`<span style="color:#2a2a2a">—</span>`;}
+
+function fillSelects(){
+  const pSel=document.getElementById('ct-px');
+  if(pSel){pSel.innerHTML='<option value="">— sem proxy —</option>'+Proxies.map(p=>`<option value="${esc(p.ip)}">${p.ip}${p.numero_pedido?' ('+p.numero_pedido+')':''}</option>`).join('');}
+  const aSel=document.getElementById('ct-av');
+  if(aSel){aSel.innerHTML='<option value="">— sem avatar —</option>'+Avatares.map(a=>`<option value="${a.id}">${esc(a.nome)}</option>`).join('');}
+}
+
+function esc(s){return(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+
+// ── inline edit helpers ──
+function ieTxt(val,fn){return`<input class="ie" value="${esc(val)}" data-fn="${fn}" style="min-width:80px">`;}
+function ieSel(val,opts,fn){return`<select class="ie" data-fn="${fn}">${opts.map(o=>`<option${o===val?' selected':''}>${esc(o)}</option>`).join('')}</select>`;}
+
+function bindTable(tbId,rows,fields){
+  const tb=document.getElementById(tbId);
+  tb.querySelectorAll('.ie').forEach(el=>{
+    const fn=el.dataset.fn;
+    if(!fn)return;
+    if(el.tagName==='SELECT'){
+      el.addEventListener('change',()=>new Function('val',fn)(el.value));
+    } else {
+      el.addEventListener('blur',()=>new Function('val',fn)(el.value));
+      el.addEventListener('keydown',e=>{if(e.key==='Enter')new Function('val',fn)(el.value);});
+    }
+  });
+}
+
+async function patch(tbl,id,field,value){
+  try{await api(tbl,'PATCH',{[field]:value},`?id=eq.${id}`);}
+  catch(e){alert('Erro ao salvar: '+e.message);}
+}
+
+// ── EMAILS ──
 async function addEmail(){
-  const o={email:v('em-email'),senha:v('em-senha'),status:v('em-status'),recovery:v('em-recovery'),tel:v('em-tel'),obs:v('em-obs')};
+  const o={email:g('em-e'),senha:g('em-s'),status:g('em-st'),recovery:g('em-r'),tel:g('em-t'),obs:g('em-o')};
   if(!o.email)return;
-  try{const r=await sb('emails','POST',o);allEmails.unshift(r[0]);['em-email','em-senha','em-recovery','em-tel','em-obs'].forEach(x=>{document.getElementById(x).value='';});document.getElementById('em-status').value='Disponível';toggleForm('form-email');renderEmails();}catch(e){alert('Erro: '+e.message);}
+  try{const r=await api('emails','POST',o);Emails.unshift(r[0]);clr(['em-e','em-s','em-r','em-t','em-o']);tog('padd-em');renderEmails();}
+  catch(e){alert('Erro: '+e.message);}
 }
-async function deleteEmail(id){if(!confirm('Excluir?'))return;await sb('emails?id=eq.'+id,'DELETE');allEmails=allEmails.filter(x=>x.id!==id);renderEmails();}
+async function bulkEmails(){
+  const lines=g('bulk-em').split('\n').map(l=>l.trim()).filter(Boolean);
+  const status=g('bulk-em-st');
+  const items=lines.map(l=>{const p=l.split(':');return{email:p[0]||'',senha:p[1]||'',status,recovery:p[2]||'',tel:p[3]||''};}).filter(x=>x.email);
+  if(!items.length)return;
+  try{const r=await api('emails','POST',items);Emails=r.concat(Emails);document.getElementById('bulk-em').value='';tog('pbulk-em');renderEmails();alert(items.length+' e-mails importados!');}
+  catch(e){alert('Erro: '+e.message);}
+}
+async function delEmail(id){if(!confirm('Excluir?'))return;await api('emails','DELETE',null,'?id=eq.'+id);Emails=Emails.filter(x=>x.id!==id);renderEmails();}
+
 function renderEmails(q=''){
-  const f=allEmails.filter(x=>!q||(x.email||'').toLowerCase().includes(q.toLowerCase()));
-  document.getElementById('tb-emails').innerHTML=f.length?f.map(e=>`<tr><td title="${e.email||''}">${e.email||'—'}</td><td><span class="mono">${e.senha||'—'}</span></td><td>${sbadge(e.status)}</td><td title="${e.recovery||''}">${e.recovery||'—'}</td><td>${e.tel||'—'}</td><td title="${e.obs||''}">${e.obs||'—'}</td><td><button class="btn btn-sm btn-danger" onclick="deleteEmail(${e.id})"><i class="ti ti-trash"></i></button></td></tr>`).join(''):`<tr><td colspan="7" class="empty">Nenhum e-mail cadastrado</td></tr>`;
-  document.getElementById('stats-emails').innerHTML=`<div class="stat-card"><div class="stat-label">Total</div><div class="stat-value">${allEmails.length}</div></div><div class="stat-card"><div class="stat-label">Disponíveis</div><div class="stat-value">${allEmails.filter(x=>x.status==='Disponível').length}</div></div><div class="stat-card"><div class="stat-label">Em uso</div><div class="stat-value">${allEmails.filter(x=>x.status==='Em uso').length}</div></div><div class="stat-card"><div class="stat-label">Bloqueados</div><div class="stat-value">${allEmails.filter(x=>x.status==='Bloqueado').length}</div></div>`;
+  const f=Emails.filter(x=>!q||(x.email||'').toLowerCase().includes(q.toLowerCase()));
+  const tb=document.getElementById('tb-em');
+  if(!f.length){tb.innerHTML=`<tr><td colspan="7" class="empty">Nenhum e-mail cadastrado</td></tr>`;return statsEmails();}
+  tb.innerHTML=f.map(e=>`<tr>
+    <td>${ieTxt(e.email,`patch('emails',${e.id},'email',val)`)}</td>
+    <td>${ieTxt(e.senha,`patch('emails',${e.id},'senha',val)`)}</td>
+    <td>${ieSel(e.status,['Disponível','Em uso','Bloqueado'],`(async(val)=>{await patch('emails',${e.id},'status',val);const em=Emails.find(x=>x.id===${e.id});if(em)em.status=val;renderEmails();})(val)`)}</td>
+    <td>${ieTxt(e.recovery,`patch('emails',${e.id},'recovery',val)`)}</td>
+    <td>${ieTxt(e.tel,`patch('emails',${e.id},'tel',val)`)}</td>
+    <td>${ieTxt(e.obs,`patch('emails',${e.id},'obs',val)`)}</td>
+    <td><button class="btn bd bsm" onclick="delEmail(${e.id})"><i class="ti ti-trash"></i></button></td>
+  </tr>`).join('');
+  bindTable('tb-em');
+  statsEmails();
 }
+function statsEmails(){
+  document.getElementById('stats-em').innerHTML=`
+    <div class="stat"><div class="sl">Total</div><div class="sv">${Emails.length}</div></div>
+    <div class="stat"><div class="sl">Disponíveis</div><div class="sv">${Emails.filter(x=>x.status==='Disponível').length}</div></div>
+    <div class="stat"><div class="sl">Em uso</div><div class="sv">${Emails.filter(x=>x.status==='Em uso').length}</div></div>
+    <div class="stat"><div class="sl">Bloqueados</div><div class="sv">${Emails.filter(x=>x.status==='Bloqueado').length}</div></div>`;
+}
+
+// ── PROXIES ──
 async function addProxy(){
-  const o={ip:v('px-ip'),usuario:v('px-user'),senha:v('px-pass'),tipo:v('px-tipo'),pais:v('px-pais'),status:v('px-status'),conta:v('px-conta'),validade:v('px-val')||null};
+  const o={numero_pedido:g('px-ped'),ip:g('px-ip'),usuario:g('px-u'),senha:g('px-s'),tipo:g('px-t'),pais:g('px-p'),status:g('px-st'),validade:g('px-v')||null};
   if(!o.ip)return;
-  try{const r=await sb('proxies','POST',o);allProxies.unshift(r[0]);['px-ip','px-user','px-pass','px-pais','px-conta','px-val'].forEach(x=>{document.getElementById(x).value='';});toggleForm('form-proxy');renderProxies();}catch(e){alert('Erro: '+e.message);}
+  try{const r=await api('proxies','POST',o);Proxies.unshift(r[0]);clr(['px-ped','px-ip','px-u','px-s','px-p','px-v']);tog('padd-px');renderProxies();fillSelects();}
+  catch(e){alert('Erro: '+e.message);}
 }
-async function deleteProxy(id){if(!confirm('Excluir?'))return;await sb('proxies?id=eq.'+id,'DELETE');allProxies=allProxies.filter(x=>x.id!==id);renderProxies();}
+async function bulkProxies(){
+  const lines=g('bulk-px').split('\n').map(l=>l.trim()).filter(Boolean);
+  const tipo=g('bulk-px-t');
+  const items=lines.map(l=>{
+    const p=l.split(':');
+    if(p.length>=5)return{numero_pedido:p[0],ip:p[1]+':'+p[2],usuario:p[3],senha:p[4],tipo,status:'Disponível'};
+    if(p.length>=4)return{ip:p[0]+':'+p[1],usuario:p[2],senha:p[3],tipo,status:'Disponível'};
+    return null;
+  }).filter(Boolean);
+  if(!items.length)return;
+  try{const r=await api('proxies','POST',items);Proxies=r.concat(Proxies);document.getElementById('bulk-px').value='';tog('pbulk-px');renderProxies();fillSelects();alert(items.length+' proxies importadas!');}
+  catch(e){alert('Erro: '+e.message);}
+}
+async function delProxy(id){if(!confirm('Excluir?'))return;await api('proxies','DELETE',null,'?id=eq.'+id);Proxies=Proxies.filter(x=>x.id!==id);renderProxies();fillSelects();}
+
 function renderProxies(q=''){
-  const f=allProxies.filter(x=>!q||((x.ip||'')+(x.conta||'')).toLowerCase().includes(q.toLowerCase()));
-  document.getElementById('tb-proxies').innerHTML=f.length?f.map(p=>`<tr><td><span class="mono">${p.ip||'—'}</span></td><td>${p.usuario||'—'}</td><td>${p.tipo||'—'}</td><td>${p.pais||'—'}</td><td>${sbadge(p.status)}</td><td title="${p.conta||''}">${p.conta||'—'}</td><td>${p.validade||'—'}</td><td><button class="btn btn-sm btn-danger" onclick="deleteProxy(${p.id})"><i class="ti ti-trash"></i></button></td></tr>`).join(''):`<tr><td colspan="8" class="empty">Nenhuma proxy cadastrada</td></tr>`;
-  document.getElementById('stats-proxies').innerHTML=`<div class="stat-card"><div class="stat-label">Total</div><div class="stat-value">${allProxies.length}</div></div><div class="stat-card"><div class="stat-label">Disponíveis</div><div class="stat-value">${allProxies.filter(x=>x.status==='Disponível').length}</div></div><div class="stat-card"><div class="stat-label">Em uso</div><div class="stat-value">${allProxies.filter(x=>x.status==='Em uso').length}</div></div>`;
+  const f=Proxies.filter(x=>!q||((x.ip||'')+(x.numero_pedido||'')+(x.conta||'')).toLowerCase().includes(q.toLowerCase()));
+  const contaUsing=ip=>{ const c=Contas.find(x=>x.proxy===ip); return c?`<span style="color:#60a5fa">${esc(c.user_ig)}</span>`:`<span style="color:#333">—</span>`;};
+  const tb=document.getElementById('tb-px');
+  if(!f.length){tb.innerHTML=`<tr><td colspan="9" class="empty">Nenhuma proxy</td></tr>`;return statsProxies();}
+  tb.innerHTML=f.map(p=>`<tr>
+    <td>${ieTxt(p.numero_pedido,`patch('proxies',${p.id},'numero_pedido',val)`)}</td>
+    <td><span class="mono">${esc(p.ip)}</span></td>
+    <td>${ieTxt(p.usuario,`patch('proxies',${p.id},'usuario',val)`)}</td>
+    <td>${ieSel(p.tipo,['HTTP','HTTPS','SOCKS5','Residencial','Datacenter'],`patch('proxies',${p.id},'tipo',val)`)}</td>
+    <td>${ieTxt(p.pais,`patch('proxies',${p.id},'pais',val)`)}</td>
+    <td>${ieSel(p.status,['Disponível','Em uso','Inativo'],`(async(val)=>{await patch('proxies',${p.id},'status',val);const px=Proxies.find(x=>x.id===${p.id});if(px)px.status=val;renderProxies();})(val)`)}</td>
+    <td>${contaUsing(p.ip)}</td>
+    <td>${ieTxt(p.validade,`patch('proxies',${p.id},'validade',val)`)}</td>
+    <td><button class="btn bd bsm" onclick="delProxy(${p.id})"><i class="ti ti-trash"></i></button></td>
+  </tr>`).join('');
+  bindTable('tb-px');
+  statsProxies();
 }
+function statsProxies(){
+  document.getElementById('stats-px').innerHTML=`
+    <div class="stat"><div class="sl">Total</div><div class="sv">${Proxies.length}</div></div>
+    <div class="stat"><div class="sl">Disponíveis</div><div class="sv">${Proxies.filter(x=>x.status==='Disponível').length}</div></div>
+    <div class="stat"><div class="sl">Em uso</div><div class="sv">${Proxies.filter(x=>x.status==='Em uso').length}</div></div>`;
+}
+
+// ── AVATARES ──
+async function addAvatar(){
+  const nome=g('av-n');if(!nome)return;
+  try{const r=await api('avatares','POST',{nome,caracteristicas:g('av-c'),prompt:g('av-p')});Avatares.unshift(r[0]);clr(['av-n','av-c','av-p']);tog('padd-av');renderAvatares();fillSelects();}
+  catch(e){alert('Erro: '+e.message);}
+}
+async function delAvatar(id){if(!confirm('Excluir avatar?'))return;await api('avatares','DELETE',null,'?id=eq.'+id);Avatares=Avatares.filter(x=>x.id!==id);renderAvatares();fillSelects();}
+function renderAvatares(){
+  const tb=document.getElementById('tb-av');
+  if(!Avatares.length){tb.innerHTML=`<tr><td colspan="6" class="empty">Nenhum avatar cadastrado</td></tr>`;return;}
+  tb.innerHTML=Avatares.map(a=>{
+    const usingContas=Contas.filter(c=>Number(c.avatar_id)===a.id);
+    const emUso=usingContas.length>0;
+    const pills=usingContas.map(c=>`<span style="display:inline-block;background:#1a2a1a;border:1px solid #2a3a2a;border-radius:4px;padding:1px 7px;font-size:10px;color:#4ade80;margin:1px">${esc(c.user_ig)}</span>`).join('');
+    const statusCell=emUso
+      ? `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span class="badge bc" style="flex-shrink:0">Em uso</span>${pills}</div>`
+      : `<span style="color:#333;font-size:11px">Disponível</span>`;
+    // prompt cell: truncated preview + expand on click
+    const promptPreview=a.prompt?(a.prompt.length>60?a.prompt.slice(0,60)+'…':a.prompt):'—';
+    const promptCell=a.prompt
+      ? `<div style="max-width:220px"><span style="font-size:11px;color:#888;cursor:pointer" onclick="expandPrompt(${a.id})" title="Clique para editar">${esc(promptPreview)}</span></div>`
+      : `<span style="color:#333;font-size:11px">—</span>`;
+    return`<tr id="av-row-${a.id}">
+      <td>${ieTxt(a.nome,`(async(val)=>{await patch('avatares',${a.id},'nome',val);const av=Avatares.find(x=>x.id===${a.id});if(av){av.nome=val;}fillSelects();})(val)`)}</td>
+      <td>${ieTxt(a.caracteristicas,`(async(val)=>{await patch('avatares',${a.id},'caracteristicas',val);const av=Avatares.find(x=>x.id===${a.id});if(av)av.caracteristicas=val;})(val)`)}</td>
+      <td>${promptCell}</td>
+      <td>${statusCell}</td>
+      <td style="text-align:center;color:#555;font-size:12px">${usingContas.length||'—'}</td>
+      <td><button class="btn bd bsm" onclick="delAvatar(${a.id})"><i class="ti ti-trash"></i></button></td>
+    </tr>`;
+  }).join('');
+  bindTable('tb-av');
+}
+
+function expandPrompt(avId){
+  const av=Avatares.find(x=>x.id===avId);if(!av)return;
+  const row=document.getElementById('av-row-'+avId);if(!row)return;
+  const promptTd=row.querySelectorAll('td')[2];
+  promptTd.innerHTML=`<textarea style="width:100%;min-height:80px;font-size:12px;background:#111;border:1px solid #333;border-radius:6px;color:#e8e8e8;padding:6px;resize:vertical;outline:none" onblur="savePrompt(${avId},this.value)">${esc(av.prompt||'')}</textarea>`;
+  promptTd.querySelector('textarea').focus();
+}
+async function savePrompt(avId,val){
+  await patch('avatares',avId,'prompt',val);
+  const av=Avatares.find(x=>x.id===avId);
+  if(av)av.prompt=val;
+  renderAvatares();
+}
+
+// ── CONTAS IG ──
 async function addConta(){
-  const o={user_ig:v('ct-user'),senha_ig:v('ct-senhaig'),email:v('ct-email'),senha_email:v('ct-senhaemail'),dispositivo:v('ct-disp'),situacao:v('ct-sit'),fb_page:v('ct-fbpage'),fb_perfil:v('ct-fbperfil'),fb_page_status:v('ct-fbpagestatus'),mb_suite:v('ct-mb'),automacao:v('ct-auto'),avatar:v('ct-avatar'),voz:v('ct-voz'),proxy:v('ct-proxy')};
+  const avId=g('ct-av')||null;
+  const o={user_ig:g('ct-u'),senha_ig:g('ct-si'),email:g('ct-e'),senha_email:g('ct-se'),dispositivo:g('ct-d'),situacao:g('ct-sit'),proxy:g('ct-px')||null,avatar_id:avId?Number(avId):null,voz:g('ct-vz'),mb_suite:g('ct-mb'),automacao:g('ct-au'),fb_page_status:g('ct-fp'),fb_page:g('ct-fbpg'),fb_perfil:g('ct-fbpr'),link_venda_ig:g('ct-lig'),link_venda_fb:g('ct-lfb'),drive_folder_id:g('ct-drv')||null,estoque_videos:0,aquecimento_dias:0,crescimento_posts:0};
   if(!o.user_ig)return;
-  try{const r=await sb('contas','POST',o);allContas.unshift(r[0]);['ct-user','ct-senhaig','ct-email','ct-senhaemail','ct-disp','ct-fbpage','ct-fbperfil','ct-proxy'].forEach(x=>{document.getElementById(x).value='';});toggleForm('form-conta');renderContas();}catch(e){alert('Erro: '+e.message);}
+  try{const r=await api('contas','POST',o);Contas.unshift(r[0]);clr(['ct-u','ct-si','ct-e','ct-se','ct-d','ct-vz','ct-fbpg','ct-fbpr','ct-lig','ct-lfb','ct-drv']);tog('padd-ct');renderContas();renderProxies();renderAvatares();}
+  catch(e){alert('Erro: '+e.message);}
 }
-async function deleteConta(id){if(!confirm('Excluir esta conta e todos os posts?'))return;await sb('contas?id=eq.'+id,'DELETE');allContas=allContas.filter(x=>x.id!==id);allPosts=allPosts.filter(x=>x.conta_id!==id);allMetas=allMetas.filter(x=>x.conta_id!==id);renderContas();}
-function filterContas(key,val){if(key==='q')contaQ=val;else contaSit=val;renderContas();}
+async function delConta(id){if(!confirm('Excluir conta e todos os dados?'))return;await api('contas','DELETE',null,'?id=eq.'+id);Contas=Contas.filter(x=>x.id!==id);Checks=Checks.filter(x=>x.conta_id!==id);renderContas();renderProxies();}
+
+function filterContas(k,v){if(k==='q')cQ=v;else cSit=v;renderContas();}
 function renderContas(){
-  let f=allContas;
-  if(contaQ)f=f.filter(x=>((x.user_ig||'')+(x.email||'')).toLowerCase().includes(contaQ.toLowerCase()));
-  if(contaSit)f=f.filter(x=>x.situacao===contaSit);
-  document.getElementById('tb-contas').innerHTML=f.length?f.map(c=>`<tr><td title="${c.user_ig||''}"><strong style="color:#fff">${c.user_ig||'—'}</strong></td><td title="${c.email||''}">${c.email||'—'}</td><td title="${c.dispositivo||''}">${c.dispositivo||'—'}</td><td>${sbadge(c.situacao)}</td><td>${yn(c.mb_suite)}</td><td>${yn(c.automacao)}</td><td>${yn(c.avatar)}</td><td>${yn(c.voz)}</td><td title="${c.proxy||''}">${c.proxy||'—'}</td><td><button class="btn btn-sm btn-danger" onclick="deleteConta(${c.id})"><i class="ti ti-trash"></i></button></td></tr>`).join(''):`<tr><td colspan="10" class="empty">Nenhuma conta cadastrada</td></tr>`;
-  document.getElementById('stats-contas').innerHTML=`<div class="stat-card"><div class="stat-label">Total</div><div class="stat-value">${allContas.length}</div></div><div class="stat-card"><div class="stat-label">Aquecimento</div><div class="stat-value">${allContas.filter(x=>x.situacao==='Aquecimento').length}</div></div><div class="stat-card"><div class="stat-label">Crescimento</div><div class="stat-value">${allContas.filter(x=>x.situacao==='Crescimento').length}</div></div><div class="stat-card"><div class="stat-label">Venda</div><div class="stat-value">${allContas.filter(x=>x.situacao==='Venda').length}</div></div><div class="stat-card"><div class="stat-label">Inativas</div><div class="stat-value">${allContas.filter(x=>['Inativo','Suspenso'].includes(x.situacao)).length}</div></div>`;
+  let f=Contas;
+  if(cQ)f=f.filter(x=>((x.user_ig||'')+(x.email||'')).toLowerCase().includes(cQ.toLowerCase()));
+  if(cSit)f=f.filter(x=>x.situacao===cSit);
+  const avName=id=>{ const a=Avatares.find(x=>x.id===id); return a?esc(a.nome):'—';};
+  const tb=document.getElementById('tb-ct');
+  if(!f.length){tb.innerHTML=`<tr><td colspan="13" class="empty">Nenhuma conta</td></tr>`;return statsContas();}
+  tb.innerHTML=f.map(c=>`<tr>
+    <td><strong style="color:#fff">${esc(c.user_ig)}</strong></td>
+    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${ieTxt(c.email,`patch('contas',${c.id},'email',val)`)}</td>
+    <td>${ieSel(c.situacao,['Criado','Aquecimento','Crescimento','Venda','Inativo','Suspenso'],`(async(val)=>{await patch('contas',${c.id},'situacao',val);const ct=Contas.find(x=>x.id===${c.id});if(ct)ct.situacao=val;renderContas();})(val)`)}</td>
+    <td>${ieSel(c.proxy||'',[''].concat(Proxies.map(p=>p.ip)),`(async(val)=>{await patch('contas',${c.id},'proxy',val||null);const ct=Contas.find(x=>x.id===${c.id});if(ct)ct.proxy=val;renderProxies();})(val)`)}</td>
+    <td>${ieSel(c.avatar_id||'',[''].concat(Avatares.map(a=>a.id)),`(async(val)=>{const nv=val?Number(val):null;await patch('contas',${c.id},'avatar_id',nv);const ct=Contas.find(x=>x.id===${c.id});if(ct)ct.avatar_id=nv;renderAvatares();})(val)`,Avatares.map(a=>a.nome))}</td>
+    <td>${ieTxt(c.voz,`patch('contas',${c.id},'voz',val)`)}</td>
+    <td>${yn(c.mb_suite)}</td>
+    <td>${yn(c.automacao)}</td>
+    <td>${yn(c.fb_page_status)}</td>
+    <td>${c.link_venda_ig?`<a href="${esc(c.link_venda_ig)}" target="_blank" style="color:#60a5fa;font-size:11px"><i class="ti ti-external-link"></i> IG</a>`:'—'}</td>
+    <td>${c.link_venda_fb?`<a href="${esc(c.link_venda_fb)}" target="_blank" style="color:#60a5fa;font-size:11px"><i class="ti ti-external-link"></i> FB</a>`:'—'}</td>
+    <td>${stockEl(c.estoque_videos)}<br><input type="number" min="0" value="${Number(c.estoque_videos||0)}" style="width:52px;background:#111;border:1px solid #222;border-radius:4px;color:#888;font-size:11px;padding:2px 4px;margin-top:3px" onblur="updateEstoque(${c.id},this.value)" onkeydown="if(event.key==='Enter')updateEstoque(${c.id},this.value)"></td>
+    <td><button class="btn bd bsm" onclick="delConta(${c.id})"><i class="ti ti-trash"></i></button></td>
+  </tr>`).join('');
+  bindTable('tb-ct');
+  statsContas();
 }
-function getWeekStart(){const n=new Date(),d=n.getDay(),diff=n.getDate()-d+(d===0?-6:1);return new Date(n.setDate(diff)).toISOString().slice(0,10);}
-async function saveGoal(cid){
-  const md=Number(document.getElementById('g-day-'+cid).value)||0;
-  const mw=Number(document.getElementById('g-week-'+cid).value)||0;
-  const existing=allMetas.find(x=>x.conta_id===cid);
-  try{if(existing){await sb('metas?conta_id=eq.'+cid,'PATCH',{meta_dia:md,meta_semana:mw});existing.meta_dia=md;existing.meta_semana=mw;}else{const r=await sb('metas','POST',{conta_id:cid,meta_dia:md,meta_semana:mw});allMetas.push(r[0]);}renderPostagens();}catch(e){alert('Erro: '+e.message);}
+// special select with label mapping
+function ieSel(val,opts,fn,labels){
+  const optHtml=opts.map((o,i)=>`<option value="${esc(String(o))}"${String(o)===String(val)?' selected':''}>${esc(String(labels?labels[i]||o:o))}</option>`).join('');
+  return`<select class="ie" data-fn="${fn}">${optHtml}</select>`;
 }
-async function addPost(cid){
-  const desc=v('pd-desc-'+cid);if(!desc)return;
-  const o={conta_id:cid,descricao:desc,plataforma:v('pd-plat-'+cid),status:v('pd-status-'+cid),data_hora:v('pd-dt-'+cid)||new Date().toISOString(),curtidas:Number(v('pd-curt-'+cid))||0,comentarios:Number(v('pd-coment-'+cid))||0,salvos:Number(v('pd-salvos-'+cid))||0,alcance:Number(v('pd-alc-'+cid))||0,link:v('pd-link-'+cid)};
-  try{const r=await sb('posts','POST',o);allPosts.unshift(r[0]);['pd-desc-','pd-link-','pd-curt-','pd-coment-','pd-salvos-','pd-alc-'].forEach(p=>{const el=document.getElementById(p+cid);if(el)el.value='';});document.getElementById('pd-dt-'+cid).value='';document.getElementById('apf-'+cid).classList.remove('open');renderPostagens();}catch(e){alert('Erro: '+e.message);}
+function statsContas(){
+  document.getElementById('stats-ct').innerHTML=`
+    <div class="stat"><div class="sl">Total</div><div class="sv">${Contas.length}</div></div>
+    <div class="stat"><div class="sl">Aquecimento</div><div class="sv">${Contas.filter(x=>x.situacao==='Aquecimento').length}</div></div>
+    <div class="stat"><div class="sl">Crescimento</div><div class="sv">${Contas.filter(x=>x.situacao==='Crescimento').length}</div></div>
+    <div class="stat"><div class="sl">Venda</div><div class="sv">${Contas.filter(x=>x.situacao==='Venda').length}</div></div>
+    <div class="stat"><div class="sl">Inativas</div><div class="sv">${Contas.filter(x=>['Inativo','Suspenso'].includes(x.situacao)).length}</div></div>`;
 }
-async function deletePost(pid){if(!confirm('Excluir post?'))return;await sb('posts?id=eq.'+pid,'DELETE');allPosts=allPosts.filter(x=>x.id!==pid);renderPostagens();}
+
+// ── POSTAGENS ──
+function checkedDays(cid){
+  return new Set(Checks.filter(x=>x.conta_id===cid).map(x=>x.data));
+}
+
+async function toggleCheck(cid,data,btn){
+  const existing=Checks.find(x=>x.conta_id===cid&&x.data===data);
+  if(existing){
+    await api('checks_postagem','DELETE',null,`?conta_id=eq.${cid}&data=eq.${data}`);
+    Checks=Checks.filter(x=>!(x.conta_id===cid&&x.data===data));
+    btn.classList.remove('on');
+    btn.innerHTML='';
+  } else {
+    const r=await api('checks_postagem','POST',{conta_id:cid,data});
+    Checks.push(r[0]);
+    btn.classList.add('on');
+    btn.innerHTML='✓';
+    // check progression
+    await checkProgression(cid);
+  }
+  // reload post section for this account
+  renderPostagens();
+}
+
+async function checkProgression(cid){
+  const ct=Contas.find(x=>x.id===cid);if(!ct)return;
+  const myChecks=Checks.filter(x=>x.conta_id===cid);
+
+  if(ct.situacao==='Aquecimento'){
+    // count distinct days confirmed in last rolling period
+    const dias=new Set(myChecks.map(x=>x.data)).size;
+    if(dias>=2){
+      await api('contas','PATCH',{situacao:'Crescimento',aquecimento_dias:dias},`?id=eq.${cid}`);
+      ct.situacao='Crescimento';ct.aquecimento_dias=dias;
+      alert(`✅ Conta ${ct.user_ig} completou 2 dias de aquecimento → CRESCIMENTO!`);
+    } else {
+      await api('contas','PATCH',{aquecimento_dias:dias},`?id=eq.${cid}`);
+      ct.aquecimento_dias=dias;
+    }
+  } else if(ct.situacao==='Crescimento'){
+    const posts=myChecks.length;
+    if(posts>=10){
+      await api('contas','PATCH',{situacao:'Venda',crescimento_posts:posts},`?id=eq.${cid}`);
+      ct.situacao='Venda';ct.crescimento_posts=posts;
+      alert(`🎉 Conta ${ct.user_ig} completou 10 posts de crescimento → VENDA!`);
+    } else {
+      await api('contas','PATCH',{crescimento_posts:posts},`?id=eq.${cid}`);
+      ct.crescimento_posts=posts;
+    }
+  }
+}
+
+async function updateEstoque(cid,val){
+  const n=Number(val)||0;
+  await patch('contas',cid,'estoque_videos',n);
+  const ct=Contas.find(x=>x.id===cid);
+  if(ct)ct.estoque_videos=n;
+}
+
 function renderPostagens(){
-  const ativas=allContas.filter(x=>['Aquecimento','Crescimento','Venda'].includes(x.situacao));
-  const el=document.getElementById('post-cards');
-  if(!ativas.length){el.innerHTML=`<div class="empty">Nenhuma conta ativa.</div>`;return;}
-  const wkStart=getWeekStart();
-  el.innerHTML=ativas.map(c=>{
-    const cid=c.id;
-    const myPosts=allPosts.filter(x=>x.conta_id===cid);
-    const meta=allMetas.find(x=>x.conta_id===cid)||{meta_dia:0,meta_semana:0};
-    const today=new Date().toDateString();
-    const todayCount=myPosts.filter(p=>new Date(p.data_hora).toDateString()===today).length;
-    const wkCount=myPosts.filter(p=>p.data_hora&&p.data_hora.slice(0,10)>=wkStart).length;
-    const totC=myPosts.reduce((a,p)=>a+(p.curtidas||0),0);
-    const totCo=myPosts.reduce((a,p)=>a+(p.comentarios||0),0);
-    const totS=myPosts.reduce((a,p)=>a+(p.salvos||0),0);
-    const totA=myPosts.reduce((a,p)=>a+(p.alcance||0),0);
-    function prog(cur,goal,lbl){if(!goal)return'';const pct=Math.min(100,Math.round(cur/goal*100));return`<div class="prog-wrap"><div class="prog-labels"><span>${lbl}: ${cur} / ${goal}</span><span>${pct}%</span></div><div class="prog-bar"><div class="prog-fill${pct>=100?' done':''}" style="width:${pct}%"></div></div></div>`;}
-    const logRows=myPosts.slice(0,30).map(p=>`<div class="log-row"><span title="${p.descricao||''}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(p.descricao||'').slice(0,50)}${(p.descricao||'').length>50?'…':''}</span><span style="color:#555">${p.plataforma||'—'}</span><span>${sbadge(p.status)}</span><span style="color:#444;font-size:11px">${p.data_hora?new Date(p.data_hora).toLocaleDateString('pt-BR'):'—'}</span><span style="text-align:right;color:#888">${num(p.curtidas)}</span><span style="text-align:right;color:#888">${num(p.comentarios)}</span><span style="text-align:right;color:#888">${num(p.alcance)}</span><button class="btn btn-sm btn-danger" style="padding:2px 6px" onclick="deletePost(${p.id})"><i class="ti ti-trash"></i></button></div>`).join('');
-    return`<div class="pc"><div class="pc-header"><div><div class="pc-name"><i class="ti ti-brand-instagram"></i>${c.user_ig}</div><div class="pc-sub">${sbadge(c.situacao)} &nbsp; ${myPosts.length} posts · ${wkCount} esta semana · ${todayCount} hoje</div></div><button class="btn btn-sm btn-primary" onclick="toggleApf(${cid})"><i class="ti ti-plus"></i> Registrar post</button></div><div class="pc-body"><div class="goal-row"><i class="ti ti-target" style="color:#555"></i><label>Meta diária:</label><input id="g-day-${cid}" type="number" min="0" value="${meta.meta_dia||''}" placeholder="0"><label style="margin-left:8px">Meta semanal:</label><input id="g-week-${cid}" type="number" min="0" value="${meta.meta_semana||''}" placeholder="0"><button class="btn btn-sm btn-primary" onclick="saveGoal(${cid})">Salvar metas</button></div>${prog(todayCount,meta.meta_dia,'Hoje')}${prog(wkCount,meta.meta_semana,'Esta semana')}<div class="eng-row"><div class="eng-cell"><div class="eng-num">${num(totC)}</div><div class="eng-lbl"><i class="ti ti-heart"></i> Curtidas</div></div><div class="eng-cell"><div class="eng-num">${num(totCo)}</div><div class="eng-lbl"><i class="ti ti-message"></i> Comentários</div></div><div class="eng-cell"><div class="eng-num">${num(totS)}</div><div class="eng-lbl"><i class="ti ti-bookmark"></i> Salvos</div></div><div class="eng-cell"><div class="eng-num">${num(totA)}</div><div class="eng-lbl"><i class="ti ti-eye"></i> Alcance</div></div></div>${myPosts.length?`<div class="log-header"><span>Conteúdo</span><span>Plataforma</span><span>Status</span><span>Data</span><span style="text-align:right">Curtidas</span><span style="text-align:right">Coment.</span><span style="text-align:right">Alcance</span><span></span></div>${logRows}`:`<div class="empty" style="padding:20px">Nenhum post registrado</div>`}</div><div class="apf" id="apf-${cid}"><div class="apf-grid"><div class="field"><label>Descrição</label><textarea id="pd-desc-${cid}" placeholder="Descreva o conteúdo..."></textarea></div><div class="field"><label>Plataforma</label><select id="pd-plat-${cid}"><option>Instagram</option><option>Facebook</option><option>Ambos</option></select></div><div class="field"><label>Status</label><select id="pd-status-${cid}"><option>Publicado</option><option>Agendado</option><option>Rascunho</option><option>Removido</option></select></div><div class="field"><label>Data / hora</label><input id="pd-dt-${cid}" type="datetime-local"></div></div><div class="apf-eng"><div class="field"><label>Curtidas</label><input id="pd-curt-${cid}" type="number" min="0" placeholder="0"></div><div class="field"><label>Comentários</label><input id="pd-coment-${cid}" type="number" min="0" placeholder="0"></div><div class="field"><label>Salvos</label><input id="pd-salvos-${cid}" type="number" min="0" placeholder="0"></div><div class="field"><label>Alcance</label><input id="pd-alc-${cid}" type="number" min="0" placeholder="0"></div><div class="field" style="grid-column:span 2"><label>Link do post</label><input id="pd-link-${cid}" type="url" placeholder="https://instagram.com/p/..."></div></div><button class="btn btn-primary btn-sm" onclick="addPost(${cid})">Salvar postagem</button><button class="btn btn-sm" style="margin-left:8px" onclick="toggleApf(${cid})">Cancelar</button></div></div>`;
+  const wk=weekDays();
+  const dayNames=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+  const sections=[
+    {sit:'Aquecimento',cls:'ba',prog:'pf-aq',max:2,label:'dias de aquecimento',getCount:c=>new Set(Checks.filter(x=>x.conta_id===c.id).map(x=>x.data)).size},
+    {sit:'Crescimento',cls:'bc',prog:'pf-cr',max:10,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).length},
+    {sit:'Venda',cls:'bv',prog:'pf-vd',max:null,label:'posts',getCount:c=>Checks.filter(x=>x.conta_id===c.id).length}
+  ];
+  const el=document.getElementById('post-sections');
+  const ativas=Contas.filter(x=>['Aquecimento','Crescimento','Venda'].includes(x.situacao));
+  if(!ativas.length){el.innerHTML=`<div class="empty">Nenhuma conta ativa (Aquecimento, Crescimento ou Venda).</div>`;return;}
+
+  el.innerHTML=sections.map(sec=>{
+    const contas=Contas.filter(x=>x.situacao===sec.sit);
+    if(!contas.length)return'';
+    const tableRows=contas.map(c=>{
+      const checked=checkedDays(c.id);
+      const count=sec.getCount(c);
+      const pct=sec.max?Math.min(100,Math.round(count/sec.max*100)):null;
+      const progHtml=sec.max?`<div style="font-size:10px;color:#555;margin-bottom:2px">${count}/${sec.max}</div><div class="prog-bar"><div class="prog-fill ${sec.prog}" style="width:${pct}%"></div></div>`:`<span style="font-size:11px;color:#555">${count} posts</span>`;
+      const dayCells=wk.map((d,i)=>{
+        const isToday=d===today;
+        const on=checked.has(d);
+        const dayLabel=d.slice(8); // day number
+        return`<td><button class="chk${on?' on':''}${isToday?' today':''}" onclick="toggleCheck(${c.id},'${d}',this)" title="${d}">${on?'✓':''}</button><div style="font-size:9px;color:#333;text-align:center;margin-top:2px">${dayLabel}</div></td>`;
+      }).join('');
+      const avName=c.avatar_id?(Avatares.find(x=>x.id===c.avatar_id)||{}).nome||'—':'—';
+      return`<tr>
+        <td><strong style="color:#fff">${esc(c.user_ig)}</strong><div style="font-size:10px;color:#555">${esc(avName)}</div></td>
+        <td>${stockEl(c.estoque_videos)}<br><input type="number" min="0" value="${Number(c.estoque_videos||0)}" style="width:50px;background:#111;border:1px solid #222;border-radius:4px;color:#888;font-size:11px;padding:2px 4px;margin-top:3px" onblur="updateEstoque(${c.id},this.value)" onkeydown="if(event.key==='Enter')updateEstoque(${c.id},this.value)"></td>
+        <td>${progHtml}</td>
+        ${dayCells}
+      </tr>`;
+    }).join('');
+
+    return`<div class="sit-block">
+      <div class="sit-hdr">
+        <span class="badge ${sec.cls}">${sec.sit}</span>
+        <span class="sit-title">${contas.length} conta${contas.length!==1?'s':''}</span>
+        <span class="sit-count">${sec.max?`Meta: ${sec.max} ${sec.label}`:sec.label}</span>
+      </div>
+      <div class="tw"><table class="pt">
+        <thead><tr>
+          <th>Conta</th>
+          <th>Estoque</th>
+          <th>Progresso</th>
+          ${dayNames.map((d,i)=>`<th style="${wk[i]===today?'color:#fff':''}">${d}<br><span style="font-size:9px;color:#444">${wk[i].slice(5)}</span></th>`).join('')}
+        </tr></thead>
+        <tbody>${tableRows}</tbody>
+      </table></div>
+    </div>`;
   }).join('');
 }
-function toggleApf(id){document.getElementById('apf-'+id).classList.toggle('open');}
+
+// ── GOOGLE DRIVE SYNC ──
+function syncDrive(){
+  if(!gToken){
+    initGoogleAuth(()=>syncDrive());
+    return;
+  }
+  const contasComDrive=Contas.filter(x=>x.drive_folder_id||x.user_ig);
+  if(!contasComDrive.length){alert('Nenhuma conta com pasta do Drive configurada.');return;}
+  let done=0;
+  contasComDrive.forEach(async c=>{
+    try{
+      // search by folder name = @username inside parent folder, or by folder id
+      let folderId=c.drive_folder_id;
+      if(!folderId){
+        // search by name
+        const q=encodeURIComponent(`name='${c.user_ig}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+        const res=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`,{headers:{Authorization:'Bearer '+gToken}});
+        const data=await res.json();
+        if(data.files&&data.files.length>0)folderId=data.files[0].id;
+      }
+      if(!folderId){done++;if(done===contasComDrive.length)renderPostagens();return;}
+      // count video files
+      const q2=encodeURIComponent(`'${folderId}' in parents and (mimeType='video/mp4' or mimeType='video/quicktime' or mimeType='video/x-msvideo') and trashed=false`);
+      const r2=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q2}&fields=files(id)&pageSize=1000`,{headers:{Authorization:'Bearer '+gToken}});
+      const d2=await r2.json();
+      const count=(d2.files||[]).length;
+      await patch('contas',c.id,'estoque_videos',count);
+      c.estoque_videos=count;
+    }catch(err){console.error('Drive err',c.user_ig,err);}
+    done++;
+    if(done===contasComDrive.length){renderContas();renderPostagens();alert('Estoque sincronizado!');}
+  });
+}
+
+function initGoogleAuth(cb){
+  if(!window.google){
+    const s=document.createElement('script');
+    s.src='https://accounts.google.com/gsi/client';
+    s.onload=()=>doGoogleAuth(cb);
+    document.head.appendChild(s);
+  } else doGoogleAuth(cb);
+}
+function doGoogleAuth(cb){
+  if(GCLIENT==='SEU_GOOGLE_CLIENT_ID.apps.googleusercontent.com'){
+    alert('Para usar a sincronização com Drive, configure o Google Client ID no arquivo index.html.\n\nVeja as instruções no README.');
+    return;
+  }
+  const client=google.accounts.oauth2.initTokenClient({
+    client_id:GCLIENT,
+    scope:'https://www.googleapis.com/auth/drive.readonly',
+    callback:(resp)=>{if(resp.access_token){gToken=resp.access_token;if(cb)cb();}}
+  });
+  client.requestAccessToken();
+}
+
 loadAll();
 </script>
 </body>
