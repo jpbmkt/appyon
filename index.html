@@ -347,7 +347,7 @@ td.iec select{cursor:pointer}
     <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-av')">Cancelar</button>
   </div>
   <div class="tw"><table>
-    <thead><tr><th style="min-width:160px">Nome / código</th><th style="min-width:200px">Características</th><th style="min-width:200px">Prompt</th><th style="min-width:160px">Status de uso</th><th style="width:50px;text-align:center">Qtd</th><th style="width:40px"></th></tr></thead>
+    <thead><tr><th style="width:70px">Foto</th><th style="min-width:160px">Nome / código</th><th style="min-width:180px">Características</th><th style="min-width:200px">Prompt</th><th style="min-width:160px">Status de uso</th><th style="width:50px;text-align:center">Qtd</th><th style="width:40px"></th></tr></thead>
     <tbody id="tb-av"><tr><td colspan="3" class="loading">Carregando...</td></tr></tbody>
   </table></div>
 </div>
@@ -396,7 +396,8 @@ td.iec select{cursor:pointer}
   </div>
   <div class="tw"><table id="tbl-ct">
     <thead><tr>
-      <th style="min-width:140px"><div class="th-inner">Perfil<div class="flt-wrap"><button class="flt-btn" id="fbt-user" onclick="toggleFlt('user',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-user"></div></div><button class="sort-btn" onclick="sortContas('user_ig',event)" id="srt-user_ig" title="Ordenar">↕</button></div></th>
+      <th style="min-width:160px"><div class="th-inner">Perfil<div class="flt-wrap"><button class="flt-btn" id="fbt-user" onclick="toggleFlt('user',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-user"></div></div><button class="sort-btn" onclick="sortContas('user_ig',event)" id="srt-user_ig" title="Ordenar">↕</button></div></th>
+      <th style="min-width:110px">User IG</th>
       <th style="min-width:110px"><div class="th-inner">Dispositivo<div class="flt-wrap"><button class="flt-btn" id="fbt-disp" onclick="toggleFlt('disp',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-disp"></div></div><button class="sort-btn" onclick="sortContas('dispositivo',event)" id="srt-dispositivo" title="Ordenar">↕</button></div></th>
       <th style="min-width:110px"><div class="th-inner">Situação<div class="flt-wrap"><button class="flt-btn" id="fbt-sit" onclick="toggleFlt('sit',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-sit"></div></div><button class="sort-btn" onclick="sortContas('situacao',event)" id="srt-situacao" title="Ordenar">↕</button></div></th>
       <th style="min-width:140px"><div class="th-inner">Conta Facebook<div class="flt-wrap"><button class="flt-btn" id="fbt-fbp" onclick="toggleFlt('fbp',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-fbp"></div></div><button class="sort-btn" onclick="sortContas('fb_perfil',event)" id="srt-fb_perfil" title="Ordenar">↕</button></div></th>
@@ -691,15 +692,17 @@ async function uploadAvatarFotoExistente(avId){
 }
 
 function openFotoModal(url){
+  if(!url)return;
   const bg=document.getElementById('foto-modal');
   const img=document.getElementById('foto-modal-img');
   if(!bg||!img)return;
   img.src=url;
+  bg.style.display='flex';
   bg.classList.add('open');
 }
 function closeFotoModal(){
   const bg=document.getElementById('foto-modal');
-  if(bg)bg.classList.remove('open');
+  if(bg){bg.classList.remove('open');bg.style.display='none';}
 }
 async function delAvatar(id){if(!confirm('Excluir avatar?'))return;await api('avatares','DELETE',null,'?id=eq.'+id);Avatares=Avatares.filter(x=>x.id!==id);renderAvatares();fillSelects();}
 function renderAvatares(){
@@ -715,8 +718,8 @@ function renderAvatares(){
     // Foto cell
     const fotoCell=a.foto_url
       ?`<div style="display:flex;align-items:center;gap:8px">
-          <div class="avatar-circle" onclick="openFotoModal('${a.foto_url}')">
-            <img src="${a.foto_url}" alt="${esc(a.nome)}" onerror="this.parentElement.innerHTML='<span class=\"avatar-initials\">${(a.nome||'?')[0].toUpperCase()}</span>'">
+          <div class="avatar-circle" data-foto="${a.foto_url.replace(/'/g,'%27')}" style="width:40px;height:40px">
+            <img src="${a.foto_url}" alt="${esc(a.nome)}" style="width:40px;height:40px" onerror="this.style.display='none'">
           </div>
           <button class="btn bd bsm" onclick="uploadAvatarFotoExistente(${a.id})" title="Trocar foto"><i class="ti ti-camera"></i></button>
         </div>`
@@ -907,6 +910,23 @@ function buildFlt(key,search=''){
 
 
 document.addEventListener('click',()=>document.querySelectorAll('.flt-drop').forEach(d=>d.classList.remove('open')));
+document.addEventListener('click',(e)=>{
+  const circle=e.target.closest('.avatar-circle[data-foto]');
+  if(circle){e.stopPropagation();openFotoModal(circle.dataset.foto);}
+});
+document.addEventListener('keydown',(e)=>{
+  if(e.key==='Escape'){
+    // Fechar foto modal
+    closeFotoModal();
+    // Fechar modal de detalhes
+    const mbg=document.getElementById('modal-bg');
+    if(mbg&&mbg.style.display!=='none')closeModal();
+    // Fechar planilha
+    if(planilhaAberta){planilhaAberta=false;const w=document.getElementById('planilha-wrap');if(w)w.style.display='none';const b=document.getElementById('btn-planilha');if(b)b.style.background='transparent';}
+    // Fechar dropdowns de filtro
+    document.querySelectorAll('.flt-drop').forEach(d=>d.classList.remove('open'));
+  }
+});
 
 function sortContas(field,e){
   e.stopPropagation();
@@ -951,15 +971,17 @@ function renderContas(){
   const YN=['Não','Sim'];
 
   tb.innerHTML=f.map(c=>`<tr>
-    <td style="cursor:pointer;padding:6px 8px">
+    <td style="padding:6px 8px;cursor:default">
       <div style="display:flex;align-items:center;gap:8px">
-        ${avatarThumb(c.avatar_id,c.user_ig)}
+        <div onclick="event.stopPropagation()" style="cursor:pointer">${avatarThumb(c.avatar_id,c.user_ig)}</div>
         <div style="flex:1;min-width:0">
-          <input class="ie" value="${esc(c.user_ig)}" style="font-size:12px;font-weight:500;color:#e8e8e8;background:transparent;border:none;padding:0;width:100%" onblur="ctPatch(${c.id},'user_ig',this.value)" onkeydown="if(event.key==='Enter')this.blur()" onclick="event.stopPropagation()">
+          <input class="ie" value="${esc(c.fb_perfil||c.user_ig)}" placeholder="Nome do perfil" style="font-size:12px;font-weight:500;color:#e8e8e8;background:transparent;border:none;padding:0;width:100%;outline:none" onblur="ctPatch(${c.id},'fb_perfil',this.value)" onkeydown="if(event.key==='Enter')this.blur()">
+          <div style="font-size:10px;color:#444;margin-top:1px;padding-left:1px">@${esc(c.user_ig)}</div>
         </div>
-        <i class="ti ti-info-circle" style="font-size:12px;color:#333;flex-shrink:0" onclick="openContaModal(${c.id})" title="Ver detalhes"></i>
+        <i class="ti ti-info-circle" style="font-size:12px;color:#333;flex-shrink:0;cursor:pointer" onclick="openContaModal(${c.id})" title="Ver detalhes"></i>
       </div>
     </td>
+    <td class="iec"><input value="${esc(c.user_ig)}" placeholder="@username" onblur="ctPatch(${c.id},'user_ig',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></td>
     <td class="iec"><input value="${esc(c.dispositivo)}" placeholder="—" onblur="ctPatch(${c.id},'dispositivo',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></td>
     <td class="iec"><select onchange="ctPatch(${c.id},'situacao',this.value);renderContas()">${SIT_OPTS.map(o=>`<option${o===c.situacao?' selected':''}>${o}</option>`).join('')}</select></td>
     <td class="iec"><input value="${esc(c.fb_perfil)}" placeholder="—" onblur="ctPatch(${c.id},'fb_perfil',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></td>
@@ -1057,11 +1079,12 @@ function avatarThumb(avatarId,userIg){
   const av=Avatares.find(x=>x.id===Number(avatarId));
   const initial=(userIg||'?')[0].toUpperCase();
   if(av&&av.foto_url){
-    return`<div class="avatar-circle" onclick="event.stopPropagation();openFotoModal('${av.foto_url}')" style="width:28px;height:28px">
-      <img src="${av.foto_url}" alt="${esc(av.nome||'')}" onerror="this.parentElement.innerHTML='<span class=\"avatar-initials\" style=\"font-size:11px\">${initial}</span>'">
+    const safeUrl=av.foto_url.replace(/'/g,'%27');
+    return`<div class="avatar-circle" data-foto="${safeUrl}" style="width:28px;height:28px">
+      <img src="${av.foto_url}" alt="${esc(av.nome||'')}" onerror="this.style.display='none';this.parentElement.insertAdjacentHTML('beforeend','<span class=\"avatar-initials\" style=\"font-size:11px\">${initial}</span>')">
     </div>`;
   }
-  return`<div class="avatar-circle" style="width:28px;height:28px;pointer-events:none">
+  return`<div class="avatar-circle" style="width:28px;height:28px;cursor:default">
     <span class="avatar-initials" style="font-size:11px">${initial}</span>
   </div>`;
 }
