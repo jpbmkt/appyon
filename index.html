@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>IG Manager</title>
+<title>Gestão Appyon</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -122,9 +122,10 @@ select.ie{cursor:pointer}
 .flt-btn:hover{background:#1a1a1a}
 .flt-drop{display:none;position:absolute;top:100%;left:0;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;min-width:160px;z-index:300;padding:6px;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.5)}
 .flt-drop.open{display:block}
-.flt-item{display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:5px;cursor:pointer;font-size:12px;color:#bbb}
+.flt-item{display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:5px;cursor:pointer;font-size:12px;color:#bbb;user-select:none}
 .flt-item:hover{background:#242424}
-.flt-item input[type=checkbox]{accent-color:#60a5fa;width:13px;height:13px;cursor:pointer}
+.flt-item input[type=checkbox]{accent-color:#60a5fa;width:13px;height:13px;cursor:pointer;flex-shrink:0}
+label.flt-item{cursor:pointer}
 .flt-search{width:100%;background:#111;border:1px solid #252525;border-radius:5px;color:#e8e8e8;font-size:12px;padding:4px 8px;margin-bottom:6px;outline:none}
 /* INLINE EDIT TD */
 td.iec{padding:0!important}
@@ -143,7 +144,7 @@ td.iec select{cursor:pointer}
 <body>
 
 <div class="topbar">
-  <div class="logo"><i class="ti ti-brand-instagram"></i> IG Manager</div>
+  <div class="logo"><i class="ti ti-coin"></i> Gestão Appyon</div>
   <div class="nav">
     <button class="nb active" onclick="showTab('emails',this)"><i class="ti ti-mail"></i> E-mails</button>
     <button class="nb" onclick="showTab('proxies',this)"><i class="ti ti-server"></i> Proxies</button>
@@ -560,14 +561,35 @@ async function updateEstoque(id,val){
   const ct=Contas.find(x=>x.id===id);if(ct)ct.estoque_videos=n;
 }
 function statsContas(){
-  document.getElementById('stats-ct').innerHTML=`
-    <div class="stat"><div class="sl">Total</div><div class="sv">${Contas.length}</div></div>
-    <div class="stat"><div class="sl" style="color:#fb923c">Criar Perfil</div><div class="sv">${Contas.filter(x=>x.situacao==='Criar Perfil').length}</div></div>
-    <div class="stat"><div class="sl" style="color:#888">Aquecimento</div><div class="sv">${Contas.filter(x=>x.situacao==='Aquecimento').length}</div></div>
-    <div class="stat"><div class="sl" style="color:#60a5fa">Crescimento</div><div class="sv">${Contas.filter(x=>x.situacao==='Crescimento').length}</div></div>
-    <div class="stat"><div class="sl" style="color:#4ade80">Venda</div><div class="sv">${Contas.filter(x=>x.situacao==='Venda').length}</div></div>
-    <div class="stat"><div class="sl" style="color:#fbbf24">SMS/Selfie</div><div class="sv">${Contas.filter(x=>x.situacao==='SMS e Análise Selfie').length}</div></div>
-    <div class="stat"><div class="sl" style="color:#f87171">Banidas</div><div class="sv">${Contas.filter(x=>['Banida','Bugada'].includes(x.situacao)).length}</div></div>`;
+  const sitGroups=[
+    {label:'Total',color:'#aaa',filter:null},
+    {label:'Criar Perfil',color:'#fb923c',filter:'Criar Perfil'},
+    {label:'Aquecimento',color:'#888',filter:'Aquecimento'},
+    {label:'Crescimento',color:'#60a5fa',filter:'Crescimento'},
+    {label:'Venda',color:'#4ade80',filter:'Venda'},
+    {label:'SMS/Selfie',color:'#fbbf24',filter:'SMS e Análise Selfie'},
+    {label:'Banidas',color:'#f87171',filter:'__banidas__'},
+  ];
+  document.getElementById('stats-ct').innerHTML=sitGroups.map(s=>{
+    const count=s.filter===null?Contas.length:s.filter==='__banidas__'?Contas.filter(x=>['Banida','Bugada'].includes(x.situacao)).length:Contas.filter(x=>x.situacao===s.filter).length;
+    const active=(s.filter===null&&cSit===''&&!cStatBanidas)||(s.filter==='__banidas__'&&cStatBanidas)||(cSit===s.filter&&s.filter!==null&&s.filter!=='__banidas__');
+    return`<div class="stat" style="cursor:pointer;transition:border-color .15s;border-color:${active?s.color:'#2a2a2a'}" onclick="statFilter(${JSON.stringify(s.filter)})">
+      <div class="sl" style="color:${s.color}">${s.label}</div>
+      <div class="sv">${count}</div>
+    </div>`;
+  }).join('');
+}
+let cStatBanidas=false;
+function statFilter(filter){
+  cStatBanidas=false;
+  if(filter===null){cSit='';}
+  else if(filter==='__banidas__'){
+    if(cStatBanidas===false&&(cSit==='Banida'||cSit==='Bugada')){cSit='';cStatBanidas=false;}
+    else{cStatBanidas=true;cSit='__banidas__';}
+  } else {
+    cSit=(cSit===filter)?'':filter;
+  }
+  renderContas();
 }
 
 
@@ -609,34 +631,42 @@ function toggleFlt(key,e){
 
 function buildFlt(key,search=''){
   const drop=document.getElementById('flt-'+key);
+  if(!drop)return;
   let vals=getColValues(key);
   if(search)vals=vals.filter(v=>v.toLowerCase().includes(search.toLowerCase()));
   const sel=ctFilters[key];
   const allChecked=sel.size===0;
-  drop.innerHTML=`<input class="flt-search" placeholder="Buscar..." value="${search}" oninput="buildFlt('${key}',this.value)">
-    <div class="flt-item" onclick="fltAll('${key}')"><input type="checkbox" ${allChecked?'checked':''} readonly> <span style="color:#888">Todos</span></div>
-    ${vals.map(v=>`<div class="flt-item" onclick="fltVal('${key}','${v.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')" ><input type="checkbox" ${sel.has(v)?'checked':''} readonly> <span>${v||'(vazio)'}</span></div>`).join('')}
+  drop.innerHTML=`<input class="flt-search" placeholder="Buscar..." value="${esc(search)}" oninput="buildFlt('${key}',this.value)">
+    <label class="flt-item"><input type="checkbox" ${allChecked?'checked':''} onchange="fltAll('${key}')"> <span style="color:#888">Todos</span></label>
+    ${vals.map(v=>{
+      const vesc=v.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      return`<label class="flt-item"><input type="checkbox" ${sel.has(v)?'checked':''} onchange="fltVal('${key}','${vesc}',this.checked)"> <span>${v||'(vazio)'}</span></label>`;
+    }).join('')}
     <div style="border-top:1px solid #222;margin-top:4px;padding-top:4px">
-      <div class="flt-item" onclick="fltAll('${key}')" style="color:#ef4444;font-size:11px"><i class="ti ti-x" style="font-size:10px"></i> Limpar filtro</div>
+      <div class="flt-item" onclick="fltAll('${key}')" style="color:#ef4444;font-size:11px;cursor:pointer"><i class="ti ti-x" style="font-size:10px"></i> Limpar filtro</div>
     </div>`;
-  // keep search focused
   const inp=drop.querySelector('.flt-search');
-  if(inp&&search){inp.focus();inp.setSelectionRange(search.length,search.length);}
+  if(inp&&search){setTimeout(()=>{inp.focus();inp.setSelectionRange(search.length,search.length);},0);}
 }
 
-function fltVal(key,val){
-  if(ctFilters[key].has(val))ctFilters[key].delete(val);
-  else ctFilters[key].add(val);
+
+function fltVal(key,val,checked){
+  if(checked)ctFilters[key].add(val);
+  else ctFilters[key].delete(val);
   const btn=document.getElementById('fbt-'+key);
   if(btn)btn.classList.toggle('active',ctFilters[key].size>0);
-  buildFlt(key);renderContas();
+  renderContas();
+  // rebuild to keep dropdown open and in sync
+  buildFlt(key);
 }
+
 function fltAll(key){
   ctFilters[key].clear();
   const btn=document.getElementById('fbt-'+key);
   if(btn)btn.classList.remove('active');
   buildFlt(key);renderContas();
 }
+
 
 document.addEventListener('click',()=>document.querySelectorAll('.flt-drop').forEach(d=>d.classList.remove('open')));
 
@@ -672,7 +702,8 @@ function applySort(f){
 function renderContas(){
   let f=Contas;
   if(cQ)f=f.filter(x=>((x.user_ig||'')+(x.email||'')).toLowerCase().includes(cQ.toLowerCase()));
-  if(cSit)f=f.filter(x=>x.situacao===cSit);
+  if(cSit==='__banidas__')f=f.filter(x=>['Banida','Bugada'].includes(x.situacao));
+  else if(cSit)f=f.filter(x=>x.situacao===cSit);
   f=applyCtFilters(f);
   f=applySort(f);
   const tb=document.getElementById('tb-ct');
@@ -817,6 +848,15 @@ async function checkProgression(cid){
 
 
 
+async function saveQtdVideos(cid,data,val){
+  const n=Number(val)||0;
+  try{
+    await api('checks_postagem','PATCH',{qtd_videos:n},`?conta_id=eq.${cid}&data=eq.${data}`);
+    const chk=Checks.find(x=>x.conta_id===cid&&x.data===data);
+    if(chk)chk.qtd_videos=n;
+  }catch(e){console.error('saveQtdVideos',e);}
+}
+
 function renderPostagens(){
   const wk=weekDays();
   const dayNames=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
@@ -841,8 +881,15 @@ function renderPostagens(){
       const dayCells=wk.map((d,i)=>{
         const isToday=d===today;
         const on=checked.has(d);
-        const dayLabel=d.slice(8); // day number
-        return`<td><button class="chk${on?' on':''}${isToday?' today':''}" onclick="toggleCheck(${c.id},'${d}',this)" title="${d}">${on?'✓':''}</button><div style="font-size:9px;color:#333;text-align:center;margin-top:2px">${dayLabel}</div></td>`;
+        const dayLabel=d.slice(8);
+        const chk=Checks.find(x=>x.conta_id===c.id&&x.data===d);
+        const qtd=chk&&chk.qtd_videos!=null?chk.qtd_videos:'';
+        const showQtd=['Aquecimento','Crescimento'].includes(c.situacao);
+        return`<td style="min-width:38px">
+          <button class="chk${on?' on':''}${isToday?' today':''}" onclick="toggleCheck(${c.id},'${d}',this)" title="${d}">${on?'✓':''}</button>
+          <div style="font-size:9px;color:#333;text-align:center;margin-top:2px">${dayLabel}</div>
+          ${showQtd&&on?`<input type="number" min="0" value="${qtd}" placeholder="vids" style="width:36px;background:#111;border:1px solid #222;border-radius:3px;color:#888;font-size:10px;padding:1px 3px;margin-top:2px;text-align:center" onclick="event.stopPropagation()" onblur="saveQtdVideos(${c.id},'${d}',this.value)" onkeydown="if(event.key==='Enter')this.blur()">`:''}
+        </td>`;
       }).join('');
       const avName=c.avatar_id?(Avatares.find(x=>x.id===c.avatar_id)||{}).nome||'—':'—';
       return`<tr>
@@ -864,7 +911,7 @@ function renderPostagens(){
           <th>Conta</th>
           <th>Estoque</th>
           <th>Progresso</th>
-          ${dayNames.map((d,i)=>`<th style="${wk[i]===today?'color:#fff':''}">${d}<br><span style="font-size:9px;color:#444">${wk[i].slice(5)}</span></th>`).join('')}
+          ${dayNames.map((d,i)=>`<th style="${wk[i]===today?'color:#fff':''};text-align:center">${d}<br><span style="font-size:9px;color:#444">${wk[i].slice(5)}</span></th>`).join('')}
         </tr></thead>
         <tbody>${tableRows}</tbody>
       </table></div>
