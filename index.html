@@ -1294,15 +1294,24 @@ function renderFila(){
     el.innerHTML=`<div style="text-align:center;padding:24px;color:#333;font-size:12px"><i class="ti ti-circle-check" style="font-size:24px;color:#4ade80;display:block;margin-bottom:8px"></i>Tudo em dia!</div>`;
     return;
   }
-  el.innerHTML=`<div class="dash-section" style="padding:12px">`+items.map(it=>`
-    <div class="fila-item" onclick="${it.action}">
-      <div class="fila-icon" style="background:${it.bg};color:${it.color}"><i class="ti ${it.icon}"></i></div>
+  const filaDiv=document.createElement('div');
+  filaDiv.className='dash-section';
+  filaDiv.style.padding='12px';
+  items.forEach(it=>{
+    const div=document.createElement('div');
+    div.className='fila-item';
+    div.style.cursor='pointer';
+    div.innerHTML=`<div class="fila-icon" style="background:${it.bg};color:${it.color}"><i class="ti ${it.icon}"></i></div>
       <div class="fila-content">
         <div class="fila-title">${it.title}</div>
         <div class="fila-sub">${it.sub}</div>
       </div>
-      <i class="ti ti-chevron-right" style="color:#333;font-size:12px"></i>
-    </div>`).join('')+`</div>`;
+      <i class="ti ti-chevron-right" style="color:#333;font-size:12px"></i>`;
+    div.addEventListener('click',()=>{new Function(it.action)();});
+    filaDiv.appendChild(div);
+  });
+  el.innerHTML='';
+  el.appendChild(filaDiv);
 }
 
 // ── AGENDA GOOGLE ──
