@@ -562,33 +562,35 @@ async function updateEstoque(id,val){
 }
 function statsContas(){
   const groups=[
-    {label:'Total',   color:'#aaa',   key:null},
-    {label:'Criar Perfil', color:'#fb923c', key:'Criar Perfil'},
-    {label:'Aquecimento',  color:'#888',    key:'Aquecimento'},
-    {label:'Crescimento',  color:'#60a5fa', key:'Crescimento'},
-    {label:'Venda',        color:'#4ade80', key:'Venda'},
-    {label:'SMS/Selfie',   color:'#fbbf24', key:'SMS e Análise Selfie'},
-    {label:'Banidas',      color:'#f87171', key:'__banidas__'},
+    {label:'Total',      color:'#aaa',    key:''},
+    {label:'Criar Perfil',color:'#fb923c',key:'Criar Perfil'},
+    {label:'Aquecimento', color:'#888',   key:'Aquecimento'},
+    {label:'Crescimento', color:'#60a5fa',key:'Crescimento'},
+    {label:'Venda',       color:'#4ade80',key:'Venda'},
+    {label:'SMS/Selfie',  color:'#fbbf24',key:'SMS e Análise Selfie'},
+    {label:'Banidas',     color:'#f87171',key:'__banidas__'},
   ];
-  document.getElementById('stats-ct').innerHTML=groups.map(g=>{
-    const count=g.key===null
+  const el=document.getElementById('stats-ct');
+  el.innerHTML=groups.map((g,i)=>{
+    const count=g.key===''
       ? Contas.length
       : g.key==='__banidas__'
         ? Contas.filter(x=>['Banida','Bugada'].includes(x.situacao)).length
         : Contas.filter(x=>x.situacao===g.key).length;
-    const isActive=g.key===null
-      ? (cSit==='' || cSit===null)
-      : cSit===g.key;
-    return`<div class="stat" style="cursor:pointer;border-color:${isActive?g.color:'#2a2a2a'};box-shadow:${isActive?'0 0 0 1px '+g.color:'none'}" onclick="statFilter(${g.key===null?'null':JSON.stringify(g.key)})">
+    const isActive=cSit===g.key;
+    return`<div class="stat stat-clickable" data-key="${g.key}" style="cursor:pointer;border-color:${isActive?g.color:'#2a2a2a'};box-shadow:${isActive?'0 0 0 1px '+g.color:'none'}">
       <div class="sl" style="color:${g.color}">${g.label}</div>
       <div class="sv">${count}</div>
     </div>`;
   }).join('');
+  // Bind clicks via JS — evita problema de escaping no onclick inline
+  el.querySelectorAll('.stat-clickable').forEach(div=>{
+    div.addEventListener('click',()=>statFilter(div.dataset.key));
+  });
 }
 
 function statFilter(key){
-  if(key===null||key===cSit) cSit='';
-  else cSit=key;
+  cSit=(cSit===key)?'':key;
   statsContas();
   renderContas();
 }
@@ -926,7 +928,7 @@ function renderPostagens(){
       const avName=c.avatar_id?(Avatares.find(x=>x.id===c.avatar_id)||{}).nome||'—':'—';
       return`<tr>
         <td><strong style="color:#fff">${esc(c.user_ig)}</strong><div style="font-size:10px;color:#555">${esc(avName)}</div></td>
-        <td>${stockEl(c.estoque_videos)}<br><input type="number" min="0" value="${Number(c.estoque_videos||0)}" style="width:50px;background:#111;border:1px solid #222;border-radius:4px;color:#888;font-size:11px;padding:2px 4px;margin-top:3px" onblur="updateEstoque(${c.id},this.value)" onkeydown="if(event.key==='Enter')updateEstoque(${c.id},this.value)"></td>
+        <td style="padding:6px 8px"><div id="stk-post-${c.id}">${stockEl(c.estoque_videos)}</div><input type="number" min="0" value="${Number(c.estoque_videos||0)}" style="width:52px;background:#111;border:1px solid #222;border-radius:4px;color:#888;font-size:11px;padding:2px 4px;margin-top:3px;text-align:center" oninput="document.getElementById('stk-post-'+${c.id}).innerHTML=stockEl(this.value)" onblur="updateEstoque(${c.id},this.value)" onkeydown="if(event.key==='Enter'){updateEstoque(${c.id},this.value);}"></td>
         <td>${progHtml}</td>
         ${dayCells}
       </tr>`;
