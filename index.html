@@ -302,7 +302,7 @@ select.ie{cursor:pointer}
 const SB='https://celnqfvjucollfcuwxrn.supabase.co';
 const KEY='sb_publishable_NKRCmfTzf9giPR7v4eHLXg_jlZMci05';
 // Google OAuth — substitua pelo seu Client ID do Google Cloud Console
-const GCLIENT='SEU_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+const GCLIENT='975610078004-mb1qdpurmirmf15gndhj8d9k874v2mku.apps.googleusercontent.com';
 let gToken=null;
 
 async function api(tbl,method='GET',body=null,qs=''){
@@ -747,7 +747,7 @@ function initGoogleAuth(cb){
   } else doGoogleAuth(cb);
 }
 function doGoogleAuth(cb){
-  if(GCLIENT==='SEU_GOOGLE_CLIENT_ID.apps.googleusercontent.com'){
+  if(GCLIENT==='975610078004-mb1qdpurmirmf15gndhj8d9k874v2mku.apps.googleusercontent.com'){
     alert('Para usar a sincronização com Drive, configure o Google Client ID no arquivo index.html.\n\nVeja as instruções no README.');
     return;
   }
