@@ -759,7 +759,7 @@ async function savePrompt(avId,val){
 async function addConta(){
   const avId=g('ct-av')||null;
   const o={user_ig:g('ct-u'),senha_ig:g('ct-si'),email:g('ct-e'),senha_email:g('ct-se'),dispositivo:g('ct-d'),situacao:g('ct-sit'),proxy:g('ct-px')||null,avatar_id:avId?Number(avId):null,voz:g('ct-vz'),mb_suite:g('ct-mb'),automacao:g('ct-au'),fb_page_status:g('ct-fp'),fb_page:g('ct-fbpg'),conta_fb:g('ct-fbconta'),fb_perfil:g('ct-fbpr'),link_venda_ig:g('ct-lig'),link_venda_fb:g('ct-lfb'),drive_folder_id:g('ct-drv')||null,estoque_videos:0,aquecimento_dias:0,crescimento_posts:0};
-  if(!o.user_ig)return;
+  if(!o.fb_perfil&&!o.user_ig)return;
   try{const r=await api('contas','POST',o);Contas.unshift(r[0]);clr(['ct-u','ct-si','ct-e','ct-se','ct-d','ct-vz','ct-fbpg','ct-fbpr','ct-lig','ct-lfb','ct-drv']);tog('padd-ct');renderContas();renderProxies();renderAvatares();}
   catch(e){alert('Erro: '+e.message);}
 }
