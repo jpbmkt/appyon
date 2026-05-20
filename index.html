@@ -1569,8 +1569,7 @@ function doGoogleAuth(cb,includeCalendar=false){
       }
     }
   });
-  // Sempre pedir token fresco — não reutilizar cached
-  client.requestAccessToken({prompt:''});
+  client.requestAccessToken({prompt:'select_account'});
 }
 
 loadAll();
