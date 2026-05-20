@@ -371,7 +371,7 @@ td.iec select{cursor:pointer}
     <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-ct')">Cancelar</button>
   </div>
   <div class="toolbar" style="margin-top:-6px">
-    <button class="btn bg bsm" onclick="syncDriveContas()"><i class="ti ti-brand-google-drive"></i> Sincronizar estoque via Drive</button>
+    <button class="btn bg bsm" id="btn-sync-drive-ct" onclick="syncDrive()"><i class="ti ti-brand-google-drive"></i> Sincronizar estoque via Drive</button>
   </div>
   <div class="tw"><table id="tbl-ct">
     <thead><tr>
@@ -397,7 +397,7 @@ td.iec select{cursor:pointer}
       <p>Sincronização automática com Google Drive</p>
       <small>O estoque é atualizado ao clicar em "Sincronizar". Requer autenticação com sua conta Google.</small>
     </div>
-    <button class="btn bg bsm" onclick="syncDrive()"><i class="ti ti-refresh"></i> Sincronizar estoque</button>
+    <button class="btn bg bsm" id="btn-sync-drive" onclick="syncDrive()"><i class="ti ti-refresh"></i> Sincronizar estoque</button>
   </div>
   <div id="post-sections"><div class="loading">Carregando...</div></div>
 </div>
@@ -1184,37 +1184,45 @@ function renderPostagens(){
 }
 
 // ── GOOGLE DRIVE SYNC ──
-function syncDrive(){
+async function syncDrive(){
   if(!gToken){
     initGoogleAuth(()=>syncDrive());
     return;
   }
-  const contasComDrive=Contas.filter(x=>x.drive_folder_id||x.user_ig);
-  if(!contasComDrive.length){alert('Nenhuma conta com pasta do Drive configurada.');return;}
-  let done=0;
-  contasComDrive.forEach(async c=>{
+  const contasComDrive=Contas.filter(x=>x.drive_folder_id&&x.drive_folder_id.trim());
+  if(!contasComDrive.length){
+    alert('Nenhuma conta com ID de pasta do Drive cadastrado.\nCadastre o ID da pasta em Gestão de Contas → modal da conta → campo "ID pasta Drive".');
+    return;
+  }
+  const btn=document.getElementById('btn-sync-drive');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i> Sincronizando...';}
+  let ok=0,erros=[];
+  for(const c of contasComDrive){
     try{
-      // search by folder name = @username inside parent folder, or by folder id
-      let folderId=c.drive_folder_id;
-      if(!folderId){
-        // search by name
-        const q=encodeURIComponent(`name='${c.user_ig}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
-        const res=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`,{headers:{Authorization:'Bearer '+gToken}});
-        const data=await res.json();
-        if(data.files&&data.files.length>0)folderId=data.files[0].id;
+      const folderId=c.drive_folder_id.trim();
+      const q=encodeURIComponent(`'${folderId}' in parents and (mimeType='video/mp4' or mimeType='video/quicktime' or mimeType='video/x-msvideo') and trashed=false`);
+      const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&pageSize=1000`,{headers:{Authorization:'Bearer '+gToken}});
+      if(!r.ok){
+        const err=await r.json();
+        erros.push(`${c.user_ig}: ${err.error?.message||r.status}`);
+        continue;
       }
-      if(!folderId){done++;if(done===contasComDrive.length)renderPostagens();return;}
-      // count video files
-      const q2=encodeURIComponent(`'${folderId}' in parents and (mimeType='video/mp4' or mimeType='video/quicktime' or mimeType='video/x-msvideo') and trashed=false`);
-      const r2=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q2}&fields=files(id)&pageSize=1000`,{headers:{Authorization:'Bearer '+gToken}});
-      const d2=await r2.json();
-      const count=(d2.files||[]).length;
+      const d=await r.json();
+      const count=(d.files||[]).length;
       await patch('contas',c.id,'estoque_videos',count);
       c.estoque_videos=count;
-    }catch(err){console.error('Drive err',c.user_ig,err);}
-    done++;
-    if(done===contasComDrive.length){renderContas();renderPostagens();alert('Estoque sincronizado!');}
-  });
+      ok++;
+    }catch(err){
+      erros.push(`${c.user_ig}: ${err.message}`);
+    }
+  }
+  if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-refresh"></i> Sincronizar estoque';}
+  renderContas();renderPostagens();renderHoje();
+  if(erros.length){
+    alert(`✅ ${ok} conta(s) sincronizada(s).\n\n⚠ Erros:\n${erros.join('\n')}`);
+  } else {
+    alert(`✅ ${ok} conta(s) sincronizada(s) com sucesso!`);
+  }
 }
 
 
