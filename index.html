@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IG Manager</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#0f0f0f;color:#e8e8e8;min-height:100vh}
+.app{display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:#161616;border-bottom:1px solid #2a2a2a;padding:0 24px;display:flex;align-items:center;gap:16px;height:52px;position:sticky;top:0;z-index:100}
+.logo{font-size:15px;font-weight:600;color:#fff;display:flex;align-items:center;gap:8px}
+.logo i{color:#E1306C;font-size:18px}
+.nav{display:flex;gap:2px;margin-left:16px}
+.nav-btn{padding:6px 14px;border-radius:6px;border:none;background:transparent;cursor:pointer;font-size:13px;color:#888;transition:all .15s;display:flex;align-items:center;gap:6px}
+.nav-btn.active{background:#242424;color:#fff}
+.nav-btn:hover:not(.active){background:#1e1e1e;color:#ccc}
+.status-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;margin-left:auto}
+.status-dot.err{background:#ef4444}
+.content{padding:24px;flex:1}
+.tab{display:none}.tab.active{display:block}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:24px}
+.stat-card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px}
+.stat-label{font-size:11px;color:#666;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.stat-value{font-size:24px;font-weight:600;color:#fff}
+.toolbar{display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
+.toolbar input,.toolbar select{font-size:13px;padding:7px 12px;border-radius:8px;border:1px solid #2a2a2a;background:#1a1a1a;color:#e8e8e8;outline:none}
+.toolbar input:focus,.toolbar select:focus{border-color:#444}
+.toolbar input{flex:1;min-width:160px}
+.btn{padding:7px 16px;border-radius:8px;border:1px solid #2a2a2a;background:transparent;cursor:pointer;font-size:13px;color:#e8e8e8;font-weight:500;transition:all .15s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{background:#242424}
+.btn-primary{background:#E1306C;color:#fff;border-color:#E1306C}
+.btn-primary:hover{background:#c4255c;border-color:#c4255c}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-danger{color:#ef4444;border-color:#3a1a1a}
+.btn-danger:hover{background:#1f0f0f}
+.add-form{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:18px;margin-bottom:20px}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;color:#666;font-weight:500;text-transform:uppercase;letter-spacing:.4px}
+.field input,.field select,.field textarea{font-size:13px;padding:7px 10px;border-radius:8px;border:1px solid #2a2a2a;background:#111;color:#e8e8e8;width:100%;outline:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:#444}
+.field textarea{resize:vertical;min-height:60px}
+.table-wrap{border-radius:10px;border:1px solid #2a2a2a;overflow:hidden;overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:600px}
+th{background:#1a1a1a;padding:9px 12px;text-align:left;font-weight:500;font-size:11px;color:#666;border-bottom:1px solid #2a2a2a;white-space:nowrap;text-transform:uppercase;letter-spacing:.4px}
+td{padding:8px 12px;border-bottom:1px solid #1e1e1e;color:#ccc;vertical-align:middle;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#1a1a1a}
+.badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:500}
+.b-disponivel{background:#14291a;color:#4ade80}
+.b-emuso{background:#2a1f0a;color:#fb923c}
+.b-bloqueado,.b-suspenso,.b-removido{background:#2a0f0f;color:#f87171}
+.b-inativo,.b-rascunho{background:#1e1e1e;color:#888}
+.b-aquecimento{background:#2a1f0a;color:#fbbf24}
+.b-crescimento{background:#14291a;color:#4ade80}
+.b-venda{background:#0f1f2a;color:#60a5fa}
+.b-criado{background:#1f0f2a;color:#c084fc}
+.b-publicado{background:#14291a;color:#4ade80}
+.b-agendado{background:#0f1f2a;color:#60a5fa}
+.pc-grid{display:grid;gap:16px}
+.pc{background:#161616;border:1px solid #2a2a2a;border-radius:14px;overflow:hidden}
+.pc-header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #222;background:#1a1a1a}
+.pc-name{font-weight:600;font-size:14px;color:#fff;display:flex;align-items:center;gap:8px}
+.pc-sub{font-size:12px;color:#555;margin-top:3px}
+.pc-body{padding:16px 18px}
+.eng-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.eng-cell{background:#1a1a1a;border:1px solid #222;border-radius:10px;padding:10px;text-align:center}
+.eng-num{font-size:18px;font-weight:600;color:#fff}
+.eng-lbl{font-size:11px;color:#555;margin-top:3px}
+.prog-wrap{margin-bottom:10px}
+.prog-labels{display:flex;justify-content:space-between;font-size:12px;color:#555;margin-bottom:5px}
+.prog-bar{height:5px;background:#222;border-radius:999px;overflow:hidden}
+.prog-fill{height:100%;border-radius:999px;background:#E1306C;transition:width .4s}
+.prog-fill.done{background:#22c55e}
+.goal-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 14px;background:#111;border-radius:10px;border:1px solid #222;flex-wrap:wrap}
+.goal-row label{font-size:12px;color:#555;white-space:nowrap}
+.goal-row input{width:70px;font-size:13px;padding:5px 8px;border-radius:7px;border:1px solid #2a2a2a;background:#1a1a1a;color:#e8e8e8;outline:none}
+.log-header{display:grid;grid-template-columns:1fr 90px 80px 90px 70px 70px 80px 36px;gap:6px;font-size:11px;color:#555;font-weight:500;text-transform:uppercase;letter-spacing:.4px;padding:6px 0 8px;border-bottom:1px solid #222}
+.log-row{display:grid;grid-template-columns:1fr 90px 80px 90px 70px 70px 80px 36px;gap:6px;padding:8px 0;border-bottom:1px solid #1e1e1e;font-size:12px;align-items:center;color:#aaa}
+.log-row:last-child{border-bottom:none}
+.apf{display:none;padding:16px 18px;border-top:1px solid #222;background:#111}
+.apf.open{display:block}
+.apf-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+.apf-eng{display:grid;grid-template-columns:repeat(4,1fr) 1fr 1fr;gap:8px;margin-bottom:12px}
+.empty{text-align:center;padding:36px;color:#444;font-size:13px}
+.loading{text-align:center;padding:32px;color:#555;font-size:13px}
+.mono{font-family:ui-monospace,monospace;font-size:11px;color:#888}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="logo"><i class="ti ti-brand-instagram"></i> IG Manager</div>
+    <div class="nav">
+      <button class="nav-btn active" onclick="showTab('emails',this)"><i class="ti ti-mail"></i> E-mails</button>
+      <button class="nav-btn" onclick="showTab('proxies',this)"><i class="ti ti-server"></i> Proxies</button>
+      <button class="nav-btn" onclick="showTab('contas',this)"><i class="ti ti-brand-instagram"></i> Contas IG</button>
+      <button class="nav-btn" onclick="showTab('postagens',this)"><i class="ti ti-calendar-stats"></i> Postagens</button>
+    </div>
+    <div id="conn-dot" class="status-dot" title="Conectado"></div>
+  </div>
+  <div class="content">
+    <div class="tab active" id="tab-emails">
+      <div class="stats" id="stats-emails"><div class="loading">Carregando...</div></div>
+      <div class="toolbar">
+        <input type="text" placeholder="Buscar e-mail..." oninput="renderEmails(this.value)">
+        <button class="btn btn-primary" onclick="toggleForm('form-email')"><i class="ti ti-plus"></i> Adicionar</button>
+      </div>
+      <div class="add-form" id="form-email" style="display:none">
+        <div class="form-grid">
+          <div class="field"><label>E-mail</label><input id="em-email" type="email" placeholder="conta@gmail.com"></div>
+          <div class="field"><label>Senha</label><input id="em-senha" placeholder="senha123"></div>
+          <div class="field"><label>Status</label><select id="em-status"><option>Disponível</option><option>Em uso</option><option>Bloqueado</option></select></div>
+          <div class="field"><label>Recovery</label><input id="em-recovery" placeholder="recovery@gmail.com"></div>
+          <div class="field"><label>Telefone</label><input id="em-tel" placeholder="+55 11 9..."></div>
+          <div class="field"><label>Observações</label><input id="em-obs" placeholder="..."></div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="addEmail()">Salvar</button>
+        <button class="btn btn-sm" style="margin-left:8px" onclick="toggleForm('form-email')">Cancelar</button>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>E-mail</th><th>Senha</th><th>Status</th><th>Recovery</th><th>Telefone</th><th>Obs</th><th></th></tr></thead>
+        <tbody id="tb-emails"><tr><td colspan="7" class="loading">Carregando...</td></tr></tbody>
+      </table></div>
+    </div>
+    <div class="tab" id="tab-proxies">
+      <div class="stats" id="stats-proxies"></div>
+      <div class="toolbar">
+        <input type="text" placeholder="Buscar proxy..." oninput="renderProxies(this.value)">
+        <button class="btn btn-primary" onclick="toggleForm('form-proxy')"><i class="ti ti-plus"></i> Adicionar</button>
+      </div>
+      <div class="add-form" id="form-proxy" style="display:none">
+        <div class="form-grid">
+          <div class="field"><label>IP:Porta</label><input id="px-ip" placeholder="192.168.1.1:8080"></div>
+          <div class="field"><label>Usuário</label><input id="px-user" placeholder="user123"></div>
+          <div class="field"><label>Senha</label><input id="px-pass" placeholder="senha123"></div>
+          <div class="field"><label>Tipo</label><select id="px-tipo"><option>HTTP</option><option>HTTPS</option><option>SOCKS5</option><option>Residencial</option><option>Datacenter</option></select></div>
+          <div class="field"><label>País</label><input id="px-pais" placeholder="BR"></div>
+          <div class="field"><label>Status</label><select id="px-status"><option>Disponível</option><option>Em uso</option><option>Inativo</option></select></div>
+          <div class="field"><label>Conta IG</label><input id="px-conta" placeholder="@username"></div>
+          <div class="field"><label>Validade</label><input id="px-val" type="date"></div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="addProxy()">Salvar</button>
+        <button class="btn btn-sm" style="margin-left:8px" onclick="toggleForm('form-proxy')">Cancelar</button>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>IP:Porta</th><th>Usuário</th><th>Tipo</th><th>País</th><th>Status</th><th>Conta IG</th><th>Validade</th><th></th></tr></thead>
+        <tbody id="tb-proxies"><tr><td colspan="8" class="loading">Carregando...</td></tr></tbody>
+      </table></div>
+    </div>
+    <div class="tab" id="tab-contas">
+      <div class="stats" id="stats-contas"></div>
+      <div class="toolbar">
+        <input type="text" placeholder="Buscar conta..." oninput="filterContas('q',this.value)">
+        <select onchange="filterContas('sit',this.value)">
+          <option value="">Todas as situações</option>
+          <option>Criado</option><option>Aquecimento</option><option>Crescimento</option><option>Venda</option><option>Inativo</option><option>Suspenso</option>
+        </select>
+        <button class="btn btn-primary" onclick="toggleForm('form-conta')"><i class="ti ti-plus"></i> Adicionar</button>
+      </div>
+      <div class="add-form" id="form-conta" style="display:none">
+        <div class="form-grid">
+          <div class="field"><label>User IG</label><input id="ct-user" placeholder="@username"></div>
+          <div class="field"><label>Senha IG</label><input id="ct-senhaig" placeholder="senha123"></div>
+          <div class="field"><label>E-mail</label><input id="ct-email" placeholder="conta@gmail.com"></div>
+          <div class="field"><label>Senha e-mail</label><input id="ct-senhaemail" placeholder="senha123"></div>
+          <div class="field"><label>Dispositivo</label><input id="ct-disp" placeholder="iPhone 14 / PC"></div>
+          <div class="field"><label>Situação</label><select id="ct-sit"><option>Criado</option><option>Aquecimento</option><option>Crescimento</option><option>Venda</option><option>Inativo</option><option>Suspenso</option></select></div>
+          <div class="field"><label>Página Facebook</label><input id="ct-fbpage" placeholder="URL da página"></div>
+          <div class="field"><label>Perfil Facebook</label><input id="ct-fbperfil" placeholder="URL do perfil"></div>
+          <div class="field"><label>FB Page</label><select id="ct-fbpagestatus"><option>Não</option><option>Sim</option></select></div>
+          <div class="field"><label>MB Suite</label><select id="ct-mb"><option>Não</option><option>Sim</option></select></div>
+          <div class="field"><label>Automação</label><select id="ct-auto"><option>Não</option><option>Sim</option></select></div>
+          <div class="field"><label>Avatar</label><select id="ct-avatar"><option>Não</option><option>Sim</option></select></div>
+          <div class="field"><label>Voz</label><select id="ct-voz"><option>Não</option><option>Sim</option></select></div>
+          <div class="field"><label>Proxy</label><input id="ct-proxy" placeholder="IP:Porta"></div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="addConta()">Salvar</button>
+        <button class="btn btn-sm" style="margin-left:8px" onclick="toggleForm('form-conta')">Cancelar</button>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>User IG</th><th>E-mail</th><th>Dispositivo</th><th>Situação</th><th>MB</th><th>Auto</th><th>Avatar</th><th>Voz</th><th>Proxy</th><th></th></tr></thead>
+        <tbody id="tb-contas"><tr><td colspan="10" class="loading">Carregando...</td></tr></tbody>
+      </table></div>
+    </div>
+    <div class="tab" id="tab-postagens">
+      <p style="font-size:13px;color:#555;margin-bottom:20px">Contas com situação <strong style="color:#888">Aquecimento</strong>, <strong style="color:#888">Crescimento</strong> ou <strong style="color:#888">Venda</strong></p>
+      <div class="pc-grid" id="post-cards"><div class="loading">Carregando...</div></div>
+    </div>
+  </div>
+</div>
+<script>
+const SB_URL='https://celnqfvjucollfcuwxrn.supabase.co';
+const SB_KEY='sb_publishable_NKRCmfTzf9giPR7v4eHLXg_jlZMci05';
+async function sb(table,method='GET',body=null,extra=''){
+  const res=await fetch(`${SB_URL}/rest/v1/${table}${extra}`,{
+    method,
+    headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':method==='POST'?'return=representation':''},
+    body:body?JSON.stringify(body):null
+  });
+  if(!res.ok){const e=await res.text();throw new Error(e);}
+  if(method==='DELETE')return null;
+  const txt=await res.text();
+  return txt?JSON.parse(txt):null;
+}
+let allEmails=[],allProxies=[],allContas=[],allPosts=[],allMetas=[];
+let contaQ='',contaSit='';
+function setConn(ok){const d=document.getElementById('conn-dot');d.className='status-dot'+(ok?'':' err');d.title=ok?'Conectado':'Erro de conexão';}
+async function loadAll(){
+  try{
+    [allEmails,allProxies,allContas,allPosts,allMetas]=await Promise.all([
+      sb('emails?order=id.desc'),
+      sb('proxies?order=id.desc'),
+      sb('contas?order=id.desc'),
+      sb('posts?order=data_hora.desc'),
+      sb('metas')
+    ]);
+    setConn(true);
+    renderEmails();renderProxies();renderContas();
+  }catch(e){setConn(false);console.error(e);}
+}
+function showTab(t,btn){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  btn.classList.add('active');
+  if(t==='postagens')renderPostagens();
+}
+function toggleForm(id){const f=document.getElementById(id);f.style.display=f.style.display==='none'?'block':'none';}
+function v(id){const el=document.getElementById(id);return el?el.value:'';}
+function sbadge(s){
+  const map={Disponível:'disponivel','Em uso':'emuso',Bloqueado:'bloqueado',Inativo:'inativo',Aquecimento:'aquecimento',Crescimento:'crescimento',Venda:'venda',Criado:'criado',Suspenso:'suspenso',Publicado:'publicado',Agendado:'agendado',Rascunho:'rascunho',Removido:'removido'};
+  return `<span class="badge b-${map[s]||'inativo'}">${s}</span>`;
+}
+function yn(val){return val==='Sim'?'<span style="color:#4ade80">✓</span>':'<span style="color:#333">—</span>';}
+function num(n){return Number(n||0).toLocaleString('pt-BR');}
+async function addEmail(){
+  const o={email:v('em-email'),senha:v('em-senha'),status:v('em-status'),recovery:v('em-recovery'),tel:v('em-tel'),obs:v('em-obs')};
+  if(!o.email)return;
+  try{const r=await sb('emails','POST',o);allEmails.unshift(r[0]);['em-email','em-senha','em-recovery','em-tel','em-obs'].forEach(x=>{document.getElementById(x).value='';});document.getElementById('em-status').value='Disponível';toggleForm('form-email');renderEmails();}catch(e){alert('Erro: '+e.message);}
+}
+async function deleteEmail(id){if(!confirm('Excluir?'))return;await sb('emails?id=eq.'+id,'DELETE');allEmails=allEmails.filter(x=>x.id!==id);renderEmails();}
+function renderEmails(q=''){
+  const f=allEmails.filter(x=>!q||(x.email||'').toLowerCase().includes(q.toLowerCase()));
+  document.getElementById('tb-emails').innerHTML=f.length?f.map(e=>`<tr><td title="${e.email||''}">${e.email||'—'}</td><td><span class="mono">${e.senha||'—'}</span></td><td>${sbadge(e.status)}</td><td title="${e.recovery||''}">${e.recovery||'—'}</td><td>${e.tel||'—'}</td><td title="${e.obs||''}">${e.obs||'—'}</td><td><button class="btn btn-sm btn-danger" onclick="deleteEmail(${e.id})"><i class="ti ti-trash"></i></button></td></tr>`).join(''):`<tr><td colspan="7" class="empty">Nenhum e-mail cadastrado</td></tr>`;
+  document.getElementById('stats-emails').innerHTML=`<div class="stat-card"><div class="stat-label">Total</div><div class="stat-value">${allEmails.length}</div></div><div class="stat-card"><div class="stat-label">Disponíveis</div><div class="stat-value">${allEmails.filter(x=>x.status==='Disponível').length}</div></div><div class="stat-card"><div class="stat-label">Em uso</div><div class="stat-value">${allEmails.filter(x=>x.status==='Em uso').length}</div></div><div class="stat-card"><div class="stat-label">Bloqueados</div><div class="stat-value">${allEmails.filter(x=>x.status==='Bloqueado').length}</div></div>`;
+}
+async function addProxy(){
+  const o={ip:v('px-ip'),usuario:v('px-user'),senha:v('px-pass'),tipo:v('px-tipo'),pais:v('px-pais'),status:v('px-status'),conta:v('px-conta'),validade:v('px-val')||null};
+  if(!o.ip)return;
+  try{const r=await sb('proxies','POST',o);allProxies.unshift(r[0]);['px-ip','px-user','px-pass','px-pais','px-conta','px-val'].forEach(x=>{document.getElementById(x).value='';});toggleForm('form-proxy');renderProxies();}catch(e){alert('Erro: '+e.message);}
+}
+async function deleteProxy(id){if(!confirm('Excluir?'))return;await sb('proxies?id=eq.'+id,'DELETE');allProxies=allProxies.filter(x=>x.id!==id);renderProxies();}
+function renderProxies(q=''){
+  const f=allProxies.filter(x=>!q||((x.ip||'')+(x.conta||'')).toLowerCase().includes(q.toLowerCase()));
+  document.getElementById('tb-proxies').innerHTML=f.length?f.map(p=>`<tr><td><span class="mono">${p.ip||'—'}</span></td><td>${p.usuario||'—'}</td><td>${p.tipo||'—'}</td><td>${p.pais||'—'}</td><td>${sbadge(p.status)}</td><td title="${p.conta||''}">${p.conta||'—'}</td><td>${p.validade||'—'}</td><td><button class="btn btn-sm btn-danger" onclick="deleteProxy(${p.id})"><i class="ti ti-trash"></i></button></td></tr>`).join(''):`<tr><td colspan="8" class="empty">Nenhuma proxy cadastrada</td></tr>`;
+  document.getElementById('stats-proxies').innerHTML=`<div class="stat-card"><div class="stat-label">Total</div><div class="stat-value">${allProxies.length}</div></div><div class="stat-card"><div class="stat-label">Disponíveis</div><div class="stat-value">${allProxies.filter(x=>x.status==='Disponível').length}</div></div><div class="stat-card"><div class="stat-label">Em uso</div><div class="stat-value">${allProxies.filter(x=>x.status==='Em uso').length}</div></div>`;
+}
+async function addConta(){
+  const o={user_ig:v('ct-user'),senha_ig:v('ct-senhaig'),email:v('ct-email'),senha_email:v('ct-senhaemail'),dispositivo:v('ct-disp'),situacao:v('ct-sit'),fb_page:v('ct-fbpage'),fb_perfil:v('ct-fbperfil'),fb_page_status:v('ct-fbpagestatus'),mb_suite:v('ct-mb'),automacao:v('ct-auto'),avatar:v('ct-avatar'),voz:v('ct-voz'),proxy:v('ct-proxy')};
+  if(!o.user_ig)return;
+  try{const r=await sb('contas','POST',o);allContas.unshift(r[0]);['ct-user','ct-senhaig','ct-email','ct-senhaemail','ct-disp','ct-fbpage','ct-fbperfil','ct-proxy'].forEach(x=>{document.getElementById(x).value='';});toggleForm('form-conta');renderContas();}catch(e){alert('Erro: '+e.message);}
+}
+async function deleteConta(id){if(!confirm('Excluir esta conta e todos os posts?'))return;await sb('contas?id=eq.'+id,'DELETE');allContas=allContas.filter(x=>x.id!==id);allPosts=allPosts.filter(x=>x.conta_id!==id);allMetas=allMetas.filter(x=>x.conta_id!==id);renderContas();}
+function filterContas(key,val){if(key==='q')contaQ=val;else contaSit=val;renderContas();}
+function renderContas(){
+  let f=allContas;
+  if(contaQ)f=f.filter(x=>((x.user_ig||'')+(x.email||'')).toLowerCase().includes(contaQ.toLowerCase()));
+  if(contaSit)f=f.filter(x=>x.situacao===contaSit);
+  document.getElementById('tb-contas').innerHTML=f.length?f.map(c=>`<tr><td title="${c.user_ig||''}"><strong style="color:#fff">${c.user_ig||'—'}</strong></td><td title="${c.email||''}">${c.email||'—'}</td><td title="${c.dispositivo||''}">${c.dispositivo||'—'}</td><td>${sbadge(c.situacao)}</td><td>${yn(c.mb_suite)}</td><td>${yn(c.automacao)}</td><td>${yn(c.avatar)}</td><td>${yn(c.voz)}</td><td title="${c.proxy||''}">${c.proxy||'—'}</td><td><button class="btn btn-sm btn-danger" onclick="deleteConta(${c.id})"><i class="ti ti-trash"></i></button></td></tr>`).join(''):`<tr><td colspan="10" class="empty">Nenhuma conta cadastrada</td></tr>`;
+  document.getElementById('stats-contas').innerHTML=`<div class="stat-card"><div class="stat-label">Total</div><div class="stat-value">${allContas.length}</div></div><div class="stat-card"><div class="stat-label">Aquecimento</div><div class="stat-value">${allContas.filter(x=>x.situacao==='Aquecimento').length}</div></div><div class="stat-card"><div class="stat-label">Crescimento</div><div class="stat-value">${allContas.filter(x=>x.situacao==='Crescimento').length}</div></div><div class="stat-card"><div class="stat-label">Venda</div><div class="stat-value">${allContas.filter(x=>x.situacao==='Venda').length}</div></div><div class="stat-card"><div class="stat-label">Inativas</div><div class="stat-value">${allContas.filter(x=>['Inativo','Suspenso'].includes(x.situacao)).length}</div></div>`;
+}
+function getWeekStart(){const n=new Date(),d=n.getDay(),diff=n.getDate()-d+(d===0?-6:1);return new Date(n.setDate(diff)).toISOString().slice(0,10);}
+async function saveGoal(cid){
+  const md=Number(document.getElementById('g-day-'+cid).value)||0;
+  const mw=Number(document.getElementById('g-week-'+cid).value)||0;
+  const existing=allMetas.find(x=>x.conta_id===cid);
+  try{if(existing){await sb('metas?conta_id=eq.'+cid,'PATCH',{meta_dia:md,meta_semana:mw});existing.meta_dia=md;existing.meta_semana=mw;}else{const r=await sb('metas','POST',{conta_id:cid,meta_dia:md,meta_semana:mw});allMetas.push(r[0]);}renderPostagens();}catch(e){alert('Erro: '+e.message);}
+}
+async function addPost(cid){
+  const desc=v('pd-desc-'+cid);if(!desc)return;
+  const o={conta_id:cid,descricao:desc,plataforma:v('pd-plat-'+cid),status:v('pd-status-'+cid),data_hora:v('pd-dt-'+cid)||new Date().toISOString(),curtidas:Number(v('pd-curt-'+cid))||0,comentarios:Number(v('pd-coment-'+cid))||0,salvos:Number(v('pd-salvos-'+cid))||0,alcance:Number(v('pd-alc-'+cid))||0,link:v('pd-link-'+cid)};
+  try{const r=await sb('posts','POST',o);allPosts.unshift(r[0]);['pd-desc-','pd-link-','pd-curt-','pd-coment-','pd-salvos-','pd-alc-'].forEach(p=>{const el=document.getElementById(p+cid);if(el)el.value='';});document.getElementById('pd-dt-'+cid).value='';document.getElementById('apf-'+cid).classList.remove('open');renderPostagens();}catch(e){alert('Erro: '+e.message);}
+}
+async function deletePost(pid){if(!confirm('Excluir post?'))return;await sb('posts?id=eq.'+pid,'DELETE');allPosts=allPosts.filter(x=>x.id!==pid);renderPostagens();}
+function renderPostagens(){
+  const ativas=allContas.filter(x=>['Aquecimento','Crescimento','Venda'].includes(x.situacao));
+  const el=document.getElementById('post-cards');
+  if(!ativas.length){el.innerHTML=`<div class="empty">Nenhuma conta ativa.</div>`;return;}
+  const wkStart=getWeekStart();
+  el.innerHTML=ativas.map(c=>{
+    const cid=c.id;
+    const myPosts=allPosts.filter(x=>x.conta_id===cid);
+    const meta=allMetas.find(x=>x.conta_id===cid)||{meta_dia:0,meta_semana:0};
+    const today=new Date().toDateString();
+    const todayCount=myPosts.filter(p=>new Date(p.data_hora).toDateString()===today).length;
+    const wkCount=myPosts.filter(p=>p.data_hora&&p.data_hora.slice(0,10)>=wkStart).length;
+    const totC=myPosts.reduce((a,p)=>a+(p.curtidas||0),0);
+    const totCo=myPosts.reduce((a,p)=>a+(p.comentarios||0),0);
+    const totS=myPosts.reduce((a,p)=>a+(p.salvos||0),0);
+    const totA=myPosts.reduce((a,p)=>a+(p.alcance||0),0);
+    function prog(cur,goal,lbl){if(!goal)return'';const pct=Math.min(100,Math.round(cur/goal*100));return`<div class="prog-wrap"><div class="prog-labels"><span>${lbl}: ${cur} / ${goal}</span><span>${pct}%</span></div><div class="prog-bar"><div class="prog-fill${pct>=100?' done':''}" style="width:${pct}%"></div></div></div>`;}
+    const logRows=myPosts.slice(0,30).map(p=>`<div class="log-row"><span title="${p.descricao||''}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(p.descricao||'').slice(0,50)}${(p.descricao||'').length>50?'…':''}</span><span style="color:#555">${p.plataforma||'—'}</span><span>${sbadge(p.status)}</span><span style="color:#444;font-size:11px">${p.data_hora?new Date(p.data_hora).toLocaleDateString('pt-BR'):'—'}</span><span style="text-align:right;color:#888">${num(p.curtidas)}</span><span style="text-align:right;color:#888">${num(p.comentarios)}</span><span style="text-align:right;color:#888">${num(p.alcance)}</span><button class="btn btn-sm btn-danger" style="padding:2px 6px" onclick="deletePost(${p.id})"><i class="ti ti-trash"></i></button></div>`).join('');
+    return`<div class="pc"><div class="pc-header"><div><div class="pc-name"><i class="ti ti-brand-instagram"></i>${c.user_ig}</div><div class="pc-sub">${sbadge(c.situacao)} &nbsp; ${myPosts.length} posts · ${wkCount} esta semana · ${todayCount} hoje</div></div><button class="btn btn-sm btn-primary" onclick="toggleApf(${cid})"><i class="ti ti-plus"></i> Registrar post</button></div><div class="pc-body"><div class="goal-row"><i class="ti ti-target" style="color:#555"></i><label>Meta diária:</label><input id="g-day-${cid}" type="number" min="0" value="${meta.meta_dia||''}" placeholder="0"><label style="margin-left:8px">Meta semanal:</label><input id="g-week-${cid}" type="number" min="0" value="${meta.meta_semana||''}" placeholder="0"><button class="btn btn-sm btn-primary" onclick="saveGoal(${cid})">Salvar metas</button></div>${prog(todayCount,meta.meta_dia,'Hoje')}${prog(wkCount,meta.meta_semana,'Esta semana')}<div class="eng-row"><div class="eng-cell"><div class="eng-num">${num(totC)}</div><div class="eng-lbl"><i class="ti ti-heart"></i> Curtidas</div></div><div class="eng-cell"><div class="eng-num">${num(totCo)}</div><div class="eng-lbl"><i class="ti ti-message"></i> Comentários</div></div><div class="eng-cell"><div class="eng-num">${num(totS)}</div><div class="eng-lbl"><i class="ti ti-bookmark"></i> Salvos</div></div><div class="eng-cell"><div class="eng-num">${num(totA)}</div><div class="eng-lbl"><i class="ti ti-eye"></i> Alcance</div></div></div>${myPosts.length?`<div class="log-header"><span>Conteúdo</span><span>Plataforma</span><span>Status</span><span>Data</span><span style="text-align:right">Curtidas</span><span style="text-align:right">Coment.</span><span style="text-align:right">Alcance</span><span></span></div>${logRows}`:`<div class="empty" style="padding:20px">Nenhum post registrado</div>`}</div><div class="apf" id="apf-${cid}"><div class="apf-grid"><div class="field"><label>Descrição</label><textarea id="pd-desc-${cid}" placeholder="Descreva o conteúdo..."></textarea></div><div class="field"><label>Plataforma</label><select id="pd-plat-${cid}"><option>Instagram</option><option>Facebook</option><option>Ambos</option></select></div><div class="field"><label>Status</label><select id="pd-status-${cid}"><option>Publicado</option><option>Agendado</option><option>Rascunho</option><option>Removido</option></select></div><div class="field"><label>Data / hora</label><input id="pd-dt-${cid}" type="datetime-local"></div></div><div class="apf-eng"><div class="field"><label>Curtidas</label><input id="pd-curt-${cid}" type="number" min="0" placeholder="0"></div><div class="field"><label>Comentários</label><input id="pd-coment-${cid}" type="number" min="0" placeholder="0"></div><div class="field"><label>Salvos</label><input id="pd-salvos-${cid}" type="number" min="0" placeholder="0"></div><div class="field"><label>Alcance</label><input id="pd-alc-${cid}" type="number" min="0" placeholder="0"></div><div class="field" style="grid-column:span 2"><label>Link do post</label><input id="pd-link-${cid}" type="url" placeholder="https://instagram.com/p/..."></div></div><button class="btn btn-primary btn-sm" onclick="addPost(${cid})">Salvar postagem</button><button class="btn btn-sm" style="margin-left:8px" onclick="toggleApf(${cid})">Cancelar</button></div></div>`;
+  }).join('');
+}
+function toggleApf(id){document.getElementById('apf-'+id).classList.toggle('open');}
+loadAll();
+</script>
+</body>
+</html>
