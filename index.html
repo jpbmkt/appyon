@@ -159,6 +159,15 @@ td.iec select{cursor:pointer}
 .nota-hora{font-size:10px;color:#444}
 .nota-text{font-size:12px;color:#aaa;line-height:1.5}
 .nota-form{display:flex;gap:8px;margin-top:10px;align-items:flex-start}
+.todo-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#111;border:1px solid #1e1e1e;border-radius:7px;margin-bottom:5px}
+.todo-item input[type=checkbox]{accent-color:#4ade80;width:14px;height:14px;cursor:pointer;flex-shrink:0}
+.todo-item label{font-size:12px;color:#ccc;flex:1;cursor:pointer;line-height:1.4}
+.todo-item label.done{text-decoration:line-through;color:#444}
+.todo-item .del-todo{background:transparent;border:none;color:#2a2a2a;cursor:pointer;font-size:12px;padding:0;line-height:1;flex-shrink:0}
+.todo-item .del-todo:hover{color:#f87171}
+.todo-add{display:flex;gap:6px;margin-top:8px}
+.todo-add input{flex:1;font-size:12px;padding:5px 9px;border-radius:6px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none}
+.todo-add button{flex-shrink:0}
 .nota-form input[type=text]{font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;width:110px;outline:none;flex-shrink:0}
 .nota-form textarea{flex:1;font-size:12px;padding:7px 10px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;resize:none;outline:none;min-height:40px}
 .alerta-estoque{background:#1f0f0f;border:1px solid #3a1515;border-radius:8px;padding:8px 12px;margin-bottom:6px;display:flex;align-items:center;gap:8px;font-size:12px;color:#f87171}
@@ -191,21 +200,36 @@ td.iec select{cursor:pointer}
 <div class="tab active" id="tab-hoje">
   <!-- Resumo rápido -->
   <div id="hoje-resumo" style="margin-bottom:20px"></div>
-  <!-- Fila de ação -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+  <!-- Grid principal -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+    <!-- Fila de ação -->
     <div>
       <div style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-list-check" style="color:#60a5fa"></i> Fila de ação do dia</div>
       <div id="hoje-fila"></div>
     </div>
+    <!-- Agenda Google -->
     <div>
       <div style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-calendar" style="color:#a78bfa"></i> Agenda Google</div>
       <div id="hoje-agenda"></div>
     </div>
   </div>
-  <!-- Notas do dia -->
-  <div>
-    <div style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-note" style="color:#fbbf24"></i> Notas do dia</div>
-    <div id="hoje-notas"></div>
+  <!-- To-do lists + Notas -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
+    <!-- To-do Jessica -->
+    <div>
+      <div style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-checkbox" style="color:#f472b6"></i> To-do · Jessica</div>
+      <div id="todo-jessica"></div>
+    </div>
+    <!-- To-do Filipe -->
+    <div>
+      <div style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-checkbox" style="color:#34d399"></i> To-do · Filipe</div>
+      <div id="todo-filipe"></div>
+    </div>
+    <!-- Notas do dia -->
+    <div>
+      <div style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-note" style="color:#fbbf24"></i> Notas do dia</div>
+      <div id="hoje-notas"></div>
+    </div>
   </div>
 </div>
 
@@ -380,7 +404,7 @@ const SB='https://celnqfvjucollfcuwxrn.supabase.co';
 const KEY='sb_publishable_NKRCmfTzf9giPR7v4eHLXg_jlZMci05';
 // Google OAuth — substitua pelo seu Client ID do Google Cloud Console
 const GCLIENT='975610078004-mb1qdpurmirmf15gndhj8d9k874v2mku.apps.googleusercontent.com';
-let gToken=null;
+let gToken=sessionStorage.getItem('igm_gtoken')||null;
 
 async function api(tbl,method='GET',body=null,qs=''){
   const h={'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+KEY};
@@ -392,7 +416,7 @@ async function api(tbl,method='GET',body=null,qs=''){
   const t=await r.text();return t?JSON.parse(t):null;
 }
 
-let Emails=[],Proxies=[],Avatares=[],Contas=[],Checks=[],ConfigsIniciais=[],NotasDia=[],gCalendarEvents=[];
+let Emails=[],Proxies=[],Avatares=[],Contas=[],Checks=[],ConfigsIniciais=[],NotasDia=[],gCalendarEvents=[],TodosJessica=[],TodosFilipe=[];
 let cQ='',cSit='',eMailFilter='',proxyFilter='';
 const today=new Date().toISOString().slice(0,10);
 
@@ -407,14 +431,16 @@ function weekDays(){
 
 async function loadAll(){
   try{
-    [Emails,Proxies,Avatares,Contas,Checks,ConfigsIniciais,NotasDia]=await Promise.all([
+    [Emails,Proxies,Avatares,Contas,Checks,ConfigsIniciais,NotasDia,TodosJessica,TodosFilipe]=await Promise.all([
       api('emails','GET',null,'?order=id.desc'),
       api('proxies','GET',null,'?order=id.desc'),
       api('avatares','GET',null,'?order=id.desc'),
       api('contas','GET',null,'?order=id.desc'),
       api('checks_postagem','GET',null,'?order=data.desc'),
       api('config_inicial','GET',null,''),
-      api('notas_dia','GET',null,'?order=created_at.desc&data=eq.'+new Date().toISOString().slice(0,10))
+      api('notas_dia','GET',null,'?order=created_at.desc&data=eq.'+new Date().toISOString().slice(0,10)),
+      api('todo_items','GET',null,'?pessoa=eq.Jessica&order=id.asc'),
+      api('todo_items','GET',null,'?pessoa=eq.Filipe&order=id.asc')
     ]);
     document.getElementById('cdot').className='dot';
     renderEmails();renderProxies();renderAvatares();renderContas();
@@ -1155,6 +1181,8 @@ function renderHoje(){
   renderResumo();
   renderFila();
   renderAgenda();
+  renderTodos('Jessica');
+  renderTodos('Filipe');
   renderNotas();
 }
 
@@ -1179,12 +1207,12 @@ function renderResumo(){
   }).join('');
 
   const alertCards=`
-    <div class="resumo-card" style="border-color:${estoqueCritico.length>0?'#3a1515':'#2a2a2a'}">
+    <div class="resumo-card" style="border-color:${estoqueCritico.length>0?'#3a1515':'#2a2a2a'}" onclick="goToTab('postagens')">
       <div class="rc-label" style="color:${estoqueCritico.length>0?'#f87171':'#555'}"><i class="ti ti-alert-triangle"></i> Estoque crítico</div>
       <div class="rc-val" style="color:${estoqueCritico.length>0?'#f87171':'#555'}">${estoqueCritico.length}</div>
       <div class="rc-sub">${estoqueCritico.length>0?estoqueCritico.slice(0,2).map(c=>c.user_ig).join(', ')+(estoqueCritico.length>2?'...':''):'Tudo ok'}</div>
     </div>
-    <div class="resumo-card">
+    <div class="resumo-card" onclick="goToTab('postagens')">
       <div class="rc-label" style="color:#60a5fa"><i class="ti ti-calendar-check"></i> Checks hoje</div>
       <div class="rc-val">${checksHoje.length}</div>
       <div class="rc-sub">${pendentesHoje.length} pendente${pendentesHoje.length!==1?'s':''}</div>
@@ -1332,7 +1360,7 @@ function renderNotas(){
 
   const form=`<div class="nota-form">
     <input type="text" id="nota-autor" placeholder="Seu nome" value="${localStorage.getItem('igm_autor')||''}" oninput="localStorage.setItem('igm_autor',this.value)">
-    <textarea id="nota-texto" placeholder="Escreva uma nota para a equipe..." rows="2"></textarea>
+    <textarea id="nota-texto" placeholder="Escreva uma nota para a equipe... (Enter para enviar, Shift+Enter para nova linha)" rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();addNota();}"></textarea>
     <button class="btn bp bsm" onclick="addNota()" style="flex-shrink:0"><i class="ti ti-send"></i></button>
   </div>`;
 
@@ -1340,13 +1368,82 @@ function renderNotas(){
     ? notas.map(n=>`<div class="nota-item">
         <div class="nota-header">
           <span class="nota-autor">${esc(n.autor||'Anônimo')}</span>
-          <span class="nota-hora">${new Date(n.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="nota-hora">${new Date(n.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span>
+            <button onclick="removeNota(${n.id})" style="background:transparent;border:none;cursor:pointer;color:#333;font-size:13px;padding:0;line-height:1" title="Remover nota"><i class="ti ti-x"></i></button>
+          </div>
         </div>
         <div class="nota-text">${esc(n.conteudo||'').replace(/\n/g,'<br>')}</div>
       </div>`).join('')
     : `<div style="text-align:center;padding:16px;color:#333;font-size:12px">Nenhuma nota ainda hoje.</div>`;
 
   el.innerHTML=`<div class="dash-section">${notasHtml}${form}</div>`;
+}
+
+// ── TO-DO LISTS ──
+function getTodos(pessoa){return pessoa==='Jessica'?TodosJessica:TodosFilipe;}
+function setTodos(pessoa,arr){if(pessoa==='Jessica')TodosJessica=arr;else TodosFilipe=arr;}
+
+function renderTodos(pessoa){
+  const elId='todo-'+pessoa.toLowerCase();
+  const el=document.getElementById(elId);
+  if(!el)return;
+  const todos=getTodos(pessoa);
+  const inputId='todo-input-'+pessoa;
+  const items=todos.length
+    ? todos.map(t=>`<div class="todo-item">
+        <input type="checkbox" id="tc-${t.id}" ${t.feito?'checked':''} onchange="toggleTodo(${t.id},'${pessoa}',this.checked)">
+        <label for="tc-${t.id}" class="${t.feito?'done':''}">${esc(t.texto)}</label>
+        <button class="del-todo" onclick="delTodo(${t.id},'${pessoa}')" title="Remover"><i class="ti ti-x"></i></button>
+      </div>`).join('')
+    : `<div style="text-align:center;padding:14px;color:#333;font-size:11px">Nenhuma tarefa</div>`;
+
+  el.innerHTML=`<div class="dash-section" style="padding:10px">
+    ${items}
+    <div class="todo-add">
+      <input id="${inputId}" type="text" placeholder="Nova tarefa..." onkeydown="if(event.key==='Enter')addTodo('${pessoa}')">
+      <button class="btn bp bsm" onclick="addTodo('${pessoa}')"><i class="ti ti-plus"></i></button>
+    </div>
+  </div>`;
+}
+
+async function addTodo(pessoa){
+  const inputId='todo-input-'+pessoa;
+  const el=document.getElementById(inputId);
+  if(!el||!el.value.trim())return;
+  const texto=el.value.trim();
+  try{
+    const r=await api('todo_items','POST',{pessoa,texto,feito:false});
+    getTodos(pessoa).push(r[0]);
+    renderTodos(pessoa);
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+async function toggleTodo(id,pessoa,feito){
+  try{
+    await api('todo_items','PATCH',{feito},`?id=eq.${id}`);
+    const t=getTodos(pessoa).find(x=>x.id===id);
+    if(t)t.feito=feito;
+    renderTodos(pessoa);
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+async function delTodo(id,pessoa){
+  try{
+    await api('todo_items','DELETE',null,`?id=eq.${id}`);
+    setTodos(pessoa,getTodos(pessoa).filter(x=>x.id!==id));
+    renderTodos(pessoa);
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+
+async function removeNota(id){
+  if(!confirm('Remover esta nota?'))return;
+  try{
+    await api('notas_dia','DELETE',null,'?id=eq.'+id);
+    NotasDia=NotasDia.filter(n=>n.id!==id);
+    renderNotas();
+  }catch(e){alert('Erro: '+e.message);}
 }
 
 async function addNota(){
@@ -1382,7 +1479,7 @@ function doGoogleAuth(cb,includeCalendar=false){
   const client=google.accounts.oauth2.initTokenClient({
     client_id:GCLIENT,
     scope,
-    callback:(resp)=>{if(resp.access_token){gToken=resp.access_token;if(cb)cb();}}
+    callback:(resp)=>{if(resp.access_token){gToken=resp.access_token;sessionStorage.setItem('igm_gtoken',gToken);if(cb)cb();}}
   });
   client.requestAccessToken();
 }
