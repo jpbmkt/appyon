@@ -1033,14 +1033,6 @@ function renderPostagens(){
         <td>${progHtml}</td>
         ${sec.showConfig?'':`${dayCells}`}
       </tr>`;
-    }).join('');;
-      const avName=c.avatar_id?(Avatares.find(x=>x.id===c.avatar_id)||{}).nome||'—':'—';
-      return`<tr>
-        <td><strong style="color:#fff">${esc(c.user_ig)}</strong><div style="font-size:10px;color:#555">${esc(avName)}</div></td>
-        <td style="padding:6px 8px"><div id="stk-post-${c.id}">${stockEl(c.estoque_videos)}</div><input type="number" min="0" value="${Number(c.estoque_videos||0)}" style="width:52px;background:#111;border:1px solid #222;border-radius:4px;color:#888;font-size:11px;padding:2px 4px;margin-top:3px;text-align:center" oninput="document.getElementById('stk-post-'+${c.id}).innerHTML=stockEl(this.value)" onblur="updateEstoque(${c.id},this.value)" onkeydown="if(event.key==='Enter'){updateEstoque(${c.id},this.value);}"></td>
-        <td>${progHtml}</td>
-        ${dayCells}
-      </tr>`;
     }).join('');
 
     return`<div class="sit-block">
@@ -1054,8 +1046,8 @@ function renderPostagens(){
           <th style="min-width:120px">Conta</th>
           <th style="min-width:90px">Dispositivo</th>
           <th style="min-width:80px">Estoque</th>
-          <th style="min-width:${sec.showConfig?'300':'160'}px">${sec.showConfig?'Configuração Inicial':'Progresso'}</th>
-          ${sec.showConfig?'':dayNames.map((d,i)=>`<th style="${wk[i]===today?'color:#fff':''};text-align:center">${d}<br><span style="font-size:9px;color:#444">${wk[i].slice(5)}</span></th>`).join('')}
+          <th>${sec.showConfig?'Configuração Inicial':'Progresso'}</th>
+          ${sec.showConfig?'':dayNames.map((d,i)=>'<th style="'+(wk[i]===today?'color:#fff':'')+';text-align:center">'+d+'<br><span style="font-size:9px;color:#444">'+wk[i].slice(5)+'</span></th>').join('')}
         </tr></thead>
         <tbody>${tableRows}</tbody>
       </table></div>
