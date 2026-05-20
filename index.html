@@ -409,7 +409,7 @@ const SB='https://celnqfvjucollfcuwxrn.supabase.co';
 const KEY='sb_publishable_NKRCmfTzf9giPR7v4eHLXg_jlZMci05';
 // Google OAuth — substitua pelo seu Client ID do Google Cloud Console
 const GCLIENT='975610078004-mb1qdpurmirmf15gndhj8d9k874v2mku.apps.googleusercontent.com';
-let gToken=sessionStorage.getItem('igm_gtoken')||null;
+let gToken=null; // Sempre autenticar ao iniciar — sessionStorage só como cache temporário
 
 async function api(tbl,method='GET',body=null,qs=''){
   const h={'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+KEY};
@@ -1202,6 +1202,14 @@ async function syncDrive(){
       const folderId=c.drive_folder_id.trim();
       const q=encodeURIComponent(`'${folderId}' in parents and (mimeType='video/mp4' or mimeType='video/quicktime' or mimeType='video/x-msvideo') and trashed=false`);
       const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&pageSize=1000`,{headers:{Authorization:'Bearer '+gToken}});
+      if(r.status===401){
+        // Token expirado — limpar e reautenticar
+        gToken=null;
+        sessionStorage.removeItem('igm_gtoken');
+        if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-refresh"></i> Sincronizar estoque';}
+        alert('Sessão do Google expirada. Clique em Sincronizar novamente para reconectar.');
+        return;
+      }
       if(!r.ok){
         const err=await r.json();
         erros.push(`${c.user_ig}: ${err.error?.message||r.status}`);
@@ -1396,8 +1404,12 @@ function fetchCalendar(){
   const end=new Date(now);end.setHours(23,59,59);
   const url=`https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${now.toISOString()}&timeMax=${end.toISOString()}&singleEvents=true&orderBy=startTime&maxResults=10`;
   fetch(url,{headers:{Authorization:'Bearer '+gToken}})
-    .then(r=>r.json())
+    .then(async r=>{
+      if(r.status===401){gToken=null;sessionStorage.removeItem('igm_gtoken');renderAgenda();return null;}
+      return r.json();
+    })
     .then(data=>{
+      if(!data)return;
       const events=(data.items||[]);
       gCalendarEvents=events;
       if(!events.length){
@@ -1544,9 +1556,21 @@ function doGoogleAuth(cb,includeCalendar=false){
   const client=google.accounts.oauth2.initTokenClient({
     client_id:GCLIENT,
     scope,
-    callback:(resp)=>{if(resp.access_token){gToken=resp.access_token;sessionStorage.setItem('igm_gtoken',gToken);if(cb)cb();}}
+    callback:(resp)=>{
+      if(resp.error){
+        console.error('Google auth error:',resp.error);
+        alert('Erro ao autenticar com Google: '+resp.error);
+        return;
+      }
+      if(resp.access_token){
+        gToken=resp.access_token;
+        
+        if(cb)cb();
+      }
+    }
   });
-  client.requestAccessToken();
+  // Sempre pedir token fresco — não reutilizar cached
+  client.requestAccessToken({prompt:''});
 }
 
 loadAll();
