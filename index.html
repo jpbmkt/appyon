@@ -159,6 +159,11 @@ td.iec select{cursor:pointer}
 .nota-hora{font-size:10px;color:#444}
 .nota-text{font-size:12px;color:#aaa;line-height:1.5}
 .nota-form{display:flex;gap:8px;margin-top:10px;align-items:flex-start}
+.state-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;border:1px solid #2a2a2a;background:transparent;cursor:pointer;font-size:14px;transition:all .15s}
+.state-btn:hover{border-color:#444;background:#1e1e1e}
+.state-empty{color:#2a2a2a}
+.state-alert{color:#fbbf24;border-color:#3a3000;background:#1a1500}
+.state-ok{color:#4ade80;border-color:#143a14;background:#0a1f0a}
 .todo-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#111;border:1px solid #1e1e1e;border-radius:7px;margin-bottom:5px}
 .todo-item input[type=checkbox]{accent-color:#4ade80;width:14px;height:14px;cursor:pointer;flex-shrink:0}
 .todo-item label{font-size:12px;color:#ccc;flex:1;cursor:pointer;line-height:1.4}
@@ -353,9 +358,9 @@ td.iec select{cursor:pointer}
       <div class="f"><label>Proxy</label><select id="ct-px"><option value="">— sem proxy —</option></select></div>
       <div class="f"><label>Avatar</label><select id="ct-av"><option value="">— sem avatar —</option></select></div>
       <div class="f"><label>Voz</label><input id="ct-vz" placeholder="Voz jovem feminina..."></div>
-      <div class="f"><label>MB Suite</label><select id="ct-mb"><option>Não</option><option>Sim</option></select></div>
-      <div class="f"><label>Automação</label><select id="ct-au"><option>Não</option><option>Sim</option></select></div>
-      <div class="f"><label>FB Page criada</label><select id="ct-fp"><option>Não</option><option>Sim</option></select></div>
+      <div class="f"><label>MB Suite</label><select id="ct-mb"><option value="">— Vazio</option><option value="alerta">⚠ Alerta</option><option value="ok">✓ OK</option></select></div>
+      <div class="f"><label>Automação</label><select id="ct-au"><option value="">— Vazio</option><option value="alerta">⚠ Alerta</option><option value="ok">✓ OK</option></select></div>
+      <div class="f"><label>FB Page criada</label><select id="ct-fp"><option value="">— Vazio</option><option value="alerta">⚠ Alerta</option><option value="ok">✓ OK</option></select></div>
       <div class="f"><label>Página Facebook</label><input id="ct-fbpg" placeholder="URL da página"></div>
       <div class="f"><label>Perfil Facebook</label><input id="ct-fbpr" placeholder="URL do perfil"></div>
       <div class="f"><label>Link venda IG</label><input id="ct-lig" placeholder="https://..."></div>
@@ -866,9 +871,10 @@ function renderContas(){
     <td class="iec"><input value="${esc(c.dispositivo)}" placeholder="—" onblur="ctPatch(${c.id},'dispositivo',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></td>
     <td class="iec"><select onchange="ctPatch(${c.id},'situacao',this.value);renderContas()">${SIT_OPTS.map(o=>`<option${o===c.situacao?' selected':''}>${o}</option>`).join('')}</select></td>
     <td class="iec"><input value="${esc(c.fb_perfil)}" placeholder="—" onblur="ctPatch(${c.id},'fb_perfil',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></td>
-    <td class="iec"><select onchange="ctPatch(${c.id},'fb_page_status',this.value)">${YN.map(o=>`<option${o===(c.fb_page_status||'Não')?' selected':''}>${o}</option>`).join('')}</select></td>
-    <td class="iec"><select onchange="ctPatch(${c.id},'mb_suite',this.value)">${YN.map(o=>`<option${o===(c.mb_suite||'Não')?' selected':''}>${o}</option>`).join('')}</select></td>
-    <td class="iec"><select onchange="ctPatch(${c.id},'automacao',this.value)">${YN.map(o=>`<option${o===(c.automacao||'Não')?' selected':''}>${o}</option>`).join('')}</select></td>
+    <td style="text-align:center;padding:4px 8px">${stateBtn(c.id,'fb_page_status',c.fb_page_status)}</td>
+    <td style="text-align:center;padding:4px 8px">${stateBtn(c.id,'mb_suite',c.mb_suite)}</td>
+    <td style="text-align:center;padding:4px 8px">${stateBtn(c.id,'automacao',c.automacao)}</td>
+</td>
     <td style="padding:6px 8px">
       <div id="stk-el-${c.id}">${stockEl(c.estoque_videos)}</div>
       <input type="number" min="0" value="${Number(c.estoque_videos||0)}" style="width:54px;background:#111;border:1px solid #222;border-radius:4px;color:#888;font-size:11px;padding:2px 4px;margin-top:3px"
@@ -881,6 +887,31 @@ function renderContas(){
   </tr>`).join('');
   statsContas();
 }
+
+// ── 3 ESTADOS: vazio → alerta → ok ──
+function stateVal(v){
+  // Normaliza: '', null, 'Não' → vazio; 'alerta' → alerta; 'ok', 'Sim' → ok
+  if(!v||v==='Não')return '';
+  if(v==='alerta')return 'alerta';
+  return 'ok';
+}
+function stateBtn(cid,field,val){
+  const s=stateVal(val);
+  const cls=s===''?'state-empty':s==='alerta'?'state-alert':'state-ok';
+  const icon=s===''?'○':s==='alerta'?'⚠':'✓';
+  const title=s===''?'Vazio – clique para marcar alerta':s==='alerta'?'Alerta – clique para marcar OK':'OK – clique para limpar';
+  return `<button class="state-btn ${cls}" onclick="cycleState(${cid},'${field}','${s}')" title="${title}">${icon}</button>`;
+}
+async function cycleState(cid,field,current){
+  const next=current===''?'alerta':current==='alerta'?'ok':'';
+  await ctPatch(cid,field,next);
+  // Atualizar só o botão sem re-renderizar tudo
+  const ct=Contas.find(x=>x.id===cid);
+  if(ct)ct[field]=next;
+  // Re-render só a linha afetada: mais eficiente re-render contas
+  renderContas();
+}
+
 
 async function ctPatch(id,field,value){
   await patch('contas',id,field,value||null);
@@ -908,9 +939,9 @@ function openContaModal(id){
       ${mFieldSel(id,'Proxy','proxy',c.proxy||'',[''].concat(Proxies.map(p=>p.ip)),['— sem proxy —'].concat(Proxies.map(p=>p.ip+(p.numero_pedido?' ('+p.numero_pedido+')':''))))}
       ${mFieldSel(id,'Avatar','avatar_id',String(c.avatar_id||''),[''].concat(Avatares.map(a=>String(a.id))),['— sem avatar —'].concat(Avatares.map(a=>a.nome)),true)}
       ${mField(id,'Voz','voz',c.voz,'text')}
-      ${mFieldSel(id,'MB Suite','mb_suite',c.mb_suite||'Não',['Não','Sim'])}
-      ${mFieldSel(id,'Automação','automacao',c.automacao||'Não',['Não','Sim'])}
-      ${mFieldSel(id,'FB Page criada','fb_page_status',c.fb_page_status||'Não',['Não','Sim'])}
+      ${mFieldState(id,'MB Suite','mb_suite',c.mb_suite)}
+      ${mFieldState(id,'Automação','automacao',c.automacao)}
+      ${mFieldState(id,'FB Page criada','fb_page_status',c.fb_page_status)}
       ${mField(id,'Página Facebook','fb_page',c.fb_page,'text')}
       ${mField(id,'Perfil Facebook','fb_perfil',c.fb_perfil,'text')}
       ${mField(id,'Link venda IG','link_venda_ig',c.link_venda_ig,'text')}
@@ -923,6 +954,15 @@ function openContaModal(id){
     </div>`;
 }
 
+function mFieldState(cid,label,field,val){
+  const s=stateVal(val);
+  const onchange=`(async()=>{await patch('contas',${cid},'${field}',this.value);const ct=Contas.find(x=>x.id===${cid});if(ct)ct['${field}']=this.value;renderContas();})()`; 
+  return`<div class="f"><label>${label}</label><select style="background:#111;border:1px solid #252525;border-radius:7px;color:#e8e8e8;font-size:13px;padding:6px 9px;width:100%;outline:none" onchange="${onchange}">
+    <option value="" ${s===''?'selected':''}>— Vazio</option>
+    <option value="alerta" ${s==='alerta'?'selected':''}>⚠ Alerta / Problema</option>
+    <option value="ok" ${s==='ok'?'selected':''}>✓ OK / Feito</option>
+  </select></div>`;
+}
 function mField(cid,label,field,val,type){
   const onchange=`(async()=>{await patch('contas',${cid},'${field}',this.value||null);const ct=Contas.find(x=>x.id===${cid});if(ct)ct['${field}']=this.value;renderContas();renderProxies();renderAvatares();})()`;
   return`<div class="f"><label>${label}</label><input type="${type||'text'}" value="${esc(val)}" placeholder="—" style="background:#111;border:1px solid #252525;border-radius:7px;color:#e8e8e8;font-size:13px;padding:6px 9px;width:100%;outline:none" onblur="${onchange}" onkeydown="if(event.key==='Enter'){${onchange}}"></div>`;
