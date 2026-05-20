@@ -1207,20 +1207,20 @@ function renderResumo(){
   }).join('');
 
   const alertCards=`
-    <div class="resumo-card" style="border-color:${estoqueCritico.length>0?'#3a1515':'#2a2a2a'}" onclick="goToTab('postagens')">
-      <div class="rc-label" style="color:${estoqueCritico.length>0?'#f87171':'#555'}"><i class="ti ti-alert-triangle"></i> Estoque crítico</div>
-      <div class="rc-val" style="color:${estoqueCritico.length>0?'#f87171':'#555'}">${estoqueCritico.length}</div>
-      <div class="rc-sub">${estoqueCritico.length>0?estoqueCritico.slice(0,2).map(c=>c.user_ig).join(', ')+(estoqueCritico.length>2?'...':''):'Tudo ok'}</div>
-    </div>
     <div class="resumo-card" onclick="goToTab('postagens')">
       <div class="rc-label" style="color:#60a5fa"><i class="ti ti-calendar-check"></i> Checks hoje</div>
       <div class="rc-val">${checksHoje.length}</div>
       <div class="rc-sub">${pendentesHoje.length} pendente${pendentesHoje.length!==1?'s':''}</div>
+    </div>
+    <div class="resumo-card" style="border-color:${estoqueCritico.length>0?'#3a1515':'#2a2a2a'}" onclick="goToTab('postagens')">
+      <div class="rc-label" style="color:${estoqueCritico.length>0?'#f87171':'#555'}"><i class="ti ti-alert-triangle"></i> Estoque crítico</div>
+      <div class="rc-val" style="color:${estoqueCritico.length>0?'#f87171':'#555'}">${estoqueCritico.length}</div>
+      <div class="rc-sub">${estoqueCritico.length>0?estoqueCritico.slice(0,2).map(c=>c.user_ig).join(', ')+(estoqueCritico.length>2?'...':''):'Tudo ok'}</div>
     </div>`;
 
   document.getElementById('hoje-resumo').innerHTML=`
     <div style="font-size:12px;font-weight:600;color:#888;margin-bottom:10px;display:flex;align-items:center;gap:6px;text-transform:uppercase;letter-spacing:.5px"><i class="ti ti-chart-bar" style="color:#60a5fa"></i> Visão geral — ${new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})}</div>
-    <div class="resumo-grid">${sitCards}${alertCards}</div>`;
+    <div class="resumo-grid">${alertCards}${sitCards}</div>`;
 }
 
 function goToTab(tabName){
@@ -1438,7 +1438,6 @@ async function delTodo(id,pessoa){
 
 
 async function removeNota(id){
-  if(!confirm('Remover esta nota?'))return;
   try{
     await api('notas_dia','DELETE',null,'?id=eq.'+id);
     NotasDia=NotasDia.filter(n=>n.id!==id);
