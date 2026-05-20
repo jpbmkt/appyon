@@ -561,34 +561,35 @@ async function updateEstoque(id,val){
   const ct=Contas.find(x=>x.id===id);if(ct)ct.estoque_videos=n;
 }
 function statsContas(){
-  const sitGroups=[
-    {label:'Total',color:'#aaa',filter:null},
-    {label:'Criar Perfil',color:'#fb923c',filter:'Criar Perfil'},
-    {label:'Aquecimento',color:'#888',filter:'Aquecimento'},
-    {label:'Crescimento',color:'#60a5fa',filter:'Crescimento'},
-    {label:'Venda',color:'#4ade80',filter:'Venda'},
-    {label:'SMS/Selfie',color:'#fbbf24',filter:'SMS e Análise Selfie'},
-    {label:'Banidas',color:'#f87171',filter:'__banidas__'},
+  const groups=[
+    {label:'Total',   color:'#aaa',   key:null},
+    {label:'Criar Perfil', color:'#fb923c', key:'Criar Perfil'},
+    {label:'Aquecimento',  color:'#888',    key:'Aquecimento'},
+    {label:'Crescimento',  color:'#60a5fa', key:'Crescimento'},
+    {label:'Venda',        color:'#4ade80', key:'Venda'},
+    {label:'SMS/Selfie',   color:'#fbbf24', key:'SMS e Análise Selfie'},
+    {label:'Banidas',      color:'#f87171', key:'__banidas__'},
   ];
-  document.getElementById('stats-ct').innerHTML=sitGroups.map(s=>{
-    const count=s.filter===null?Contas.length:s.filter==='__banidas__'?Contas.filter(x=>['Banida','Bugada'].includes(x.situacao)).length:Contas.filter(x=>x.situacao===s.filter).length;
-    const active=(s.filter===null&&cSit===''&&!cStatBanidas)||(s.filter==='__banidas__'&&cStatBanidas)||(cSit===s.filter&&s.filter!==null&&s.filter!=='__banidas__');
-    return`<div class="stat" style="cursor:pointer;transition:border-color .15s;border-color:${active?s.color:'#2a2a2a'}" onclick="statFilter(${JSON.stringify(s.filter)})">
-      <div class="sl" style="color:${s.color}">${s.label}</div>
+  document.getElementById('stats-ct').innerHTML=groups.map(g=>{
+    const count=g.key===null
+      ? Contas.length
+      : g.key==='__banidas__'
+        ? Contas.filter(x=>['Banida','Bugada'].includes(x.situacao)).length
+        : Contas.filter(x=>x.situacao===g.key).length;
+    const isActive=g.key===null
+      ? (cSit==='' || cSit===null)
+      : cSit===g.key;
+    return`<div class="stat" style="cursor:pointer;border-color:${isActive?g.color:'#2a2a2a'};box-shadow:${isActive?'0 0 0 1px '+g.color:'none'}" onclick="statFilter(${g.key===null?'null':JSON.stringify(g.key)})">
+      <div class="sl" style="color:${g.color}">${g.label}</div>
       <div class="sv">${count}</div>
     </div>`;
   }).join('');
 }
-let cStatBanidas=false;
-function statFilter(filter){
-  cStatBanidas=false;
-  if(filter===null){cSit='';}
-  else if(filter==='__banidas__'){
-    if(cStatBanidas===false&&(cSit==='Banida'||cSit==='Bugada')){cSit='';cStatBanidas=false;}
-    else{cStatBanidas=true;cSit='__banidas__';}
-  } else {
-    cSit=(cSit===filter)?'':filter;
-  }
+
+function statFilter(key){
+  if(key===null||key===cSit) cSit='';
+  else cSit=key;
+  statsContas();
   renderContas();
 }
 
@@ -624,10 +625,17 @@ function getColValues(key){
 function toggleFlt(key,e){
   e.stopPropagation();
   const drop=document.getElementById('flt-'+key);
+  if(!drop)return;
   const isOpen=drop.classList.contains('open');
   document.querySelectorAll('.flt-drop').forEach(d=>d.classList.remove('open'));
-  if(!isOpen){buildFlt(key);drop.classList.add('open');}
+  if(!isOpen){
+    buildFlt(key);
+    drop.classList.add('open');
+    // Prevent clicks inside dropdown from closing it
+    drop.onclick=ev=>ev.stopPropagation();
+  }
 }
+
 
 function buildFlt(key,search=''){
   const drop=document.getElementById('flt-'+key);
@@ -635,37 +643,58 @@ function buildFlt(key,search=''){
   let vals=getColValues(key);
   if(search)vals=vals.filter(v=>v.toLowerCase().includes(search.toLowerCase()));
   const sel=ctFilters[key];
-  const allChecked=sel.size===0;
-  drop.innerHTML=`<input class="flt-search" placeholder="Buscar..." value="${esc(search)}" oninput="buildFlt('${key}',this.value)">
-    <label class="flt-item"><input type="checkbox" ${allChecked?'checked':''} onchange="fltAll('${key}')"> <span style="color:#888">Todos</span></label>
-    ${vals.map(v=>{
-      const vesc=v.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
-      return`<label class="flt-item"><input type="checkbox" ${sel.has(v)?'checked':''} onchange="fltVal('${key}','${vesc}',this.checked)"> <span>${v||'(vazio)'}</span></label>`;
-    }).join('')}
-    <div style="border-top:1px solid #222;margin-top:4px;padding-top:4px">
-      <div class="flt-item" onclick="fltAll('${key}')" style="color:#ef4444;font-size:11px;cursor:pointer"><i class="ti ti-x" style="font-size:10px"></i> Limpar filtro</div>
-    </div>`;
-  const inp=drop.querySelector('.flt-search');
-  if(inp&&search){setTimeout(()=>{inp.focus();inp.setSelectionRange(search.length,search.length);},0);}
+
+  let html=`<input class="flt-search" placeholder="Buscar..." value="${esc(search)}">`
+    +`<label class="flt-item"><input type="checkbox" id="flt-all-${key}" ${sel.size===0?'checked':''}> <span style="color:#888">Todos</span></label>`
+    +vals.map((v,i)=>{
+      const id=`flt-${key}-${i}`;
+      const checked=sel.has(v)?'checked':'';
+      const label=v||'(vazio)';
+      return`<label class="flt-item"><input type="checkbox" id="${id}" ${checked}> <span>${label}</span></label>`;
+    }).join('')
+    +`<div style="border-top:1px solid #222;margin-top:4px;padding-top:4px"><div class="flt-item" id="flt-clear-${key}" style="color:#ef4444;font-size:11px;cursor:pointer"><i class="ti ti-x" style="font-size:10px"></i> Limpar filtro</div></div>`;
+
+  drop.innerHTML=html;
+
+  // Bind search input
+  drop.querySelector('.flt-search').addEventListener('input',function(){buildFlt(key,this.value);});
+
+  // Bind "Todos"
+  drop.querySelector(`#flt-all-${key}`).addEventListener('change',function(){
+    ctFilters[key].clear();
+    const btn=document.getElementById('fbt-'+key);
+    if(btn)btn.classList.remove('active');
+    buildFlt(key,search);renderContas();
+  });
+
+  // Bind individual checkboxes
+  vals.forEach((v,i)=>{
+    const cb=drop.querySelector(`#flt-${key}-${i}`);
+    if(!cb)return;
+    cb.addEventListener('change',function(){
+      if(this.checked)ctFilters[key].add(v);
+      else ctFilters[key].delete(v);
+      const btn=document.getElementById('fbt-'+key);
+      if(btn)btn.classList.toggle('active',ctFilters[key].size>0);
+      // update "Todos" checkbox
+      const allCb=drop.querySelector(`#flt-all-${key}`);
+      if(allCb)allCb.checked=ctFilters[key].size===0;
+      renderContas();
+    });
+  });
+
+  // Bind clear
+  const clearBtn=drop.querySelector(`#flt-clear-${key}`);
+  if(clearBtn)clearBtn.addEventListener('click',function(){
+    ctFilters[key].clear();
+    const btn=document.getElementById('fbt-'+key);
+    if(btn)btn.classList.remove('active');
+    buildFlt(key,search);renderContas();
+  });
 }
 
 
-function fltVal(key,val,checked){
-  if(checked)ctFilters[key].add(val);
-  else ctFilters[key].delete(val);
-  const btn=document.getElementById('fbt-'+key);
-  if(btn)btn.classList.toggle('active',ctFilters[key].size>0);
-  renderContas();
-  // rebuild to keep dropdown open and in sync
-  buildFlt(key);
-}
 
-function fltAll(key){
-  ctFilters[key].clear();
-  const btn=document.getElementById('fbt-'+key);
-  if(btn)btn.classList.remove('active');
-  buildFlt(key);renderContas();
-}
 
 
 document.addEventListener('click',()=>document.querySelectorAll('.flt-drop').forEach(d=>d.classList.remove('open')));
@@ -823,7 +852,6 @@ async function checkProgression(cid){
   const myChecks=Checks.filter(x=>x.conta_id===cid);
 
   if(ct.situacao==='Aquecimento'){
-    // count distinct days confirmed in last rolling period
     const dias=new Set(myChecks.map(x=>x.data)).size;
     if(dias>=2){
       await api('contas','PATCH',{situacao:'Crescimento',aquecimento_dias:dias},`?id=eq.${cid}`);
@@ -834,17 +862,18 @@ async function checkProgression(cid){
       ct.aquecimento_dias=dias;
     }
   } else if(ct.situacao==='Crescimento'){
-    const posts=myChecks.length;
-    if(posts>=10){
-      await api('contas','PATCH',{situacao:'Venda',crescimento_posts:posts},`?id=eq.${cid}`);
-      ct.situacao='Venda';ct.crescimento_posts=posts;
-      alert(`🎉 ${ct.user_ig} completou 10 posts → VENDA!`);
+    const totalVideos=myChecks.reduce((a,c)=>a+(Number(c.qtd_videos)||0),0);
+    if(totalVideos>=10){
+      await api('contas','PATCH',{situacao:'Venda',crescimento_posts:totalVideos},`?id=eq.${cid}`);
+      ct.situacao='Venda';ct.crescimento_posts=totalVideos;
+      alert(`🎉 ${ct.user_ig} atingiu 10 vídeos → VENDA!`);
     } else {
-      await api('contas','PATCH',{crescimento_posts:posts},`?id=eq.${cid}`);
-      ct.crescimento_posts=posts;
+      await api('contas','PATCH',{crescimento_posts:totalVideos},`?id=eq.${cid}`);
+      ct.crescimento_posts=totalVideos;
     }
   }
 }
+
 
 
 
@@ -854,15 +883,18 @@ async function saveQtdVideos(cid,data,val){
     await api('checks_postagem','PATCH',{qtd_videos:n},`?conta_id=eq.${cid}&data=eq.${data}`);
     const chk=Checks.find(x=>x.conta_id===cid&&x.data===data);
     if(chk)chk.qtd_videos=n;
+    await checkProgression(cid);
+    renderPostagens();
   }catch(e){console.error('saveQtdVideos',e);}
 }
+
 
 function renderPostagens(){
   const wk=weekDays();
   const dayNames=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
   const sections=[
     {sit:'Aquecimento',cls:'b-aquecimento',prog:'pf-aq',max:2,label:'dias de aquecimento',getCount:c=>new Set(Checks.filter(x=>x.conta_id===c.id).map(x=>x.data)).size},
-    {sit:'Crescimento',cls:'b-crescimento',prog:'pf-cr',max:10,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).length},
+    {sit:'Crescimento',cls:'b-crescimento',prog:'pf-cr',max:10,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).reduce((a,ch)=>a+(Number(ch.qtd_videos)||0),0)},
     {sit:'Venda',cls:'b-venda',prog:'pf-vd',max:null,label:'posts',getCount:c=>Checks.filter(x=>x.conta_id===c.id).length}
   ];
   const el=document.getElementById('post-sections');
@@ -884,7 +916,7 @@ function renderPostagens(){
         const dayLabel=d.slice(8);
         const chk=Checks.find(x=>x.conta_id===c.id&&x.data===d);
         const qtd=chk&&chk.qtd_videos!=null?chk.qtd_videos:'';
-        const showQtd=['Aquecimento','Crescimento'].includes(c.situacao);
+        const showQtd=['Crescimento','Venda'].includes(c.situacao);
         return`<td style="min-width:38px">
           <button class="chk${on?' on':''}${isToday?' today':''}" onclick="toggleCheck(${c.id},'${d}',this)" title="${d}">${on?'✓':''}</button>
           <div style="font-size:9px;color:#333;text-align:center;margin-top:2px">${dayLabel}</div>
