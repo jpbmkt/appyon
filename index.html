@@ -471,7 +471,11 @@ async function loadAll(){
     document.getElementById('cdot').className='dot';
     renderEmails();renderProxies();renderAvatares();renderContas();
     fillSelects();
-    renderHoje();
+    // Restaurar aba salva
+    const savedTab=sessionStorage.getItem('igm_tab')||'hoje';
+    const savedBtn=document.querySelector(`.nb[onclick*="${savedTab}"]`);
+    if(savedBtn)showTab(savedTab,savedBtn);
+    else renderHoje();
   }catch(e){document.getElementById('cdot').className='dot err';console.error(e);}
 }
 
@@ -480,6 +484,7 @@ function showTab(t,btn){
   document.querySelectorAll('.nb').forEach(x=>x.classList.remove('active'));
   document.getElementById('tab-'+t).classList.add('active');
   btn.classList.add('active');
+  sessionStorage.setItem('igm_tab',t);
   if(t==='postagens')renderPostagens();
   if(t==='hoje'){renderHoje();}
 }
