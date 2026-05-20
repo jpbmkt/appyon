@@ -290,7 +290,7 @@ td.iec select{cursor:pointer}
     <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-ct')">Cancelar</button>
   </div>
   <div class="toolbar" style="margin-top:-6px">
-    <button class="btn bg bsm" onclick="syncDriveContas()"><i class="ti ti-refresh"></i> Sincronizar estoque</button>
+    <button class="btn bg bsm" onclick="syncDriveContas()"><i class="ti ti-brand-google-drive"></i> Sincronizar estoque via Drive</button>
   </div>
   <div class="tw"><table id="tbl-ct">
     <thead><tr>
@@ -312,11 +312,14 @@ td.iec select{cursor:pointer}
 <div class="tab" id="tab-postagens">
   <div class="drive-panel">
     <i class="ti ti-brand-google-drive"></i>
-    <div class="drive-info">
-      <p>Sincronização automática com Google Drive</p>
-      <small>O estoque é atualizado ao clicar em "Sincronizar". Requer autenticação OAuth do Google.</small>
+    <div class="drive-info" style="flex:1">
+      <p style="margin-bottom:6px">Sincronização com Google Drive</p>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <input id="gclient-input" type="text" placeholder="Cole seu Google Client ID aqui..." style="font-size:12px;padding:5px 9px;border-radius:6px;border:1px solid #2a4a2a;background:#0f1f0f;color:#e8e8e8;width:320px;outline:none" oninput="saveGClient(this.value)">
+        <button class="btn bg bsm" onclick="syncDrive()"><i class="ti ti-refresh"></i> Sincronizar estoque</button>
+      </div>
+      <small style="margin-top:4px;display:block">Cole o Client ID do Google Cloud Console. Fica salvo no navegador.</small>
     </div>
-    <button class="btn bg bsm" onclick="syncDrive()"><i class="ti ti-refresh"></i> Sincronizar estoque</button>
   </div>
   <div id="post-sections"><div class="loading">Carregando...</div></div>
 </div>
@@ -327,8 +330,16 @@ td.iec select{cursor:pointer}
 const SB='https://celnqfvjucollfcuwxrn.supabase.co';
 const KEY='sb_publishable_NKRCmfTzf9giPR7v4eHLXg_jlZMci05';
 // Google OAuth — substitua pelo seu Client ID do Google Cloud Console
-const GCLIENT='975610078004-mb1qdpurmirmf15gndhj8d9k874v2mku.apps.googleusercontent.com';
+let GCLIENT=localStorage.getItem('igm_gclient')||'';
 let gToken=null;
+function saveGClient(val){
+  GCLIENT=val.trim();
+  localStorage.setItem('igm_gclient',GCLIENT);
+}
+function loadGClientInput(){
+  const inp=document.getElementById('gclient-input');
+  if(inp&&GCLIENT)inp.value=GCLIENT;
+}
 
 async function api(tbl,method='GET',body=null,qs=''){
   const h={'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+KEY};
@@ -341,7 +352,7 @@ async function api(tbl,method='GET',body=null,qs=''){
 }
 
 let Emails=[],Proxies=[],Avatares=[],Contas=[],Checks=[];
-let cQ='',cSit='';
+let cQ='',cSit='',eMailFilter='',proxyFilter='';
 const today=new Date().toISOString().slice(0,10);
 
 // days of current week Mon-Sun
@@ -365,6 +376,7 @@ async function loadAll(){
     document.getElementById('cdot').className='dot';
     renderEmails();renderProxies();renderAvatares();renderContas();
     fillSelects();
+    loadGClientInput();
   }catch(e){document.getElementById('cdot').className='dot err';console.error(e);}
 }
 
@@ -429,7 +441,8 @@ async function bulkEmails(){
 }
 async function delEmail(id){if(!confirm('Excluir?'))return;await api('emails','DELETE',null,'?id=eq.'+id);Emails=Emails.filter(x=>x.id!==id);renderEmails();}
 function renderEmails(q=''){
-  const f=Emails.filter(x=>!q||(x.email||'').toLowerCase().includes(q.toLowerCase()));
+  let f=Emails.filter(x=>!q||(x.email||'').toLowerCase().includes(q.toLowerCase()));
+  if(eMailFilter)f=f.filter(x=>x.status===eMailFilter);
   const tb=document.getElementById('tb-em');
   if(!f.length){tb.innerHTML=`<tr><td colspan="7" class="empty">Nenhum e-mail cadastrado</td></tr>`;return statsEmails();}
   tb.innerHTML=f.map(e=>`<tr>
@@ -445,11 +458,27 @@ function renderEmails(q=''){
   statsEmails();
 }
 function statsEmails(){
-  document.getElementById('stats-em').innerHTML=`
-    <div class="stat"><div class="sl">Total</div><div class="sv">${Emails.length}</div></div>
-    <div class="stat"><div class="sl">Disponíveis</div><div class="sv">${Emails.filter(x=>x.status==='Disponível').length}</div></div>
-    <div class="stat"><div class="sl">Em uso</div><div class="sv">${Emails.filter(x=>x.status==='Em uso').length}</div></div>
-    <div class="stat"><div class="sl">Bloqueados</div><div class="sv">${Emails.filter(x=>x.status==='Bloqueado').length}</div></div>`;
+  const groups=[
+    {label:'Total',      color:'#aaa',    key:''},
+    {label:'Disponíveis',color:'#4ade80', key:'Disponível'},
+    {label:'Em uso',     color:'#fb923c', key:'Em uso'},
+    {label:'Bloqueados', color:'#f87171', key:'Bloqueado'},
+  ];
+  const el=document.getElementById('stats-em');
+  el.innerHTML=groups.map(g=>{
+    const count=g.key===''?Emails.length:Emails.filter(x=>x.status===g.key).length;
+    const isActive=eMailFilter===g.key;
+    return`<div class="stat stat-clickable" data-key="${g.key}" style="cursor:pointer;border-color:${isActive?g.color:'#2a2a2a'};box-shadow:${isActive?'0 0 0 1px '+g.color:'none'}">
+      <div class="sl" style="color:${g.color}">${g.label}</div>
+      <div class="sv">${count}</div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.stat-clickable').forEach(div=>{
+    div.addEventListener('click',()=>{
+      eMailFilter=(eMailFilter===div.dataset.key)?'':div.dataset.key;
+      renderEmails();
+    });
+  });
 }
 
 // ── PROXIES ──
@@ -474,7 +503,8 @@ async function bulkProxies(){
 }
 async function delProxy(id){if(!confirm('Excluir?'))return;await api('proxies','DELETE',null,'?id=eq.'+id);Proxies=Proxies.filter(x=>x.id!==id);renderProxies();fillSelects();}
 function renderProxies(q=''){
-  const f=Proxies.filter(x=>!q||((x.ip||'')+(x.numero_pedido||'')).toLowerCase().includes(q.toLowerCase()));
+  let f=Proxies.filter(x=>!q||((x.ip||'')+(x.numero_pedido||'')).toLowerCase().includes(q.toLowerCase()));
+  if(proxyFilter)f=f.filter(x=>x.status===proxyFilter);
   const contaUsing=ip=>{const c=Contas.find(x=>x.proxy===ip);return c?`<span style="color:#60a5fa">${esc(c.user_ig)}</span>`:`<span style="color:#333">—</span>`;};
   const tb=document.getElementById('tb-px');
   if(!f.length){tb.innerHTML=`<tr><td colspan="9" class="empty">Nenhuma proxy</td></tr>`;return statsProxies();}
@@ -493,10 +523,27 @@ function renderProxies(q=''){
   statsProxies();
 }
 function statsProxies(){
-  document.getElementById('stats-px').innerHTML=`
-    <div class="stat"><div class="sl">Total</div><div class="sv">${Proxies.length}</div></div>
-    <div class="stat"><div class="sl">Disponíveis</div><div class="sv">${Proxies.filter(x=>x.status==='Disponível').length}</div></div>
-    <div class="stat"><div class="sl">Em uso</div><div class="sv">${Proxies.filter(x=>x.status==='Em uso').length}</div></div>`;
+  const groups=[
+    {label:'Total',      color:'#aaa',    key:''},
+    {label:'Disponíveis',color:'#4ade80', key:'Disponível'},
+    {label:'Em uso',     color:'#fb923c', key:'Em uso'},
+    {label:'Inativas',   color:'#555',    key:'Inativo'},
+  ];
+  const el=document.getElementById('stats-px');
+  el.innerHTML=groups.map(g=>{
+    const count=g.key===''?Proxies.length:Proxies.filter(x=>x.status===g.key).length;
+    const isActive=proxyFilter===g.key;
+    return`<div class="stat stat-clickable" data-key="${g.key}" style="cursor:pointer;border-color:${isActive?g.color:'#2a2a2a'};box-shadow:${isActive?'0 0 0 1px '+g.color:'none'}">
+      <div class="sl" style="color:${g.color}">${g.label}</div>
+      <div class="sv">${count}</div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.stat-clickable').forEach(div=>{
+    div.addEventListener('click',()=>{
+      proxyFilter=(proxyFilter===div.dataset.key)?'':div.dataset.key;
+      renderProxies();
+    });
+  });
 }
 
 // ── AVATARES ──
@@ -897,7 +944,7 @@ function renderPostagens(){
   const sections=[
     {sit:'Aquecimento',cls:'b-aquecimento',prog:'pf-aq',max:2,label:'dias de aquecimento',getCount:c=>new Set(Checks.filter(x=>x.conta_id===c.id).map(x=>x.data)).size},
     {sit:'Crescimento',cls:'b-crescimento',prog:'pf-cr',max:10,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).reduce((a,ch)=>a+(Number(ch.qtd_videos)||0),0)},
-    {sit:'Venda',cls:'b-venda',prog:'pf-vd',max:null,label:'posts',getCount:c=>Checks.filter(x=>x.conta_id===c.id).length}
+    {sit:'Venda',cls:'b-venda',prog:'pf-vd',max:null,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).reduce((a,ch)=>a+(Number(ch.qtd_videos)||0),0)}
   ];
   const el=document.getElementById('post-sections');
   const ativas=Contas.filter(x=>['Aquecimento','Crescimento','Venda'].includes(x.situacao));
@@ -998,8 +1045,8 @@ function initGoogleAuth(cb){
   } else doGoogleAuth(cb);
 }
 function doGoogleAuth(cb){
-  if(GCLIENT==='SEU_GOOGLE_CLIENT_ID.apps.googleusercontent.com'){
-    alert('Para usar a sincronização com Drive, configure o Google Client ID no arquivo index.html.\n\nVeja as instruções no README.');
+  if(!GCLIENT||GCLIENT.length<10){
+    alert('Cole seu Google Client ID no campo acima antes de sincronizar.');
     return;
   }
   const client=google.accounts.oauth2.initTokenClient({
