@@ -64,10 +64,14 @@ select.ie{cursor:pointer}
 
 /* BADGES */
 .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:500}
-.ba{background:#2a1f0a;color:#fbbf24} /* aquecimento */
-.bc{background:#14291a;color:#4ade80} /* crescimento */
-.bv{background:#0f1f2a;color:#60a5fa} /* venda */
-.bdi{background:#1e1e1e;color:#555}   /* outros */
+.b-criar{background:#3a1f00;color:#fb923c}
+.b-aquecimento{background:#222;color:#888}
+.b-crescimento{background:#0f1f2a;color:#60a5fa}
+.b-venda{background:#14291a;color:#4ade80}
+.b-sms{background:#2a2700;color:#fbbf24}
+.b-banida{background:#2a0f0f;color:#f87171}
+.b-bugada{background:#2a0f0f;color:#f87171}
+.bdi{background:#1e1e1e;color:#555}
 .bdis{background:#14291a;color:#4ade80}
 .buso{background:#2a1f0a;color:#fb923c}
 .bblq{background:#2a0f0f;color:#f87171}
@@ -106,6 +110,22 @@ select.ie{cursor:pointer}
 .loading{text-align:center;padding:28px;color:#444;font-size:12px}
 .mono{font-family:ui-monospace,monospace;font-size:11px;color:#666}
 .tip{font-size:11px;color:#555;margin-bottom:10px}
+/* FILTER DROPDOWN */
+.flt-wrap{position:relative;display:inline-block}
+.flt-btn{padding:2px 6px;border-radius:4px;border:1px solid #2a2a2a;background:transparent;cursor:pointer;font-size:11px;color:#555;display:inline-flex;align-items:center;gap:3px}
+.flt-btn.active{color:#60a5fa;border-color:#60a5fa}
+.flt-btn:hover{background:#1a1a1a}
+.flt-drop{display:none;position:absolute;top:100%;left:0;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;min-width:160px;z-index:300;padding:6px;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.flt-drop.open{display:block}
+.flt-item{display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:5px;cursor:pointer;font-size:12px;color:#bbb}
+.flt-item:hover{background:#242424}
+.flt-item input[type=checkbox]{accent-color:#60a5fa;width:13px;height:13px;cursor:pointer}
+.flt-search{width:100%;background:#111;border:1px solid #252525;border-radius:5px;color:#e8e8e8;font-size:12px;padding:4px 8px;margin-bottom:6px;outline:none}
+/* INLINE EDIT TD */
+td.iec{padding:0!important}
+td.iec input,td.iec select{background:transparent;border:none;color:#e8e8e8;font-size:12px;padding:6px 8px;width:100%;outline:none;cursor:pointer}
+td.iec input:focus,td.iec select:focus{background:#1e1e1e;border-bottom:1px solid #444}
+td.iec select{cursor:pointer}
 
 /* DRIVE PANEL */
 .drive-panel{background:#111;border:1px solid #1e3a1e;border-radius:9px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
@@ -236,7 +256,7 @@ select.ie{cursor:pointer}
     <input type="text" placeholder="Buscar conta..." oninput="filterContas('q',this.value)">
     <select onchange="filterContas('sit',this.value)">
       <option value="">Todas as situações</option>
-      <option>Criado</option><option>Aquecimento</option><option>Crescimento</option><option>Venda</option><option>Inativo</option><option>Suspenso</option>
+      <option>Criar Perfil</option><option>Aquecimento</option><option>Crescimento</option><option>Venda</option><option>SMS e Análise Selfie</option><option>Banida</option><option>Bugada</option>
     </select>
     <button class="btn bp" onclick="tog('padd-ct')"><i class="ti ti-plus"></i> Adicionar</button>
   </div>
@@ -247,7 +267,7 @@ select.ie{cursor:pointer}
       <div class="f"><label>E-mail</label><input id="ct-e" placeholder="conta@gmail.com"></div>
       <div class="f"><label>Senha e-mail</label><input id="ct-se" placeholder="senha123"></div>
       <div class="f"><label>Dispositivo</label><input id="ct-d" placeholder="iPhone 14 / PC"></div>
-      <div class="f"><label>Situação</label><select id="ct-sit"><option>Criado</option><option>Aquecimento</option><option>Crescimento</option><option>Venda</option><option>Inativo</option><option>Suspenso</option></select></div>
+      <div class="f"><label>Situação</label><select id="ct-sit"><option>Criar Perfil</option><option>Aquecimento</option><option>Crescimento</option><option>Venda</option><option>SMS e Análise Selfie</option><option>Banida</option><option>Bugada</option></select></div>
       <div class="f"><label>Proxy</label><select id="ct-px"><option value="">— sem proxy —</option></select></div>
       <div class="f"><label>Avatar</label><select id="ct-av"><option value="">— sem avatar —</option></select></div>
       <div class="f"><label>Voz</label><input id="ct-vz" placeholder="Voz jovem feminina..."></div>
@@ -266,16 +286,16 @@ select.ie{cursor:pointer}
   <div class="toolbar" style="margin-top:-6px">
     <button class="btn bg bsm" onclick="syncDriveContas()"><i class="ti ti-refresh"></i> Sincronizar estoque</button>
   </div>
-  <div class="tw"><table>
+  <div class="tw"><table id="tbl-ct">
     <thead><tr>
-      <th style="min-width:130px">User IG</th>
-      <th style="min-width:110px">Dispositivo</th>
-      <th style="min-width:90px">Situação</th>
-      <th style="min-width:150px">Perfil Facebook</th>
-      <th style="width:55px">FB Page</th>
-      <th style="width:55px">MB Suite</th>
-      <th style="width:55px">Automação</th>
-      <th style="min-width:90px">Estoque vídeos</th>
+      <th style="min-width:140px"><div style="display:flex;align-items:center;gap:4px">User IG<div class="flt-wrap"><button class="flt-btn" id="fbt-user" onclick="toggleFlt('user',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-user"></div></div></div></th>
+      <th style="min-width:110px"><div style="display:flex;align-items:center;gap:4px">Dispositivo<div class="flt-wrap"><button class="flt-btn" id="fbt-disp" onclick="toggleFlt('disp',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-disp"></div></div></div></th>
+      <th style="min-width:110px"><div style="display:flex;align-items:center;gap:4px">Situação<div class="flt-wrap"><button class="flt-btn" id="fbt-sit" onclick="toggleFlt('sit',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-sit"></div></div></div></th>
+      <th style="min-width:140px">Perfil Facebook</th>
+      <th style="width:65px"><div style="display:flex;align-items:center;gap:4px">FB Page<div class="flt-wrap"><button class="flt-btn" id="fbt-fb" onclick="toggleFlt('fb',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-fb"></div></div></div></th>
+      <th style="width:65px"><div style="display:flex;align-items:center;gap:4px">MB Suite<div class="flt-wrap"><button class="flt-btn" id="fbt-mb" onclick="toggleFlt('mb',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-mb"></div></div></div></th>
+      <th style="width:65px"><div style="display:flex;align-items:center;gap:4px">Automação<div class="flt-wrap"><button class="flt-btn" id="fbt-auto" onclick="toggleFlt('auto',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-auto"></div></div></div></th>
+      <th style="min-width:90px">Estoque</th>
       <th style="width:40px"></th>
     </tr></thead>
     <tbody id="tb-ct"><tr><td colspan="9" class="loading">Carregando...</td></tr></tbody>
@@ -550,35 +570,115 @@ async function addConta(){
 }
 async function delConta(id){if(!confirm('Excluir conta e todos os dados?'))return;await api('contas','DELETE',null,'?id=eq.'+id);Contas=Contas.filter(x=>x.id!==id);Checks=Checks.filter(x=>x.conta_id!==id);renderContas();renderProxies();}
 
+function sitBadge(s){
+  const cls={'Criar Perfil':'b-criar','Aquecimento':'b-aquecimento','Crescimento':'b-crescimento','Venda':'b-venda','SMS e Análise Selfie':'b-sms','Banida':'b-banida','Bugada':'b-bugada'}[s]||'bdi';
+  return`<span class="badge ${cls}">${s}</span>`;
+}
+
+// ── FILTROS MULTI-SELECT ──
+const ctFilters={user:new Set(),disp:new Set(),sit:new Set(),fb:new Set(),mb:new Set(),auto:new Set()};
+
+function getColValues(key){
+  const map={user:c=>c.user_ig||'',disp:c=>c.dispositivo||'',sit:c=>c.situacao||'',fb:c=>c.fb_page_status||'Não',mb:c=>c.mb_suite||'Não',auto:c=>c.automacao||'Não'};
+  return [...new Set(Contas.map(map[key]).filter(Boolean))].sort();
+}
+
+function toggleFlt(key,e){
+  e.stopPropagation();
+  const drop=document.getElementById('flt-'+key);
+  const isOpen=drop.classList.contains('open');
+  document.querySelectorAll('.flt-drop').forEach(d=>d.classList.remove('open'));
+  if(!isOpen){
+    buildFlt(key);
+    drop.classList.add('open');
+  }
+}
+
+function buildFlt(key){
+  const drop=document.getElementById('flt-'+key);
+  const vals=getColValues(key);
+  const sel=ctFilters[key];
+  drop.innerHTML=`<input class="flt-search" placeholder="Buscar..." oninput="buildFlt('${key}',this.value)">
+    <div class="flt-item" onclick="toggleFltAll('${key}')"><input type="checkbox" ${sel.size===0?'checked':''}> <span>Todos</span></div>
+    ${vals.map(v=>`<div class="flt-item" onclick="toggleFltVal('${key}','${v.replace(/'/g,"\\'")}',this)"><input type="checkbox" ${sel.has(v)?'checked':''}> <span>${v}</span></div>`).join('')}
+    <div style="border-top:1px solid #222;margin-top:4px;padding-top:4px">
+      <div class="flt-item" onclick="clearFlt('${key}')" style="color:#ef4444;font-size:11px"><i class="ti ti-x" style="font-size:10px"></i> Limpar filtro</div>
+    </div>`;
+}
+
+function toggleFltVal(key,val,div){
+  const cb=div.querySelector('input');
+  if(ctFilters[key].has(val)){ctFilters[key].delete(val);cb.checked=false;}
+  else{ctFilters[key].add(val);cb.checked=true;}
+  document.getElementById('fbt-'+{user:'user',disp:'disp',sit:'sit',fb:'fb',mb:'mb',auto:'auto'}[key]).classList.toggle('active',ctFilters[key].size>0);
+  renderContas();
+}
+function toggleFltAll(key){
+  ctFilters[key].clear();
+  document.getElementById('fbt-'+key).classList.remove('active');
+  buildFlt(key);renderContas();
+}
+function clearFlt(key){toggleFltAll(key);}
+
+document.addEventListener('click',()=>document.querySelectorAll('.flt-drop').forEach(d=>d.classList.remove('open')));
+
 function filterContas(k,v){if(k==='q')cQ=v;else cSit=v;renderContas();}
+
+function applyCtFilters(f){
+  const keys=['user','disp','sit','fb','mb','auto'];
+  const fns={user:c=>c.user_ig||'',disp:c=>c.dispositivo||'',sit:c=>c.situacao||'',fb:c=>c.fb_page_status||'Não',mb:c=>c.mb_suite||'Não',auto:c=>c.automacao||'Não'};
+  keys.forEach(k=>{if(ctFilters[k].size>0)f=f.filter(c=>ctFilters[k].has(fns[k](c)));});
+  return f;
+}
+
 function renderContas(){
   let f=Contas;
   if(cQ)f=f.filter(x=>((x.user_ig||'')+(x.email||'')).toLowerCase().includes(cQ.toLowerCase()));
   if(cSit)f=f.filter(x=>x.situacao===cSit);
+  f=applyCtFilters(f);
   const tb=document.getElementById('tb-ct');
   if(!f.length){tb.innerHTML=`<tr><td colspan="9" class="empty">Nenhuma conta</td></tr>`;return statsContas();}
-  tb.innerHTML=f.map(c=>`<tr style="cursor:pointer">
-    <td onclick="openContaModal(${c.id})"><strong style="color:#60a5fa">${esc(c.user_ig)}</strong> <i class="ti ti-pencil" style="font-size:10px;color:#444"></i></td>
-    <td style="color:#888">${esc(c.dispositivo||'—')}</td>
-    <td>${ieSel(c.situacao,['Criado','Aquecimento','Crescimento','Venda','Inativo','Suspenso'],`(async(val)=>{await patch('contas',${c.id},'situacao',val);const ct=Contas.find(x=>x.id===${c.id});if(ct)ct.situacao=val;renderContas();})(val)`)}</td>
-    <td>${c.fb_perfil?`<a href="${esc(c.fb_perfil)}" target="_blank" style="color:#60a5fa;font-size:11px"><i class="ti ti-external-link"></i> Ver perfil</a>`:'<span style="color:#333">—</span>'}</td>
-    <td>${yn(c.fb_page_status)}</td>
-    <td>${yn(c.mb_suite)}</td>
-    <td>${yn(c.automacao)}</td>
+
+  const SIT_OPTS=['Criar Perfil','Aquecimento','Crescimento','Venda','SMS e Análise Selfie','Banida','Bugada'];
+  const YN_OPTS=['Não','Sim'];
+
+  tb.innerHTML=f.map(c=>`<tr>
+    <td class="iec" onclick="openContaModal(${c.id})" style="cursor:pointer"><strong style="color:#60a5fa;padding:6px 8px;display:block">${esc(c.user_ig)} <i class="ti ti-pencil" style="font-size:9px;color:#444"></i></strong></td>
+    <td class="iec"><input value="${esc(c.dispositivo)}" placeholder="—" onblur="ctPatch(${c.id},'dispositivo',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></td>
+    <td class="iec"><select onchange="ctPatch(${c.id},'situacao',this.value);renderContas()">
+      ${SIT_OPTS.map(o=>`<option${o===c.situacao?' selected':''}>${o}</option>`).join('')}
+    </select></td>
+    <td class="iec"><input value="${esc(c.fb_perfil)}" placeholder="—" onblur="ctPatch(${c.id},'fb_perfil',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></td>
+    <td class="iec"><select onchange="ctPatch(${c.id},'fb_page_status',this.value)">
+      ${YN_OPTS.map(o=>`<option${o===(c.fb_page_status||'Não')?' selected':''}>${o}</option>`).join('')}
+    </select></td>
+    <td class="iec"><select onchange="ctPatch(${c.id},'mb_suite',this.value)">
+      ${YN_OPTS.map(o=>`<option${o===(c.mb_suite||'Não')?' selected':''}>${o}</option>`).join('')}
+    </select></td>
+    <td class="iec"><select onchange="ctPatch(${c.id},'automacao',this.value)">
+      ${YN_OPTS.map(o=>`<option${o===(c.automacao||'Não')?' selected':''}>${o}</option>`).join('')}
+    </select></td>
     <td>${stockEl(c.estoque_videos)}<br><input type="number" min="0" value="${Number(c.estoque_videos||0)}" style="width:52px;background:#111;border:1px solid #222;border-radius:4px;color:#888;font-size:11px;padding:2px 4px;margin-top:3px" onclick="event.stopPropagation()" onblur="updateEstoque(${c.id},this.value)" onkeydown="if(event.key==='Enter'){event.stopPropagation();updateEstoque(${c.id},this.value);}"></td>
     <td><button class="btn bd bsm" onclick="event.stopPropagation();delConta(${c.id})"><i class="ti ti-trash"></i></button></td>
   </tr>`).join('');
-  bindTable('tb-ct');
   statsContas();
+}
+
+async function ctPatch(id,field,value){
+  await patch('contas',id,field,value||null);
+  const ct=Contas.find(x=>x.id===id);
+  if(ct)ct[field]=value;
+  if(field==='situacao')renderPostagens&&renderPostagens();
 }
 
 function openContaModal(id){
   const c=Contas.find(x=>x.id===id);if(!c)return;
   document.getElementById('modal-bg').style.display='flex';
+  const SIT_OPTS=['Criar Perfil','Aquecimento','Crescimento','Venda','SMS e Análise Selfie','Banida','Bugada'];
   document.getElementById('modal-inner').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <h3 style="color:#fff;font-size:15px"><i class="ti ti-brand-instagram" style="color:#E1306C;margin-right:8px"></i>${esc(c.user_ig)}</h3>
-      <button onclick="closeModal()" style="background:transparent;border:none;color:#666;font-size:20px;cursor:pointer;line-height:1">×</button>
+      <button onclick="closeModal()" style="background:transparent;border:none;color:#666;font-size:22px;cursor:pointer;line-height:1">×</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
       ${mField(id,'User IG','user_ig',c.user_ig,'text')}
@@ -586,7 +686,7 @@ function openContaModal(id){
       ${mField(id,'E-mail','email',c.email,'text')}
       ${mField(id,'Senha e-mail','senha_email',c.senha_email,'password')}
       ${mField(id,'Dispositivo','dispositivo',c.dispositivo,'text')}
-      ${mFieldSel(id,'Situação','situacao',c.situacao,['Criado','Aquecimento','Crescimento','Venda','Inativo','Suspenso'])}
+      ${mFieldSel(id,'Situação','situacao',c.situacao,SIT_OPTS)}
       ${mFieldSel(id,'Proxy','proxy',c.proxy||'',[''].concat(Proxies.map(p=>p.ip)),['— sem proxy —'].concat(Proxies.map(p=>p.ip+(p.numero_pedido?' ('+p.numero_pedido+')':''))))}
       ${mFieldSel(id,'Avatar','avatar_id',String(c.avatar_id||''),[''].concat(Avatares.map(a=>String(a.id))),['— sem avatar —'].concat(Avatares.map(a=>a.nome)),true)}
       ${mField(id,'Voz','voz',c.voz,'text')}
@@ -606,10 +706,7 @@ function openContaModal(id){
 }
 
 function mField(cid,label,field,val,type){
-  const isNum=(field==='avatar_id');
-  const onchange=isNum
-    ? `(async()=>{const nv=this.value?Number(this.value):null;await patch('contas',${cid},'${field}',nv);const ct=Contas.find(x=>x.id===${cid});if(ct)ct['${field}']=nv;renderContas();renderAvatares();})()`
-    : `(async()=>{await patch('contas',${cid},'${field}',this.value||null);const ct=Contas.find(x=>x.id===${cid});if(ct)ct['${field}']=this.value;renderContas();renderProxies();renderAvatares();})()`;
+  const onchange=`(async()=>{await patch('contas',${cid},'${field}',this.value||null);const ct=Contas.find(x=>x.id===${cid});if(ct)ct['${field}']=this.value;renderContas();renderProxies();renderAvatares();})()`;
   return`<div class="f"><label>${label}</label><input type="${type||'text'}" value="${esc(val)}" placeholder="—" style="background:#111;border:1px solid #252525;border-radius:7px;color:#e8e8e8;font-size:13px;padding:6px 9px;width:100%;outline:none" onblur="${onchange}" onkeydown="if(event.key==='Enter'){${onchange}}"></div>`;
 }
 function mFieldSel(cid,label,field,val,opts,labels,isNum){
@@ -669,7 +766,7 @@ async function checkProgression(cid){
     if(dias>=2){
       await api('contas','PATCH',{situacao:'Crescimento',aquecimento_dias:dias},`?id=eq.${cid}`);
       ct.situacao='Crescimento';ct.aquecimento_dias=dias;
-      alert(`✅ Conta ${ct.user_ig} completou 2 dias de aquecimento → CRESCIMENTO!`);
+      alert(`✅ ${ct.user_ig} completou aquecimento → CRESCIMENTO!`);
     } else {
       await api('contas','PATCH',{aquecimento_dias:dias},`?id=eq.${cid}`);
       ct.aquecimento_dias=dias;
@@ -679,7 +776,7 @@ async function checkProgression(cid){
     if(posts>=10){
       await api('contas','PATCH',{situacao:'Venda',crescimento_posts:posts},`?id=eq.${cid}`);
       ct.situacao='Venda';ct.crescimento_posts=posts;
-      alert(`🎉 Conta ${ct.user_ig} completou 10 posts de crescimento → VENDA!`);
+      alert(`🎉 ${ct.user_ig} completou 10 posts → VENDA!`);
     } else {
       await api('contas','PATCH',{crescimento_posts:posts},`?id=eq.${cid}`);
       ct.crescimento_posts=posts;
@@ -698,12 +795,13 @@ function renderPostagens(){
   const wk=weekDays();
   const dayNames=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
   const sections=[
-    {sit:'Aquecimento',cls:'ba',prog:'pf-aq',max:2,label:'dias de aquecimento',getCount:c=>new Set(Checks.filter(x=>x.conta_id===c.id).map(x=>x.data)).size},
-    {sit:'Crescimento',cls:'bc',prog:'pf-cr',max:10,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).length},
-    {sit:'Venda',cls:'bv',prog:'pf-vd',max:null,label:'posts',getCount:c=>Checks.filter(x=>x.conta_id===c.id).length}
+    {sit:'Aquecimento',cls:'b-aquecimento',prog:'pf-aq',max:2,label:'dias de aquecimento',getCount:c=>new Set(Checks.filter(x=>x.conta_id===c.id).map(x=>x.data)).size},
+    {sit:'Crescimento',cls:'b-crescimento',prog:'pf-cr',max:10,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).length},
+    {sit:'Venda',cls:'b-venda',prog:'pf-vd',max:null,label:'posts',getCount:c=>Checks.filter(x=>x.conta_id===c.id).length}
   ];
   const el=document.getElementById('post-sections');
   const ativas=Contas.filter(x=>['Aquecimento','Crescimento','Venda'].includes(x.situacao));
+  if(!ativas.length){el.innerHTML=`<div class='empty'>Nenhuma conta em Aquecimento, Crescimento ou Venda.</div>`;return;}
   if(!ativas.length){el.innerHTML=`<div class="empty">Nenhuma conta ativa (Aquecimento, Crescimento ou Venda).</div>`;return;}
 
   el.innerHTML=sections.map(sec=>{
