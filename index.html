@@ -1366,7 +1366,15 @@ function renderPostagens(){
       </td>`;
 
       return`<tr>
-        <td><strong style="color:#fff;font-size:12px">${esc(c.user_ig)}</strong>${avName?`<div style="font-size:10px;color:#555">${esc(avName)}</div>`:''}</td>
+        <td style="padding:6px 8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            ${avatarThumb(c.avatar_id,c.user_ig)}
+            <div style="min-width:0">
+              <div style="font-size:12px;font-weight:500;color:#e8e8e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.fb_perfil||c.user_ig)}</div>
+              <div style="font-size:10px;color:#444;margin-top:1px">@${esc(c.user_ig)}</div>
+            </div>
+          </div>
+        </td>
         <td style="color:#666;font-size:11px">${esc(c.dispositivo||'—')}</td>
         ${estoqueCell}
         <td>${progHtml}</td>
