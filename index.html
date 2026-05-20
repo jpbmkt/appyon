@@ -164,6 +164,14 @@ td.iec select{cursor:pointer}
 .state-empty{color:#2a2a2a}
 .state-alert{color:#fbbf24;border-color:#3a3000;background:#1a1500}
 .state-ok{color:#4ade80;border-color:#143a14;background:#0a1f0a}
+.planilha-table{border-collapse:collapse;font-size:12px;min-width:max-content;width:100%}
+.planilha-table th{background:#1a1a1a;padding:7px 10px;text-align:left;font-size:10px;color:#555;border-bottom:1px solid #222;border-right:1px solid #1e1e1e;white-space:nowrap;text-transform:uppercase;letter-spacing:.4px;position:sticky;top:0;z-index:10}
+.planilha-table td{padding:0;border-bottom:1px solid #1a1a1a;border-right:1px solid #1a1a1a;vertical-align:middle}
+.planilha-table td input,.planilha-table td select{width:100%;background:transparent;border:none;color:#ccc;font-size:12px;padding:6px 8px;outline:none;min-width:80px}
+.planilha-table td input:focus,.planilha-table td select:focus{background:#1e2a1e;color:#fff}
+.planilha-table tr:hover td{background:#111}
+.planilha-table tr:last-child td{border-bottom:none}
+.pl-idx{background:#1a1a1a;color:#444;font-size:10px;text-align:center;padding:6px 6px;border-right:1px solid #222;width:28px;user-select:none}
 .todo-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#111;border:1px solid #1e1e1e;border-radius:7px;margin-bottom:5px}
 .todo-item input[type=checkbox]{accent-color:#4ade80;width:14px;height:14px;cursor:pointer;flex-shrink:0}
 .todo-item label{font-size:12px;color:#ccc;flex:1;cursor:pointer;line-height:1.4}
@@ -362,7 +370,7 @@ td.iec select{cursor:pointer}
       <div class="f"><label>Automação</label><select id="ct-au"><option value="">— Vazio</option><option value="alerta">⚠ Alerta</option><option value="ok">✓ OK</option></select></div>
       <div class="f"><label>FB Page criada</label><select id="ct-fp"><option value="">— Vazio</option><option value="alerta">⚠ Alerta</option><option value="ok">✓ OK</option></select></div>
       <div class="f"><label>Página Facebook</label><input id="ct-fbpg" placeholder="URL da página"></div>
-      <div class="f"><label>Perfil Facebook</label><input id="ct-fbpr" placeholder="URL do perfil"></div>
+      <div class="f"><label>Conta Facebook</label><input id="ct-fbpr" placeholder="URL do perfil"></div>
       <div class="f"><label>Link venda IG</label><input id="ct-lig" placeholder="https://..."></div>
       <div class="f"><label>Link venda FB</label><input id="ct-lfb" placeholder="https://..."></div>
       <div class="f"><label>ID pasta Drive</label><input id="ct-drv" placeholder="1aBcDeFgHiJkLmN..."></div>
@@ -370,15 +378,20 @@ td.iec select{cursor:pointer}
     <button class="btn bp bsm" onclick="addConta()">Salvar</button>
     <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-ct')">Cancelar</button>
   </div>
-  <div class="toolbar" style="margin-top:-6px">
+  <div class="toolbar" style="margin-top:-6px;margin-bottom:10px">
     <button class="btn bg bsm" id="btn-sync-drive-ct" onclick="syncDrive()"><i class="ti ti-brand-google-drive"></i> Sincronizar estoque via Drive</button>
+    <button class="btn bsm" id="btn-planilha" onclick="togglePlanilha()" style="border-color:#a78bfa;color:#a78bfa"><i class="ti ti-table"></i> Planilha</button>
+  </div>
+  <!-- PLANILHA -->
+  <div id="planilha-wrap" style="display:none;margin-bottom:16px;overflow-x:auto;border-radius:9px;border:1px solid #2a2a2a">
+    <div id="planilha-inner"></div>
   </div>
   <div class="tw"><table id="tbl-ct">
     <thead><tr>
-      <th style="min-width:140px"><div class="th-inner">User IG<div class="flt-wrap"><button class="flt-btn" id="fbt-user" onclick="toggleFlt('user',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-user"></div></div><button class="sort-btn" onclick="sortContas('user_ig',event)" id="srt-user_ig" title="Ordenar">↕</button></div></th>
+      <th style="min-width:140px"><div class="th-inner">Perfil<div class="flt-wrap"><button class="flt-btn" id="fbt-user" onclick="toggleFlt('user',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-user"></div></div><button class="sort-btn" onclick="sortContas('user_ig',event)" id="srt-user_ig" title="Ordenar">↕</button></div></th>
       <th style="min-width:110px"><div class="th-inner">Dispositivo<div class="flt-wrap"><button class="flt-btn" id="fbt-disp" onclick="toggleFlt('disp',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-disp"></div></div><button class="sort-btn" onclick="sortContas('dispositivo',event)" id="srt-dispositivo" title="Ordenar">↕</button></div></th>
       <th style="min-width:110px"><div class="th-inner">Situação<div class="flt-wrap"><button class="flt-btn" id="fbt-sit" onclick="toggleFlt('sit',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-sit"></div></div><button class="sort-btn" onclick="sortContas('situacao',event)" id="srt-situacao" title="Ordenar">↕</button></div></th>
-      <th style="min-width:140px"><div class="th-inner">Perfil Facebook<div class="flt-wrap"><button class="flt-btn" id="fbt-fbp" onclick="toggleFlt('fbp',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-fbp"></div></div><button class="sort-btn" onclick="sortContas('fb_perfil',event)" id="srt-fb_perfil" title="Ordenar">↕</button></div></th>
+      <th style="min-width:140px"><div class="th-inner">Conta Facebook<div class="flt-wrap"><button class="flt-btn" id="fbt-fbp" onclick="toggleFlt('fbp',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-fbp"></div></div><button class="sort-btn" onclick="sortContas('fb_perfil',event)" id="srt-fb_perfil" title="Ordenar">↕</button></div></th>
       <th style="width:70px"><div class="th-inner">FB Page<div class="flt-wrap"><button class="flt-btn" id="fbt-fb" onclick="toggleFlt('fb',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-fb"></div></div></div></th>
       <th style="width:70px"><div class="th-inner">MB Suite<div class="flt-wrap"><button class="flt-btn" id="fbt-mb" onclick="toggleFlt('mb',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-mb"></div></div></div></th>
       <th style="width:70px"><div class="th-inner">Automação<div class="flt-wrap"><button class="flt-btn" id="fbt-auto" onclick="toggleFlt('auto',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-auto"></div></div></div></th>
@@ -867,7 +880,16 @@ function renderContas(){
   const YN=['Não','Sim'];
 
   tb.innerHTML=f.map(c=>`<tr>
-    <td class="iec" onclick="openContaModal(${c.id})" style="cursor:pointer"><strong style="color:#60a5fa;padding:6px 8px;display:block">${esc(c.user_ig)} <i class="ti ti-pencil" style="font-size:9px;color:#444"></i></strong></td>
+    <td onclick="openContaModal(${c.id})" style="cursor:pointer;padding:6px 8px">
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="width:28px;height:28px;border-radius:50%;background:#1a2a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:700;color:#60a5fa">${(c.user_ig||'?')[0].toUpperCase()}</div>
+        <div>
+          <div style="font-size:12px;font-weight:500;color:#e8e8e8">${esc(c.user_ig)}</div>
+          ${c.fb_perfil?`<div style="font-size:10px;color:#555;margin-top:1px">${esc(c.fb_perfil)}</div>`:''}
+        </div>
+        <i class="ti ti-pencil" style="font-size:9px;color:#333;margin-left:auto"></i>
+      </div>
+    </td>
     <td class="iec"><input value="${esc(c.dispositivo)}" placeholder="—" onblur="ctPatch(${c.id},'dispositivo',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></td>
     <td class="iec"><select onchange="ctPatch(${c.id},'situacao',this.value);renderContas()">${SIT_OPTS.map(o=>`<option${o===c.situacao?' selected':''}>${o}</option>`).join('')}</select></td>
     <td class="iec"><input value="${esc(c.fb_perfil)}" placeholder="—" onblur="ctPatch(${c.id},'fb_perfil',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></td>
@@ -887,6 +909,78 @@ function renderContas(){
   </tr>`).join('');
   statsContas();
 }
+
+// ── PLANILHA ──
+let planilhaAberta=false;
+const PLAN_COLS=[
+  {label:'Perfil / User IG', field:'user_ig', type:'text', w:140},
+  {label:'Senha IG',         field:'senha_ig', type:'text', w:120},
+  {label:'E-mail',           field:'email',    type:'text', w:170},
+  {label:'Senha e-mail',     field:'senha_email',type:'text',w:120},
+  {label:'Dispositivo',      field:'dispositivo',type:'text',w:110},
+  {label:'Situação',         field:'situacao', type:'select', opts:['Criar Perfil','Configuração Inicial','Aquecimento','Crescimento','Venda','SMS e Análise Selfie','Banida','Bugada'], w:130},
+  {label:'Proxy',            field:'proxy',    type:'text', w:140},
+  {label:'Voz',              field:'voz',      type:'text', w:110},
+  {label:'Conta Facebook',   field:'fb_perfil',type:'text', w:140},
+  {label:'Página Facebook',  field:'fb_page',  type:'text', w:140},
+  {label:'Link venda IG',    field:'link_venda_ig',type:'text',w:150},
+  {label:'Link venda FB',    field:'link_venda_fb',type:'text',w:150},
+  {label:'ID pasta Drive',   field:'drive_folder_id',type:'text',w:160},
+  {label:'Estoque vídeos',   field:'estoque_videos',type:'number',w:80},
+];
+
+function togglePlanilha(){
+  planilhaAberta=!planilhaAberta;
+  const wrap=document.getElementById('planilha-wrap');
+  const btn=document.getElementById('btn-planilha');
+  if(planilhaAberta){
+    wrap.style.display='block';
+    btn.style.background='#1a1030';
+    renderPlanilha();
+  } else {
+    wrap.style.display='none';
+    btn.style.background='transparent';
+  }
+}
+
+function renderPlanilha(){
+  const el=document.getElementById('planilha-inner');
+  if(!el)return;
+  let f=Contas;
+  if(cQ)f=f.filter(x=>((x.user_ig||'')+(x.email||'')).toLowerCase().includes(cQ.toLowerCase()));
+  if(cSit&&cSit!=='__banidas__')f=f.filter(x=>x.situacao===cSit);
+  else if(cSit==='__banidas__')f=f.filter(x=>['Banida','Bugada'].includes(x.situacao));
+  f=applyCtFilters(f);
+  f=applySort(f);
+
+  const thead=`<tr><th class="pl-idx">#</th>${PLAN_COLS.map(c=>`<th style="min-width:${c.w}px">${c.label}</th>`).join('')}</tr>`;
+  const tbody=f.map((c,i)=>`<tr>
+    <td class="pl-idx">${i+1}</td>
+    ${PLAN_COLS.map(col=>{
+      const v=c[col.field]??'';
+      if(col.type==='select'){
+        return`<td><select style="width:${col.w}px" onchange="plPatch(${c.id},'${col.field}',this.value)">${col.opts.map(o=>`<option${o===v?' selected':''}>${o}</option>`).join('')}</select></td>`;
+      }
+      if(col.type==='number'){
+        return`<td><input type="number" min="0" value="${Number(v||0)}" style="width:${col.w}px" onblur="plPatch(${c.id},'${col.field}',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></td>`;
+      }
+      return`<td><input type="text" value="${esc(v)}" style="width:${col.w}px" onblur="plPatch(${c.id},'${col.field}',this.value)" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Tab'){event.preventDefault();const inputs=[...document.querySelectorAll('#planilha-inner input,#planilha-inner select')];const idx=inputs.indexOf(this);if(inputs[idx+1])inputs[idx+1].focus();}"></td>`;
+    }).join('')}
+  </tr>`).join('');
+
+  el.innerHTML=`<table class="planilha-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
+}
+
+async function plPatch(id,field,value){
+  const val=field==='estoque_videos'?Number(value)||0:(value||null);
+  await patch('contas',id,field,val);
+  const ct=Contas.find(x=>x.id===id);
+  if(ct)ct[field]=val;
+  // Atualizar tabela principal sem fechar planilha
+  renderContas();
+  statsContas();
+}
+
 
 // ── 3 ESTADOS: vazio → alerta → ok ──
 function stateVal(v){
@@ -940,9 +1034,9 @@ function openContaModal(id){
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
       ${mField(id,'User IG','user_ig',c.user_ig,'text')}
-      ${mField(id,'Senha IG','senha_ig',c.senha_ig,'password')}
+      ${mField(id,'Senha IG','senha_ig',c.senha_ig,'text')}
       ${mField(id,'E-mail','email',c.email,'text')}
-      ${mField(id,'Senha e-mail','senha_email',c.senha_email,'password')}
+      ${mField(id,'Senha e-mail','senha_email',c.senha_email,'text')}
       ${mField(id,'Dispositivo','dispositivo',c.dispositivo,'text')}
       ${mFieldSel(id,'Situação','situacao',c.situacao,SIT_OPTS)}
       ${mFieldSel(id,'Proxy','proxy',c.proxy||'',[''].concat(Proxies.map(p=>p.ip)),['— sem proxy —'].concat(Proxies.map(p=>p.ip+(p.numero_pedido?' ('+p.numero_pedido+')':''))))}
@@ -952,7 +1046,7 @@ function openContaModal(id){
       ${mFieldState(id,'Automação','automacao',c.automacao)}
       ${mFieldState(id,'FB Page criada','fb_page_status',c.fb_page_status)}
       ${mField(id,'Página Facebook','fb_page',c.fb_page,'text')}
-      ${mField(id,'Perfil Facebook','fb_perfil',c.fb_perfil,'text')}
+      ${mField(id,'Conta Facebook','fb_perfil',c.fb_perfil,'text')}
       ${mField(id,'Link venda IG','link_venda_ig',c.link_venda_ig,'text')}
       ${mField(id,'Link venda FB','link_venda_fb',c.link_venda_fb,'text')}
       ${mField(id,'ID pasta Drive','drive_folder_id',c.drive_folder_id,'text')}
