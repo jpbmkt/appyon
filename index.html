@@ -379,6 +379,7 @@ td.iec select{cursor:pointer}
       <div class="f"><label>Automação</label><select id="ct-au"><option value="">— Vazio</option><option value="alerta">⚠ Alerta</option><option value="ok">✓ OK</option></select></div>
       <div class="f"><label>FB Page criada</label><select id="ct-fp"><option value="">— Vazio</option><option value="alerta">⚠ Alerta</option><option value="ok">✓ OK</option></select></div>
       <div class="f"><label>Página Facebook</label><input id="ct-fbpg" placeholder="URL da página"></div>
+      <div class="f"><label>Conta Facebook</label><input id="ct-fbconta" placeholder="URL ou nome da conta FB"></div>
       
       <div class="f"><label>Link venda IG</label><input id="ct-lig" placeholder="https://..."></div>
       <div class="f"><label>Link venda FB</label><input id="ct-lfb" placeholder="https://..."></div>
@@ -757,7 +758,7 @@ async function savePrompt(avId,val){
 // ── CONTAS — add ──
 async function addConta(){
   const avId=g('ct-av')||null;
-  const o={user_ig:g('ct-u'),senha_ig:g('ct-si'),email:g('ct-e'),senha_email:g('ct-se'),dispositivo:g('ct-d'),situacao:g('ct-sit'),proxy:g('ct-px')||null,avatar_id:avId?Number(avId):null,voz:g('ct-vz'),mb_suite:g('ct-mb'),automacao:g('ct-au'),fb_page_status:g('ct-fp'),fb_page:g('ct-fbpg'),fb_perfil:g('ct-fbpr'),link_venda_ig:g('ct-lig'),link_venda_fb:g('ct-lfb'),drive_folder_id:g('ct-drv')||null,estoque_videos:0,aquecimento_dias:0,crescimento_posts:0};
+  const o={user_ig:g('ct-u'),senha_ig:g('ct-si'),email:g('ct-e'),senha_email:g('ct-se'),dispositivo:g('ct-d'),situacao:g('ct-sit'),proxy:g('ct-px')||null,avatar_id:avId?Number(avId):null,voz:g('ct-vz'),mb_suite:g('ct-mb'),automacao:g('ct-au'),fb_page_status:g('ct-fp'),fb_page:g('ct-fbpg'),conta_fb:g('ct-fbconta'),fb_perfil:g('ct-fbpr'),link_venda_ig:g('ct-lig'),link_venda_fb:g('ct-lfb'),drive_folder_id:g('ct-drv')||null,estoque_videos:0,aquecimento_dias:0,crescimento_posts:0};
   if(!o.user_ig)return;
   try{const r=await api('contas','POST',o);Contas.unshift(r[0]);clr(['ct-u','ct-si','ct-e','ct-se','ct-d','ct-vz','ct-fbpg','ct-fbpr','ct-lig','ct-lfb','ct-drv']);tog('padd-ct');renderContas();renderProxies();renderAvatares();}
   catch(e){alert('Erro: '+e.message);}
@@ -1026,7 +1027,8 @@ const PLAN_COLS=[
   {label:'Situação',         field:'situacao', type:'select', opts:['Criar Perfil','Configuração Inicial','Aquecimento','Crescimento','Venda','SMS e Análise Selfie','Banida','Bugada'], w:130},
   {label:'Proxy',            field:'proxy',    type:'text', w:140},
   {label:'Voz',              field:'voz',      type:'text', w:110},
-  {label:'Conta Facebook',   field:'fb_perfil',type:'text', w:140},
+  {label:'Conta Facebook',   field:'conta_fb', type:'text', w:140},
+  {label:'Página Facebook',  field:'fb_page',  type:'text', w:140},
   {label:'Página Facebook',  field:'fb_page',  type:'text', w:140},
   {label:'Link venda IG',    field:'link_venda_ig',type:'text',w:150},
   {label:'Link venda FB',    field:'link_venda_fb',type:'text',w:150},
@@ -1168,6 +1170,7 @@ function openContaModal(id){
       ${mFieldState(id,'MB Suite','mb_suite',c.mb_suite)}
       ${mFieldState(id,'Automação','automacao',c.automacao)}
       ${mFieldState(id,'FB Page criada','fb_page_status',c.fb_page_status)}
+      ${mField(id,'Conta Facebook','conta_fb',c.conta_fb,'text')}
       ${mField(id,'Página Facebook','fb_page',c.fb_page,'text')}
       ${mField(id,'Conta Facebook','fb_perfil',c.fb_perfil,'text')}
       ${mField(id,'Link venda IG','link_venda_ig',c.link_venda_ig,'text')}
