@@ -396,7 +396,7 @@ td.iec select{cursor:pointer}
   </div>
   <div class="tw"><table id="tbl-ct">
     <thead><tr>
-      <th style="min-width:160px"><div class="th-inner">Perfil<div class="flt-wrap"><button class="flt-btn" id="fbt-user" onclick="toggleFlt('user',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-user"></div></div><button class="sort-btn" onclick="sortContas('user_ig',event)" id="srt-user_ig" title="Ordenar">↕</button></div></th>
+      <th style="min-width:160px"><div class="th-inner">Perfil<div class="flt-wrap"><button class="flt-btn" id="fbt-user" onclick="toggleFlt('user',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-user"></div></div><button class="sort-btn" onclick="sortContas('fb_perfil',event)" id="srt-fb_perfil2" title="Ordenar">↕</button></div></th>
       <th style="min-width:110px"><div class="th-inner">Dispositivo<div class="flt-wrap"><button class="flt-btn" id="fbt-disp" onclick="toggleFlt('disp',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-disp"></div></div><button class="sort-btn" onclick="sortContas('dispositivo',event)" id="srt-dispositivo" title="Ordenar">↕</button></div></th>
       <th style="min-width:110px"><div class="th-inner">Situação<div class="flt-wrap"><button class="flt-btn" id="fbt-sit" onclick="toggleFlt('sit',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-sit"></div></div><button class="sort-btn" onclick="sortContas('situacao',event)" id="srt-situacao" title="Ordenar">↕</button></div></th>
       <th style="min-width:140px"><div class="th-inner">Conta Facebook<div class="flt-wrap"><button class="flt-btn" id="fbt-fbp" onclick="toggleFlt('fbp',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-fbp"></div></div><button class="sort-btn" onclick="sortContas('fb_perfil',event)" id="srt-fb_perfil" title="Ordenar">↕</button></div></th>
@@ -822,7 +822,7 @@ let ctSort={field:null,dir:1};
 
 function getColValues(key){
   const map={
-    user:c=>c.user_ig||'',
+    user:c=>c.fb_perfil||c.user_ig||'',
     disp:c=>c.dispositivo||'',
     sit:c=>c.situacao||'',
     fbp:c=>c.fb_perfil||'',
@@ -954,7 +954,7 @@ function sortContas(field,e){
 function filterContas(k,v){if(k==='q')cQ=v;else cSit=v;renderContas();}
 
 function applyCtFilters(f){
-  const fns={user:c=>c.user_ig||'',disp:c=>c.dispositivo||'',sit:c=>c.situacao||'',fbp:c=>c.fb_perfil||'',fb:c=>c.fb_page_status||'Não',mb:c=>c.mb_suite||'Não',auto:c=>c.automacao||'Não',est:c=>String(Number(c.estoque_videos||0))};
+  const fns={user:c=>c.fb_perfil||c.user_ig||'',disp:c=>c.dispositivo||'',sit:c=>c.situacao||'',fbp:c=>c.fb_perfil||'',fb:c=>c.fb_page_status||'Não',mb:c=>c.mb_suite||'Não',auto:c=>c.automacao||'Não',est:c=>String(Number(c.estoque_videos||0))};
   Object.keys(ctFilters).forEach(k=>{if(ctFilters[k].size>0)f=f.filter(c=>ctFilters[k].has(fns[k](c)));});
   return f;
 }
