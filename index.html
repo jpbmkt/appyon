@@ -65,6 +65,7 @@ select.ie{cursor:pointer}
 /* BADGES */
 .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:500}
 .b-criar{background:#3a1f00;color:#fb923c}
+.b-config{background:#0f2030;color:#38bdf8}
 .b-aquecimento{background:#222;color:#888}
 .b-crescimento{background:#0f1f2a;color:#60a5fa}
 .b-venda{background:#14291a;color:#4ade80}
@@ -105,6 +106,7 @@ select.ie{cursor:pointer}
 .pf-aq{background:#fbbf24}
 .pf-cr{background:#E1306C}
 .pf-vd{background:#60a5fa}
+.pf-config{background:#38bdf8}
 
 .empty{text-align:center;padding:28px;color:#444;font-size:12px}
 .loading{text-align:center;padding:28px;color:#444;font-size:12px}
@@ -262,7 +264,7 @@ td.iec select{cursor:pointer}
     <input type="text" placeholder="Buscar conta..." oninput="filterContas('q',this.value)">
     <select onchange="filterContas('sit',this.value)">
       <option value="">Todas as situações</option>
-      <option>Criar Perfil</option><option>Aquecimento</option><option>Crescimento</option><option>Venda</option><option>SMS e Análise Selfie</option><option>Banida</option><option>Bugada</option>
+      <option>Criar Perfil</option><option>Configuração Inicial</option><option>Aquecimento</option><option>Crescimento</option><option>Venda</option><option>SMS e Análise Selfie</option><option>Banida</option><option>Bugada</option>
     </select>
     <button class="btn bp" onclick="tog('padd-ct')"><i class="ti ti-plus"></i> Adicionar</button>
   </div>
@@ -273,7 +275,7 @@ td.iec select{cursor:pointer}
       <div class="f"><label>E-mail</label><input id="ct-e" placeholder="conta@gmail.com"></div>
       <div class="f"><label>Senha e-mail</label><input id="ct-se" placeholder="senha123"></div>
       <div class="f"><label>Dispositivo</label><input id="ct-d" placeholder="iPhone 14 / PC"></div>
-      <div class="f"><label>Situação</label><select id="ct-sit"><option>Criar Perfil</option><option>Aquecimento</option><option>Crescimento</option><option>Venda</option><option>SMS e Análise Selfie</option><option>Banida</option><option>Bugada</option></select></div>
+      <div class="f"><label>Situação</label><select id="ct-sit"><option>Criar Perfil</option><option>Configuração Inicial</option><option>Aquecimento</option><option>Crescimento</option><option>Venda</option><option>SMS e Análise Selfie</option><option>Banida</option><option>Bugada</option></select></div>
       <div class="f"><label>Proxy</label><select id="ct-px"><option value="">— sem proxy —</option></select></div>
       <div class="f"><label>Avatar</label><select id="ct-av"><option value="">— sem avatar —</option></select></div>
       <div class="f"><label>Voz</label><input id="ct-vz" placeholder="Voz jovem feminina..."></div>
@@ -340,7 +342,7 @@ async function api(tbl,method='GET',body=null,qs=''){
   const t=await r.text();return t?JSON.parse(t):null;
 }
 
-let Emails=[],Proxies=[],Avatares=[],Contas=[],Checks=[];
+let Emails=[],Proxies=[],Avatares=[],Contas=[],Checks=[],ConfigsIniciais=[];
 let cQ='',cSit='',eMailFilter='',proxyFilter='';
 const today=new Date().toISOString().slice(0,10);
 
@@ -355,12 +357,13 @@ function weekDays(){
 
 async function loadAll(){
   try{
-    [Emails,Proxies,Avatares,Contas,Checks]=await Promise.all([
+    [Emails,Proxies,Avatares,Contas,Checks,ConfigsIniciais]=await Promise.all([
       api('emails','GET',null,'?order=id.desc'),
       api('proxies','GET',null,'?order=id.desc'),
       api('avatares','GET',null,'?order=id.desc'),
       api('contas','GET',null,'?order=id.desc'),
-      api('checks_postagem','GET',null,'?order=data.desc')
+      api('checks_postagem','GET',null,'?order=data.desc'),
+      api('config_inicial','GET',null,'')
     ]);
     document.getElementById('cdot').className='dot';
     renderEmails();renderProxies();renderAvatares();renderContas();
@@ -598,8 +601,9 @@ async function updateEstoque(id,val){
 function statsContas(){
   const groups=[
     {label:'Total',      color:'#aaa',    key:''},
-    {label:'Criar Perfil',color:'#fb923c',key:'Criar Perfil'},
-    {label:'Aquecimento', color:'#888',   key:'Aquecimento'},
+    {label:'Criar Perfil',     color:'#fb923c', key:'Criar Perfil'},
+    {label:'Config. Inicial',color:'#38bdf8', key:'Configuração Inicial'},
+    {label:'Aquecimento',    color:'#888',   key:'Aquecimento'},
     {label:'Crescimento', color:'#60a5fa',key:'Crescimento'},
     {label:'Venda',       color:'#4ade80',key:'Venda'},
     {label:'SMS/Selfie',  color:'#fbbf24',key:'SMS e Análise Selfie'},
@@ -633,7 +637,7 @@ function statFilter(key){
 
 
 function sitBadge(s){
-  const cls={'Criar Perfil':'b-criar','Aquecimento':'b-aquecimento','Crescimento':'b-crescimento','Venda':'b-venda','SMS e Análise Selfie':'b-sms','Banida':'b-banida','Bugada':'b-bugada'}[s]||'bdi';
+  const cls={'Criar Perfil':'b-criar','Configuração Inicial':'b-config','Aquecimento':'b-aquecimento','Crescimento':'b-crescimento','Venda':'b-venda','SMS e Análise Selfie':'b-sms','Banida':'b-banida','Bugada':'b-bugada'}[s]||'bdi';
   return`<span class="badge ${cls}">${s}</span>`;
 }
 
@@ -775,7 +779,7 @@ function renderContas(){
   const tb=document.getElementById('tb-ct');
   if(!f.length){tb.innerHTML=`<tr><td colspan="9" class="empty">Nenhuma conta</td></tr>`;return statsContas();}
 
-  const SIT_OPTS=['Criar Perfil','Aquecimento','Crescimento','Venda','SMS e Análise Selfie','Banida','Bugada'];
+  const SIT_OPTS=['Criar Perfil','Configuração Inicial','Aquecimento','Crescimento','Venda','SMS e Análise Selfie','Banida','Bugada'];
   const YN=['Não','Sim'];
 
   tb.innerHTML=f.map(c=>`<tr>
@@ -809,7 +813,7 @@ async function ctPatch(id,field,value){
 function openContaModal(id){
   const c=Contas.find(x=>x.id===id);if(!c)return;
   document.getElementById('modal-bg').style.display='flex';
-  const SIT_OPTS=['Criar Perfil','Aquecimento','Crescimento','Venda','SMS e Análise Selfie','Banida','Bugada'];
+  const SIT_OPTS=['Criar Perfil','Configuração Inicial','Aquecimento','Crescimento','Venda','SMS e Análise Selfie','Banida','Bugada'];
   document.getElementById('modal-inner').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <h3 style="color:#fff;font-size:15px"><i class="ti ti-brand-instagram" style="color:#E1306C;margin-right:8px"></i>${esc(c.user_ig)}</h3>
@@ -891,9 +895,9 @@ async function checkProgression(cid){
   if(ct.situacao==='Aquecimento'){
     const dias=new Set(myChecks.map(x=>x.data)).size;
     if(dias>=2){
-      await api('contas','PATCH',{situacao:'Crescimento',aquecimento_dias:dias},`?id=eq.${cid}`);
-      ct.situacao='Crescimento';ct.aquecimento_dias=dias;
-      alert(`✅ ${ct.user_ig} completou aquecimento → CRESCIMENTO!`);
+      await api('contas','PATCH',{situacao:'Configuração Inicial',aquecimento_dias:dias},`?id=eq.${cid}`);
+      ct.situacao='Configuração Inicial';ct.aquecimento_dias=dias;
+      alert(`✅ ${ct.user_ig} completou 2 dias de aquecimento → CONFIGURAÇÃO INICIAL!`);
     } else {
       await api('contas','PATCH',{aquecimento_dias:dias},`?id=eq.${cid}`);
       ct.aquecimento_dias=dias;
@@ -914,6 +918,31 @@ async function checkProgression(cid){
 
 
 
+async function toggleConfig(cid, field, checked){
+  const existing=ConfigsIniciais.find(x=>x.conta_id===cid);
+  try{
+    if(existing){
+      await api('config_inicial','PATCH',{[field]:checked},`?conta_id=eq.${cid}`);
+      existing[field]=checked;
+    } else {
+      const r=await api('config_inicial','POST',{conta_id:cid,[field]:checked});
+      ConfigsIniciais.push(r[0]);
+    }
+    renderPostagens();
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+async function moverParaCrescimento(cid){
+  if(!confirm('Configuração concluída! Mover conta para CRESCIMENTO?'))return;
+  await api('contas','PATCH',{situacao:'Crescimento'},`?id=eq.${cid}`);
+  const ct=Contas.find(x=>x.id===cid);
+  if(ct)ct.situacao='Crescimento';
+  renderPostagens();
+  renderContas();
+  statsContas();
+}
+
+
 async function saveQtdVideos(cid,data,val){
   const n=Number(val)||0;
   try{
@@ -930,9 +959,10 @@ function renderPostagens(){
   const wk=weekDays();
   const dayNames=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
   const sections=[
-    {sit:'Aquecimento',cls:'b-aquecimento',prog:'pf-aq',max:2,label:'dias de aquecimento',getCount:c=>new Set(Checks.filter(x=>x.conta_id===c.id).map(x=>x.data)).size},
-    {sit:'Crescimento',cls:'b-crescimento',prog:'pf-cr',max:10,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).reduce((a,ch)=>a+(Number(ch.qtd_videos)||0),0)},
-    {sit:'Venda',cls:'b-venda',prog:'pf-vd',max:null,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).reduce((a,ch)=>a+(Number(ch.qtd_videos)||0),0)}
+    {sit:'Aquecimento',cls:'b-aquecimento',prog:'pf-aq',max:2,label:'dias de aquecimento',getCount:c=>new Set(Checks.filter(x=>x.conta_id===c.id).map(x=>x.data)).size,showQtd:false,showConfig:false},
+    {sit:'Configuração Inicial',cls:'b-config',prog:'pf-config',max:null,label:'configuração',getCount:()=>0,showQtd:false,showConfig:true},
+    {sit:'Crescimento',cls:'b-crescimento',prog:'pf-cr',max:10,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).reduce((a,ch)=>a+(Number(ch.qtd_videos)||0),0),showQtd:true,showConfig:false},
+    {sit:'Venda',cls:'b-venda',prog:'pf-vd',max:null,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).reduce((a,ch)=>a+(Number(ch.qtd_videos)||0),0),showQtd:true,showConfig:false}
   ];
   const el=document.getElementById('post-sections');
   const ativas=Contas.filter(x=>['Aquecimento','Crescimento','Venda'].includes(x.situacao));
@@ -946,20 +976,64 @@ function renderPostagens(){
       const checked=checkedDays(c.id);
       const count=sec.getCount(c);
       const pct=sec.max?Math.min(100,Math.round(count/sec.max*100)):null;
-      const progHtml=sec.max?`<div style="font-size:10px;color:#555;margin-bottom:2px">${count}/${sec.max}</div><div class="prog-bar"><div class="prog-fill ${sec.prog}" style="width:${pct}%"></div></div>`:`<span style="font-size:11px;color:#555">${count} posts</span>`;
-      const dayCells=wk.map((d,i)=>{
+      const avName=c.avatar_id?(Avatares.find(x=>x.id===c.avatar_id)||{}).nome||'':'';
+
+      // Progresso
+      let progHtml='';
+      if(sec.showConfig){
+        // Configuração Inicial — checkboxes
+        const cfg=ConfigsIniciais.find(x=>x.conta_id===c.id)||{};
+        const items=[
+          {key:'pasta_drive',    label:'Pasta Drive'},
+          {key:'foto_perfil',    label:'Foto perfil'},
+          {key:'conta_profissional',label:'Conta profissional'},
+          {key:'descricao_bio',  label:'Descrição bio'},
+          {key:'link_bio',       label:'Link bio'},
+        ];
+        const allDone=items.every(it=>cfg[it.key]);
+        const pills=items.map(it=>`<label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:${cfg[it.key]?'#4ade80':'#555'};cursor:pointer;margin-right:6px;margin-bottom:2px">
+          <input type="checkbox" ${cfg[it.key]?'checked':''} style="accent-color:#4ade80;cursor:pointer" onchange="toggleConfig(${c.id},'${it.key}',this.checked)">
+          ${it.label}
+        </label>`).join('');
+        progHtml=`<div style="display:flex;flex-wrap:wrap;gap:2px;align-items:center">${pills}</div>
+          ${allDone?`<button class="btn bg bsm" style="margin-top:6px;font-size:11px" onclick="moverParaCrescimento(${c.id})"><i class="ti ti-arrow-right"></i> Mover para Crescimento</button>`:''}`;
+      } else if(sec.max){
+        progHtml=`<div style="font-size:10px;color:#555;margin-bottom:2px">${count}/${sec.max}</div><div class="prog-bar"><div class="prog-fill ${sec.prog}" style="width:${pct}%"></div></div>`;
+      } else {
+        progHtml=`<span style="font-size:11px;color:#555">${count} vídeos</span>`;
+      }
+
+      // Day cells (só para não-Config)
+      const dayCells=sec.showConfig?'':wk.map((d,i)=>{
         const isToday=d===today;
         const on=checked.has(d);
         const dayLabel=d.slice(8);
         const chk=Checks.find(x=>x.conta_id===c.id&&x.data===d);
         const qtd=chk&&chk.qtd_videos!=null?chk.qtd_videos:'';
-        const showQtd=['Crescimento','Venda'].includes(c.situacao);
-        return`<td style="min-width:38px">
+        return`<td style="min-width:38px;text-align:center">
           <button class="chk${on?' on':''}${isToday?' today':''}" onclick="toggleCheck(${c.id},'${d}',this)" title="${d}">${on?'✓':''}</button>
           <div style="font-size:9px;color:#333;text-align:center;margin-top:2px">${dayLabel}</div>
-          ${showQtd&&on?`<input type="number" min="0" value="${qtd}" placeholder="vids" style="width:36px;background:#111;border:1px solid #222;border-radius:3px;color:#888;font-size:10px;padding:1px 3px;margin-top:2px;text-align:center" onclick="event.stopPropagation()" onblur="saveQtdVideos(${c.id},'${d}',this.value)" onkeydown="if(event.key==='Enter')this.blur()">`:''}
-        </td>`;
+          ${sec.showQtd&&on?`<input type="number" min="0" value="${qtd}" placeholder="vids" style="width:36px;background:#111;border:1px solid #222;border-radius:3px;color:#888;font-size:10px;padding:1px 3px;margin-top:2px;text-align:center" onclick="event.stopPropagation()" onblur="saveQtdVideos(${c.id},'${d}',this.value)" onkeydown="if(event.key==='Enter')this.blur()">`:''}`+
+        `</td>`;
       }).join('');
+
+      // Estoque
+      const estoqueCell=`<td style="padding:6px 8px">
+        <div id="stk-post-${c.id}">${stockEl(c.estoque_videos)}</div>
+        <input type="number" min="0" value="${Number(c.estoque_videos||0)}" style="width:52px;background:#111;border:1px solid #222;border-radius:4px;color:#888;font-size:11px;padding:2px 4px;margin-top:3px;text-align:center"
+          oninput="document.getElementById('stk-post-'+${c.id}).innerHTML=stockEl(this.value)"
+          onblur="updateEstoque(${c.id},this.value)"
+          onkeydown="if(event.key==='Enter'){updateEstoque(${c.id},this.value);}">
+      </td>`;
+
+      return`<tr>
+        <td><strong style="color:#fff;font-size:12px">${esc(c.user_ig)}</strong>${avName?`<div style="font-size:10px;color:#555">${esc(avName)}</div>`:''}</td>
+        <td style="color:#666;font-size:11px">${esc(c.dispositivo||'—')}</td>
+        ${estoqueCell}
+        <td>${progHtml}</td>
+        ${sec.showConfig?'':`${dayCells}`}
+      </tr>`;
+    }).join('');;
       const avName=c.avatar_id?(Avatares.find(x=>x.id===c.avatar_id)||{}).nome||'—':'—';
       return`<tr>
         <td><strong style="color:#fff">${esc(c.user_ig)}</strong><div style="font-size:10px;color:#555">${esc(avName)}</div></td>
@@ -977,10 +1051,11 @@ function renderPostagens(){
       </div>
       <div class="tw"><table class="pt">
         <thead><tr>
-          <th>Conta</th>
-          <th>Estoque</th>
-          <th>Progresso</th>
-          ${dayNames.map((d,i)=>`<th style="${wk[i]===today?'color:#fff':''};text-align:center">${d}<br><span style="font-size:9px;color:#444">${wk[i].slice(5)}</span></th>`).join('')}
+          <th style="min-width:120px">Conta</th>
+          <th style="min-width:90px">Dispositivo</th>
+          <th style="min-width:80px">Estoque</th>
+          <th style="min-width:${sec.showConfig?'300':'160'}px">${sec.showConfig?'Configuração Inicial':'Progresso'}</th>
+          ${sec.showConfig?'':dayNames.map((d,i)=>`<th style="${wk[i]===today?'color:#fff':''};text-align:center">${d}<br><span style="font-size:9px;color:#444">${wk[i].slice(5)}</span></th>`).join('')}
         </tr></thead>
         <tbody>${tableRows}</tbody>
       </table></div>
