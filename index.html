@@ -385,6 +385,193 @@ function stockEl(n){
   return`<span class="s3">🟢 ${n}</span>`;
 }
 
+function esc(s){return(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function yn(v){return v==='Sim'?`<span style="color:#4ade80;font-size:13px">✓</span>`:`<span style="color:#2a2a2a">—</span>`;}
+
+function fillSelects(){
+  const pSel=document.getElementById('ct-px');
+  if(pSel){pSel.innerHTML='<option value="">— sem proxy —</option>'+Proxies.map(p=>`<option value="${esc(p.ip)}">${p.ip}${p.numero_pedido?' ('+p.numero_pedido+')':''}</option>`).join('');}
+  const aSel=document.getElementById('ct-av');
+  if(aSel){aSel.innerHTML='<option value="">— sem avatar —</option>'+Avatares.map(a=>`<option value="${a.id}">${esc(a.nome)}</option>`).join('');}
+}
+
+// ── inline helpers (usados em emails/proxies/avatares) ──
+function ieTxt(val,fn){return`<input class="ie" value="${esc(val)}" data-fn="${fn}" style="min-width:80px">`;}
+function bindTable(tbId){
+  const tb=document.getElementById(tbId);if(!tb)return;
+  tb.querySelectorAll('.ie').forEach(el=>{
+    const fn=el.dataset.fn;if(!fn)return;
+    if(el.tagName==='SELECT'){el.addEventListener('change',()=>new Function('val',fn)(el.value));}
+    else{el.addEventListener('blur',()=>new Function('val',fn)(el.value));el.addEventListener('keydown',e=>{if(e.key==='Enter')new Function('val',fn)(el.value);});}
+  });
+}
+
+async function patch(tbl,id,field,value){
+  try{await api(tbl,'PATCH',{[field]:value},`?id=eq.${id}`);}
+  catch(e){alert('Erro ao salvar: '+e.message);}
+}
+
+// ── EMAILS ──
+async function addEmail(){
+  const o={email:g('em-e'),senha:g('em-s'),status:g('em-st'),recovery:g('em-r'),tel:g('em-t'),obs:g('em-o')};
+  if(!o.email)return;
+  try{const r=await api('emails','POST',o);Emails.unshift(r[0]);clr(['em-e','em-s','em-r','em-t','em-o']);tog('padd-em');renderEmails();}
+  catch(e){alert('Erro: '+e.message);}
+}
+async function bulkEmails(){
+  const lines=g('bulk-em').split('\n').map(l=>l.trim()).filter(Boolean);
+  const status=g('bulk-em-st');
+  const items=lines.map(l=>{const p=l.split(':');return{email:p[0]||'',senha:p[1]||'',status,recovery:p[2]||'',tel:p[3]||''};}).filter(x=>x.email);
+  if(!items.length)return;
+  try{const r=await api('emails','POST',items);Emails=r.concat(Emails);document.getElementById('bulk-em').value='';tog('pbulk-em');renderEmails();alert(items.length+' e-mails importados!');}
+  catch(e){alert('Erro: '+e.message);}
+}
+async function delEmail(id){if(!confirm('Excluir?'))return;await api('emails','DELETE',null,'?id=eq.'+id);Emails=Emails.filter(x=>x.id!==id);renderEmails();}
+function renderEmails(q=''){
+  const f=Emails.filter(x=>!q||(x.email||'').toLowerCase().includes(q.toLowerCase()));
+  const tb=document.getElementById('tb-em');
+  if(!f.length){tb.innerHTML=`<tr><td colspan="7" class="empty">Nenhum e-mail cadastrado</td></tr>`;return statsEmails();}
+  tb.innerHTML=f.map(e=>`<tr>
+    <td>${ieTxt(e.email,`patch('emails',${e.id},'email',val)`)}</td>
+    <td>${ieTxt(e.senha,`patch('emails',${e.id},'senha',val)`)}</td>
+    <td>${ieSel(e.status,['Disponível','Em uso','Bloqueado'],`(async(val)=>{await patch('emails',${e.id},'status',val);const em=Emails.find(x=>x.id===${e.id});if(em)em.status=val;renderEmails();})(val)`)}</td>
+    <td>${ieTxt(e.recovery,`patch('emails',${e.id},'recovery',val)`)}</td>
+    <td>${ieTxt(e.tel,`patch('emails',${e.id},'tel',val)`)}</td>
+    <td>${ieTxt(e.obs,`patch('emails',${e.id},'obs',val)`)}</td>
+    <td><button class="btn bd bsm" onclick="delEmail(${e.id})"><i class="ti ti-trash"></i></button></td>
+  </tr>`).join('');
+  bindTable('tb-em');
+  statsEmails();
+}
+function statsEmails(){
+  document.getElementById('stats-em').innerHTML=`
+    <div class="stat"><div class="sl">Total</div><div class="sv">${Emails.length}</div></div>
+    <div class="stat"><div class="sl">Disponíveis</div><div class="sv">${Emails.filter(x=>x.status==='Disponível').length}</div></div>
+    <div class="stat"><div class="sl">Em uso</div><div class="sv">${Emails.filter(x=>x.status==='Em uso').length}</div></div>
+    <div class="stat"><div class="sl">Bloqueados</div><div class="sv">${Emails.filter(x=>x.status==='Bloqueado').length}</div></div>`;
+}
+
+// ── PROXIES ──
+async function addProxy(){
+  const o={numero_pedido:g('px-ped'),ip:g('px-ip'),usuario:g('px-u'),senha:g('px-s'),tipo:g('px-t'),pais:g('px-p'),status:g('px-st'),validade:g('px-v')||null};
+  if(!o.ip)return;
+  try{const r=await api('proxies','POST',o);Proxies.unshift(r[0]);clr(['px-ped','px-ip','px-u','px-s','px-p','px-v']);tog('padd-px');renderProxies();fillSelects();}
+  catch(e){alert('Erro: '+e.message);}
+}
+async function bulkProxies(){
+  const lines=g('bulk-px').split('\n').map(l=>l.trim()).filter(Boolean);
+  const tipo=g('bulk-px-t');
+  const items=lines.map(l=>{
+    const p=l.split(':');
+    if(p.length>=5)return{numero_pedido:p[0],ip:p[1]+':'+p[2],usuario:p[3],senha:p[4],tipo,status:'Disponível'};
+    if(p.length>=4)return{ip:p[0]+':'+p[1],usuario:p[2],senha:p[3],tipo,status:'Disponível'};
+    return null;
+  }).filter(Boolean);
+  if(!items.length)return;
+  try{const r=await api('proxies','POST',items);Proxies=r.concat(Proxies);document.getElementById('bulk-px').value='';tog('pbulk-px');renderProxies();fillSelects();alert(items.length+' proxies importadas!');}
+  catch(e){alert('Erro: '+e.message);}
+}
+async function delProxy(id){if(!confirm('Excluir?'))return;await api('proxies','DELETE',null,'?id=eq.'+id);Proxies=Proxies.filter(x=>x.id!==id);renderProxies();fillSelects();}
+function renderProxies(q=''){
+  const f=Proxies.filter(x=>!q||((x.ip||'')+(x.numero_pedido||'')).toLowerCase().includes(q.toLowerCase()));
+  const contaUsing=ip=>{const c=Contas.find(x=>x.proxy===ip);return c?`<span style="color:#60a5fa">${esc(c.user_ig)}</span>`:`<span style="color:#333">—</span>`;};
+  const tb=document.getElementById('tb-px');
+  if(!f.length){tb.innerHTML=`<tr><td colspan="9" class="empty">Nenhuma proxy</td></tr>`;return statsProxies();}
+  tb.innerHTML=f.map(p=>`<tr>
+    <td>${ieTxt(p.numero_pedido,`patch('proxies',${p.id},'numero_pedido',val)`)}</td>
+    <td><span class="mono">${esc(p.ip)}</span></td>
+    <td>${ieTxt(p.usuario,`patch('proxies',${p.id},'usuario',val)`)}</td>
+    <td>${ieSel(p.tipo,['HTTP','HTTPS','SOCKS5','Residencial','Datacenter'],`patch('proxies',${p.id},'tipo',val)`)}</td>
+    <td>${ieTxt(p.pais,`patch('proxies',${p.id},'pais',val)`)}</td>
+    <td>${ieSel(p.status,['Disponível','Em uso','Inativo'],`(async(val)=>{await patch('proxies',${p.id},'status',val);const px=Proxies.find(x=>x.id===${p.id});if(px)px.status=val;renderProxies();})(val)`)}</td>
+    <td>${contaUsing(p.ip)}</td>
+    <td>${ieTxt(p.validade,`patch('proxies',${p.id},'validade',val)`)}</td>
+    <td><button class="btn bd bsm" onclick="delProxy(${p.id})"><i class="ti ti-trash"></i></button></td>
+  </tr>`).join('');
+  bindTable('tb-px');
+  statsProxies();
+}
+function statsProxies(){
+  document.getElementById('stats-px').innerHTML=`
+    <div class="stat"><div class="sl">Total</div><div class="sv">${Proxies.length}</div></div>
+    <div class="stat"><div class="sl">Disponíveis</div><div class="sv">${Proxies.filter(x=>x.status==='Disponível').length}</div></div>
+    <div class="stat"><div class="sl">Em uso</div><div class="sv">${Proxies.filter(x=>x.status==='Em uso').length}</div></div>`;
+}
+
+// ── AVATARES ──
+async function addAvatar(){
+  const nome=g('av-n');if(!nome)return;
+  try{const r=await api('avatares','POST',{nome,caracteristicas:g('av-c'),prompt:g('av-p')});Avatares.unshift(r[0]);clr(['av-n','av-c','av-p']);tog('padd-av');renderAvatares();fillSelects();}
+  catch(e){alert('Erro: '+e.message);}
+}
+async function delAvatar(id){if(!confirm('Excluir avatar?'))return;await api('avatares','DELETE',null,'?id=eq.'+id);Avatares=Avatares.filter(x=>x.id!==id);renderAvatares();fillSelects();}
+function renderAvatares(){
+  const tb=document.getElementById('tb-av');
+  if(!Avatares.length){tb.innerHTML=`<tr><td colspan="6" class="empty">Nenhum avatar cadastrado</td></tr>`;return;}
+  tb.innerHTML=Avatares.map(a=>{
+    const usingContas=Contas.filter(c=>Number(c.avatar_id)===a.id);
+    const emUso=usingContas.length>0;
+    const pills=usingContas.map(c=>`<span style="display:inline-block;background:#1a2a1a;border:1px solid #2a3a2a;border-radius:4px;padding:1px 7px;font-size:10px;color:#4ade80;margin:1px">${esc(c.user_ig)}</span>`).join('');
+    const statusCell=emUso?`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span class="badge b-venda" style="flex-shrink:0">Em uso</span>${pills}</div>`:`<span style="color:#333;font-size:11px">Disponível</span>`;
+    const promptPreview=a.prompt?(a.prompt.length>60?a.prompt.slice(0,60)+'…':a.prompt):'—';
+    const promptCell=a.prompt?`<span style="font-size:11px;color:#888;cursor:pointer" onclick="expandPrompt(${a.id})" title="Clique para editar">${esc(promptPreview)}</span>`:`<span style="color:#333;font-size:11px">—</span>`;
+    return`<tr id="av-row-${a.id}">
+      <td>${ieTxt(a.nome,`(async(val)=>{await patch('avatares',${a.id},'nome',val);const av=Avatares.find(x=>x.id===${a.id});if(av){av.nome=val;}fillSelects();})(val)`)}</td>
+      <td>${ieTxt(a.caracteristicas,`(async(val)=>{await patch('avatares',${a.id},'caracteristicas',val);const av=Avatares.find(x=>x.id===${a.id});if(av)av.caracteristicas=val;})(val)`)}</td>
+      <td>${promptCell}</td>
+      <td>${statusCell}</td>
+      <td style="text-align:center;color:#555;font-size:12px">${usingContas.length||'—'}</td>
+      <td><button class="btn bd bsm" onclick="delAvatar(${a.id})"><i class="ti ti-trash"></i></button></td>
+    </tr>`;
+  }).join('');
+  bindTable('tb-av');
+}
+function expandPrompt(avId){
+  const av=Avatares.find(x=>x.id===avId);if(!av)return;
+  const row=document.getElementById('av-row-'+avId);if(!row)return;
+  const td=row.querySelectorAll('td')[2];
+  td.innerHTML=`<textarea style="width:100%;min-height:80px;font-size:12px;background:#111;border:1px solid #333;border-radius:6px;color:#e8e8e8;padding:6px;resize:vertical;outline:none" onblur="savePrompt(${avId},this.value)">${esc(av.prompt||'')}</textarea>`;
+  td.querySelector('textarea').focus();
+}
+async function savePrompt(avId,val){
+  await patch('avatares',avId,'prompt',val);
+  const av=Avatares.find(x=>x.id===avId);if(av)av.prompt=val;
+  renderAvatares();
+}
+
+// ── CONTAS — add ──
+async function addConta(){
+  const avId=g('ct-av')||null;
+  const o={user_ig:g('ct-u'),senha_ig:g('ct-si'),email:g('ct-e'),senha_email:g('ct-se'),dispositivo:g('ct-d'),situacao:g('ct-sit'),proxy:g('ct-px')||null,avatar_id:avId?Number(avId):null,voz:g('ct-vz'),mb_suite:g('ct-mb'),automacao:g('ct-au'),fb_page_status:g('ct-fp'),fb_page:g('ct-fbpg'),fb_perfil:g('ct-fbpr'),link_venda_ig:g('ct-lig'),link_venda_fb:g('ct-lfb'),drive_folder_id:g('ct-drv')||null,estoque_videos:0,aquecimento_dias:0,crescimento_posts:0};
+  if(!o.user_ig)return;
+  try{const r=await api('contas','POST',o);Contas.unshift(r[0]);clr(['ct-u','ct-si','ct-e','ct-se','ct-d','ct-vz','ct-fbpg','ct-fbpr','ct-lig','ct-lfb','ct-drv']);tog('padd-ct');renderContas();renderProxies();renderAvatares();}
+  catch(e){alert('Erro: '+e.message);}
+}
+async function delConta(id){
+  if(!confirm('Excluir conta e todos os dados?'))return;
+  await api('contas','DELETE',null,'?id=eq.'+id);
+  Contas=Contas.filter(x=>x.id!==id);
+  Checks=Checks.filter(x=>x.conta_id!==id);
+  renderContas();renderProxies();renderAvatares();
+}
+async function updateEstoque(id,val){
+  const n=Number(val)||0;
+  await patch('contas',id,'estoque_videos',n);
+  const ct=Contas.find(x=>x.id===id);if(ct)ct.estoque_videos=n;
+}
+function statsContas(){
+  document.getElementById('stats-ct').innerHTML=`
+    <div class="stat"><div class="sl">Total</div><div class="sv">${Contas.length}</div></div>
+    <div class="stat"><div class="sl" style="color:#fb923c">Criar Perfil</div><div class="sv">${Contas.filter(x=>x.situacao==='Criar Perfil').length}</div></div>
+    <div class="stat"><div class="sl" style="color:#888">Aquecimento</div><div class="sv">${Contas.filter(x=>x.situacao==='Aquecimento').length}</div></div>
+    <div class="stat"><div class="sl" style="color:#60a5fa">Crescimento</div><div class="sv">${Contas.filter(x=>x.situacao==='Crescimento').length}</div></div>
+    <div class="stat"><div class="sl" style="color:#4ade80">Venda</div><div class="sv">${Contas.filter(x=>x.situacao==='Venda').length}</div></div>
+    <div class="stat"><div class="sl" style="color:#fbbf24">SMS/Selfie</div><div class="sv">${Contas.filter(x=>x.situacao==='SMS e Análise Selfie').length}</div></div>
+    <div class="stat"><div class="sl" style="color:#f87171">Banidas</div><div class="sv">${Contas.filter(x=>['Banida','Bugada'].includes(x.situacao)).length}</div></div>`;
+}
+
+
+
 function sitBadge(s){
   const cls={'Criar Perfil':'b-criar','Aquecimento':'b-aquecimento','Crescimento':'b-crescimento','Venda':'b-venda','SMS e Análise Selfie':'b-sms','Banida':'b-banida','Bugada':'b-bugada'}[s]||'bdi';
   return`<span class="badge ${cls}">${s}</span>`;
@@ -574,14 +761,7 @@ function ieSel(val,opts,fn,labels){
   const optHtml=opts.map((o,i)=>`<option value="${esc(String(o))}"${String(o)===String(val)?' selected':''}>${esc(String(labels?labels[i]||o:o))}</option>`).join('');
   return`<select class="ie" data-fn="${fn}">${optHtml}</select>`;
 }
-function statsContas(){
-  document.getElementById('stats-ct').innerHTML=`
-    <div class="stat"><div class="sl">Total</div><div class="sv">${Contas.length}</div></div>
-    <div class="stat"><div class="sl">Aquecimento</div><div class="sv">${Contas.filter(x=>x.situacao==='Aquecimento').length}</div></div>
-    <div class="stat"><div class="sl">Crescimento</div><div class="sv">${Contas.filter(x=>x.situacao==='Crescimento').length}</div></div>
-    <div class="stat"><div class="sl">Venda</div><div class="sv">${Contas.filter(x=>x.situacao==='Venda').length}</div></div>
-    <div class="stat"><div class="sl">Inativas</div><div class="sv">${Contas.filter(x=>['Inativo','Suspenso'].includes(x.situacao)).length}</div></div>`;
-}
+
 
 // ── POSTAGENS ──
 function checkedDays(cid){
@@ -635,12 +815,7 @@ async function checkProgression(cid){
   }
 }
 
-async function updateEstoque(cid,val){
-  const n=Number(val)||0;
-  await patch('contas',cid,'estoque_videos',n);
-  const ct=Contas.find(x=>x.id===cid);
-  if(ct)ct.estoque_videos=n;
-}
+
 
 function renderPostagens(){
   const wk=weekDays();
