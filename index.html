@@ -312,14 +312,11 @@ td.iec select{cursor:pointer}
 <div class="tab" id="tab-postagens">
   <div class="drive-panel">
     <i class="ti ti-brand-google-drive"></i>
-    <div class="drive-info" style="flex:1">
-      <p style="margin-bottom:6px">Sincronização com Google Drive</p>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <input id="gclient-input" type="text" placeholder="Cole seu Google Client ID aqui..." style="font-size:12px;padding:5px 9px;border-radius:6px;border:1px solid #2a4a2a;background:#0f1f0f;color:#e8e8e8;width:320px;outline:none" oninput="saveGClient(this.value)">
-        <button class="btn bg bsm" onclick="syncDrive()"><i class="ti ti-refresh"></i> Sincronizar estoque</button>
-      </div>
-      <small style="margin-top:4px;display:block">Cole o Client ID do Google Cloud Console. Fica salvo no navegador.</small>
+    <div class="drive-info">
+      <p>Sincronização automática com Google Drive</p>
+      <small>O estoque é atualizado ao clicar em "Sincronizar". Requer autenticação com sua conta Google.</small>
     </div>
+    <button class="btn bg bsm" onclick="syncDrive()"><i class="ti ti-refresh"></i> Sincronizar estoque</button>
   </div>
   <div id="post-sections"><div class="loading">Carregando...</div></div>
 </div>
@@ -330,16 +327,8 @@ td.iec select{cursor:pointer}
 const SB='https://celnqfvjucollfcuwxrn.supabase.co';
 const KEY='sb_publishable_NKRCmfTzf9giPR7v4eHLXg_jlZMci05';
 // Google OAuth — substitua pelo seu Client ID do Google Cloud Console
-let GCLIENT=localStorage.getItem('igm_gclient')||'';
+const GCLIENT='975610078004-mb1qdpurmirmf15gndhj8d9k874v2mku.apps.googleusercontent.com';
 let gToken=null;
-function saveGClient(val){
-  GCLIENT=val.trim();
-  localStorage.setItem('igm_gclient',GCLIENT);
-}
-function loadGClientInput(){
-  const inp=document.getElementById('gclient-input');
-  if(inp&&GCLIENT)inp.value=GCLIENT;
-}
 
 async function api(tbl,method='GET',body=null,qs=''){
   const h={'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+KEY};
@@ -376,7 +365,6 @@ async function loadAll(){
     document.getElementById('cdot').className='dot';
     renderEmails();renderProxies();renderAvatares();renderContas();
     fillSelects();
-    loadGClientInput();
   }catch(e){document.getElementById('cdot').className='dot err';console.error(e);}
 }
 
