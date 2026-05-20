@@ -263,23 +263,22 @@ select.ie{cursor:pointer}
     <button class="btn bp bsm" onclick="addConta()">Salvar</button>
     <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-ct')">Cancelar</button>
   </div>
+  <div class="toolbar" style="margin-top:-6px">
+    <button class="btn bg bsm" onclick="syncDriveContas()"><i class="ti ti-refresh"></i> Sincronizar estoque</button>
+  </div>
   <div class="tw"><table>
     <thead><tr>
-      <th style="min-width:120px">User IG</th>
-      <th style="min-width:160px">E-mail</th>
+      <th style="min-width:130px">User IG</th>
+      <th style="min-width:110px">Dispositivo</th>
       <th style="min-width:90px">Situação</th>
-      <th style="min-width:130px">Proxy</th>
-      <th style="min-width:100px">Avatar</th>
-      <th style="min-width:120px">Voz</th>
-      <th style="width:45px">MB</th>
-      <th style="width:45px">Auto</th>
-      <th style="width:45px">FB</th>
-      <th style="min-width:80px">Link IG</th>
-      <th style="min-width:80px">Link FB</th>
+      <th style="min-width:150px">Perfil Facebook</th>
+      <th style="width:55px">FB Page</th>
+      <th style="width:55px">MB Suite</th>
+      <th style="width:55px">Automação</th>
       <th style="min-width:90px">Estoque vídeos</th>
       <th style="width:40px"></th>
     </tr></thead>
-    <tbody id="tb-ct"><tr><td colspan="13" class="loading">Carregando...</td></tr></tbody>
+    <tbody id="tb-ct"><tr><td colspan="9" class="loading">Carregando...</td></tr></tbody>
   </table></div>
 </div>
 
@@ -556,27 +555,72 @@ function renderContas(){
   let f=Contas;
   if(cQ)f=f.filter(x=>((x.user_ig||'')+(x.email||'')).toLowerCase().includes(cQ.toLowerCase()));
   if(cSit)f=f.filter(x=>x.situacao===cSit);
-  const avName=id=>{ const a=Avatares.find(x=>x.id===id); return a?esc(a.nome):'—';};
   const tb=document.getElementById('tb-ct');
-  if(!f.length){tb.innerHTML=`<tr><td colspan="13" class="empty">Nenhuma conta</td></tr>`;return statsContas();}
-  tb.innerHTML=f.map(c=>`<tr>
-    <td><strong style="color:#fff">${esc(c.user_ig)}</strong></td>
-    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${ieTxt(c.email,`patch('contas',${c.id},'email',val)`)}</td>
+  if(!f.length){tb.innerHTML=`<tr><td colspan="9" class="empty">Nenhuma conta</td></tr>`;return statsContas();}
+  tb.innerHTML=f.map(c=>`<tr style="cursor:pointer">
+    <td onclick="openContaModal(${c.id})"><strong style="color:#60a5fa">${esc(c.user_ig)}</strong> <i class="ti ti-pencil" style="font-size:10px;color:#444"></i></td>
+    <td style="color:#888">${esc(c.dispositivo||'—')}</td>
     <td>${ieSel(c.situacao,['Criado','Aquecimento','Crescimento','Venda','Inativo','Suspenso'],`(async(val)=>{await patch('contas',${c.id},'situacao',val);const ct=Contas.find(x=>x.id===${c.id});if(ct)ct.situacao=val;renderContas();})(val)`)}</td>
-    <td>${ieSel(c.proxy||'',[''].concat(Proxies.map(p=>p.ip)),`(async(val)=>{await patch('contas',${c.id},'proxy',val||null);const ct=Contas.find(x=>x.id===${c.id});if(ct)ct.proxy=val;renderProxies();})(val)`)}</td>
-    <td>${ieSel(c.avatar_id||'',[''].concat(Avatares.map(a=>a.id)),`(async(val)=>{const nv=val?Number(val):null;await patch('contas',${c.id},'avatar_id',nv);const ct=Contas.find(x=>x.id===${c.id});if(ct)ct.avatar_id=nv;renderAvatares();})(val)`,Avatares.map(a=>a.nome))}</td>
-    <td>${ieTxt(c.voz,`patch('contas',${c.id},'voz',val)`)}</td>
+    <td>${c.fb_perfil?`<a href="${esc(c.fb_perfil)}" target="_blank" style="color:#60a5fa;font-size:11px"><i class="ti ti-external-link"></i> Ver perfil</a>`:'<span style="color:#333">—</span>'}</td>
+    <td>${yn(c.fb_page_status)}</td>
     <td>${yn(c.mb_suite)}</td>
     <td>${yn(c.automacao)}</td>
-    <td>${yn(c.fb_page_status)}</td>
-    <td>${c.link_venda_ig?`<a href="${esc(c.link_venda_ig)}" target="_blank" style="color:#60a5fa;font-size:11px"><i class="ti ti-external-link"></i> IG</a>`:'—'}</td>
-    <td>${c.link_venda_fb?`<a href="${esc(c.link_venda_fb)}" target="_blank" style="color:#60a5fa;font-size:11px"><i class="ti ti-external-link"></i> FB</a>`:'—'}</td>
-    <td>${stockEl(c.estoque_videos)}<br><input type="number" min="0" value="${Number(c.estoque_videos||0)}" style="width:52px;background:#111;border:1px solid #222;border-radius:4px;color:#888;font-size:11px;padding:2px 4px;margin-top:3px" onblur="updateEstoque(${c.id},this.value)" onkeydown="if(event.key==='Enter')updateEstoque(${c.id},this.value)"></td>
-    <td><button class="btn bd bsm" onclick="delConta(${c.id})"><i class="ti ti-trash"></i></button></td>
+    <td>${stockEl(c.estoque_videos)}<br><input type="number" min="0" value="${Number(c.estoque_videos||0)}" style="width:52px;background:#111;border:1px solid #222;border-radius:4px;color:#888;font-size:11px;padding:2px 4px;margin-top:3px" onclick="event.stopPropagation()" onblur="updateEstoque(${c.id},this.value)" onkeydown="if(event.key==='Enter'){event.stopPropagation();updateEstoque(${c.id},this.value);}"></td>
+    <td><button class="btn bd bsm" onclick="event.stopPropagation();delConta(${c.id})"><i class="ti ti-trash"></i></button></td>
   </tr>`).join('');
   bindTable('tb-ct');
   statsContas();
 }
+
+function openContaModal(id){
+  const c=Contas.find(x=>x.id===id);if(!c)return;
+  document.getElementById('modal-bg').style.display='flex';
+  document.getElementById('modal-inner').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="color:#fff;font-size:15px"><i class="ti ti-brand-instagram" style="color:#E1306C;margin-right:8px"></i>${esc(c.user_ig)}</h3>
+      <button onclick="closeModal()" style="background:transparent;border:none;color:#666;font-size:20px;cursor:pointer;line-height:1">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      ${mField(id,'User IG','user_ig',c.user_ig,'text')}
+      ${mField(id,'Senha IG','senha_ig',c.senha_ig,'password')}
+      ${mField(id,'E-mail','email',c.email,'text')}
+      ${mField(id,'Senha e-mail','senha_email',c.senha_email,'password')}
+      ${mField(id,'Dispositivo','dispositivo',c.dispositivo,'text')}
+      ${mFieldSel(id,'Situação','situacao',c.situacao,['Criado','Aquecimento','Crescimento','Venda','Inativo','Suspenso'])}
+      ${mFieldSel(id,'Proxy','proxy',c.proxy||'',[''].concat(Proxies.map(p=>p.ip)),['— sem proxy —'].concat(Proxies.map(p=>p.ip+(p.numero_pedido?' ('+p.numero_pedido+')':''))))}
+      ${mFieldSel(id,'Avatar','avatar_id',String(c.avatar_id||''),[''].concat(Avatares.map(a=>String(a.id))),['— sem avatar —'].concat(Avatares.map(a=>a.nome)),true)}
+      ${mField(id,'Voz','voz',c.voz,'text')}
+      ${mFieldSel(id,'MB Suite','mb_suite',c.mb_suite||'Não',['Não','Sim'])}
+      ${mFieldSel(id,'Automação','automacao',c.automacao||'Não',['Não','Sim'])}
+      ${mFieldSel(id,'FB Page criada','fb_page_status',c.fb_page_status||'Não',['Não','Sim'])}
+      ${mField(id,'Página Facebook','fb_page',c.fb_page,'text')}
+      ${mField(id,'Perfil Facebook','fb_perfil',c.fb_perfil,'text')}
+      ${mField(id,'Link venda IG','link_venda_ig',c.link_venda_ig,'text')}
+      ${mField(id,'Link venda FB','link_venda_fb',c.link_venda_fb,'text')}
+      ${mField(id,'ID pasta Drive','drive_folder_id',c.drive_folder_id,'text')}
+    </div>
+    <div style="padding-top:12px;border-top:1px solid #222;display:flex;justify-content:space-between;align-items:center">
+      <button class="btn bd bsm" onclick="delConta(${id});closeModal()"><i class="ti ti-trash"></i> Excluir conta</button>
+      <button class="btn bp bsm" onclick="closeModal()">Fechar</button>
+    </div>`;
+}
+
+function mField(cid,label,field,val,type){
+  const isNum=(field==='avatar_id');
+  const onchange=isNum
+    ? `(async()=>{const nv=this.value?Number(this.value):null;await patch('contas',${cid},'${field}',nv);const ct=Contas.find(x=>x.id===${cid});if(ct)ct['${field}']=nv;renderContas();renderAvatares();})()`
+    : `(async()=>{await patch('contas',${cid},'${field}',this.value||null);const ct=Contas.find(x=>x.id===${cid});if(ct)ct['${field}']=this.value;renderContas();renderProxies();renderAvatares();})()`;
+  return`<div class="f"><label>${label}</label><input type="${type||'text'}" value="${esc(val)}" placeholder="—" style="background:#111;border:1px solid #252525;border-radius:7px;color:#e8e8e8;font-size:13px;padding:6px 9px;width:100%;outline:none" onblur="${onchange}" onkeydown="if(event.key==='Enter'){${onchange}}"></div>`;
+}
+function mFieldSel(cid,label,field,val,opts,labels,isNum){
+  const onchange=isNum
+    ? `(async()=>{const nv=this.value?Number(this.value):null;await patch('contas',${cid},'${field}',nv);const ct=Contas.find(x=>x.id===${cid});if(ct)ct['${field}']=nv;renderContas();renderAvatares();})()`
+    : `(async()=>{await patch('contas',${cid},'${field}',this.value||null);const ct=Contas.find(x=>x.id===${cid});if(ct)ct['${field}']=this.value;renderContas();renderProxies();})()`;
+  const optHtml=opts.map((o,i)=>`<option value="${esc(String(o))}"${String(o)===String(val)?' selected':''}>${esc(String(labels?labels[i]:o))}</option>`).join('');
+  return`<div class="f"><label>${label}</label><select style="background:#111;border:1px solid #252525;border-radius:7px;color:#e8e8e8;font-size:13px;padding:6px 9px;width:100%;outline:none" onchange="${onchange}">${optHtml}</select></div>`;
+}
+function closeModal(){document.getElementById('modal-bg').style.display='none';}
+
 // special select with label mapping
 function ieSel(val,opts,fn,labels){
   const optHtml=opts.map((o,i)=>`<option value="${esc(String(o))}"${String(o)===String(val)?' selected':''}>${esc(String(labels?labels[i]||o:o))}</option>`).join('');
@@ -738,6 +782,8 @@ function syncDrive(){
   });
 }
 
+
+function syncDriveContas(){syncDrive();}
 function initGoogleAuth(cb){
   if(!window.google){
     const s=document.createElement('script');
@@ -747,7 +793,7 @@ function initGoogleAuth(cb){
   } else doGoogleAuth(cb);
 }
 function doGoogleAuth(cb){
-  if(GCLIENT==='975610078004-mb1qdpurmirmf15gndhj8d9k874v2mku.apps.googleusercontent.com'){
+  if(GCLIENT==='SEU_GOOGLE_CLIENT_ID.apps.googleusercontent.com'){
     alert('Para usar a sincronização com Drive, configure o Google Client ID no arquivo index.html.\n\nVeja as instruções no README.');
     return;
   }
@@ -761,5 +807,9 @@ function doGoogleAuth(cb){
 
 loadAll();
 </script>
+
+<div id="modal-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;align-items:flex-start;justify-content:center;padding-top:40px;overflow-y:auto">
+  <div id="modal-inner" style="background:#161616;border:1px solid #2a2a2a;border-radius:14px;padding:20px;width:90%;max-width:620px;margin-bottom:40px"></div>
+</div>
 </body>
 </html>
