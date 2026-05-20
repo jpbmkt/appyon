@@ -135,6 +135,33 @@ td.iec input,td.iec select{background:transparent;border:none;color:#e8e8e8;font
 td.iec input:focus,td.iec select:focus{background:#1e1e1e;border-bottom:1px solid #444}
 td.iec select{cursor:pointer}
 
+/* DASHBOARD HOJE */
+.dash-section{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:16px;margin-bottom:0}
+.dash-section-title{font-size:12px;font-weight:600;color:#888;margin-bottom:12px;display:flex;align-items:center;gap:6px;text-transform:uppercase;letter-spacing:.5px}
+.resumo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:20px}
+.resumo-card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:12px 14px;cursor:pointer;transition:border-color .15s}
+.resumo-card:hover{border-color:#3a3a3a}
+.resumo-card .rc-label{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.resumo-card .rc-val{font-size:24px;font-weight:700;color:#fff}
+.resumo-card .rc-sub{font-size:10px;color:#444;margin-top:2px}
+.fila-item{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;background:#111;border:1px solid #1e1e1e;border-radius:8px;margin-bottom:6px;cursor:pointer;transition:border-color .15s}
+.fila-item:hover{border-color:#2a2a2a}
+.fila-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.fila-content{flex:1;min-width:0}
+.fila-title{font-size:12px;font-weight:500;color:#e8e8e8;margin-bottom:1px}
+.fila-sub{font-size:11px;color:#555}
+.agenda-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#111;border:1px solid #1e1e1e;border-radius:8px;margin-bottom:6px}
+.agenda-time{font-size:11px;color:#a78bfa;font-weight:600;white-space:nowrap;min-width:50px}
+.agenda-title{font-size:12px;color:#ccc}
+.nota-item{background:#111;border:1px solid #1e1e1e;border-radius:8px;padding:10px 12px;margin-bottom:8px}
+.nota-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.nota-autor{font-size:11px;font-weight:500;color:#60a5fa}
+.nota-hora{font-size:10px;color:#444}
+.nota-text{font-size:12px;color:#aaa;line-height:1.5}
+.nota-form{display:flex;gap:8px;margin-top:10px;align-items:flex-start}
+.nota-form input[type=text]{font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;width:110px;outline:none;flex-shrink:0}
+.nota-form textarea{flex:1;font-size:12px;padding:7px 10px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;resize:none;outline:none;min-height:40px}
+.alerta-estoque{background:#1f0f0f;border:1px solid #3a1515;border-radius:8px;padding:8px 12px;margin-bottom:6px;display:flex;align-items:center;gap:8px;font-size:12px;color:#f87171}
 /* DRIVE PANEL */
 .drive-panel{background:#111;border:1px solid #1e3a1e;border-radius:9px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .drive-panel i{color:#4ade80;font-size:18px}
@@ -148,7 +175,8 @@ td.iec select{cursor:pointer}
 <div class="topbar">
   <div class="logo"><i class="ti ti-coin"></i> Gestão Appyon</div>
   <div class="nav">
-    <button class="nb active" onclick="showTab('emails',this)"><i class="ti ti-mail"></i> E-mails</button>
+    <button class="nb active" onclick="showTab('hoje',this)"><i class="ti ti-layout-dashboard"></i> Hoje</button>
+    <button class="nb" onclick="showTab('emails',this)"><i class="ti ti-mail"></i> E-mails</button>
     <button class="nb" onclick="showTab('proxies',this)"><i class="ti ti-server"></i> Proxies</button>
     <button class="nb" onclick="showTab('avatares',this)"><i class="ti ti-user-circle"></i> Avatares</button>
     <button class="nb" onclick="showTab('contas',this)"><i class="ti ti-layout-dashboard"></i> Gestão de Contas</button>
@@ -159,8 +187,30 @@ td.iec select{cursor:pointer}
 
 <div class="content">
 
+<!-- ===== HOJE ===== -->
+<div class="tab active" id="tab-hoje">
+  <!-- Resumo rápido -->
+  <div id="hoje-resumo" style="margin-bottom:20px"></div>
+  <!-- Fila de ação -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+    <div>
+      <div style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-list-check" style="color:#60a5fa"></i> Fila de ação do dia</div>
+      <div id="hoje-fila"></div>
+    </div>
+    <div>
+      <div style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-calendar" style="color:#a78bfa"></i> Agenda Google</div>
+      <div id="hoje-agenda"></div>
+    </div>
+  </div>
+  <!-- Notas do dia -->
+  <div>
+    <div style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-note" style="color:#fbbf24"></i> Notas do dia</div>
+    <div id="hoje-notas"></div>
+  </div>
+</div>
+
 <!-- ===== EMAILS ===== -->
-<div class="tab active" id="tab-emails">
+<div class="tab" id="tab-emails">
   <div class="stats" id="stats-em"></div>
   <div class="toolbar">
     <input type="text" placeholder="Buscar e-mail..." oninput="renderEmails(this.value)">
@@ -342,7 +392,7 @@ async function api(tbl,method='GET',body=null,qs=''){
   const t=await r.text();return t?JSON.parse(t):null;
 }
 
-let Emails=[],Proxies=[],Avatares=[],Contas=[],Checks=[],ConfigsIniciais=[];
+let Emails=[],Proxies=[],Avatares=[],Contas=[],Checks=[],ConfigsIniciais=[],NotasDia=[],gCalendarEvents=[];
 let cQ='',cSit='',eMailFilter='',proxyFilter='';
 const today=new Date().toISOString().slice(0,10);
 
@@ -357,13 +407,14 @@ function weekDays(){
 
 async function loadAll(){
   try{
-    [Emails,Proxies,Avatares,Contas,Checks,ConfigsIniciais]=await Promise.all([
+    [Emails,Proxies,Avatares,Contas,Checks,ConfigsIniciais,NotasDia]=await Promise.all([
       api('emails','GET',null,'?order=id.desc'),
       api('proxies','GET',null,'?order=id.desc'),
       api('avatares','GET',null,'?order=id.desc'),
       api('contas','GET',null,'?order=id.desc'),
       api('checks_postagem','GET',null,'?order=data.desc'),
-      api('config_inicial','GET',null,'')
+      api('config_inicial','GET',null,''),
+      api('notas_dia','GET',null,'?order=created_at.desc&data=eq.'+new Date().toISOString().slice(0,10))
     ]);
     document.getElementById('cdot').className='dot';
     renderEmails();renderProxies();renderAvatares();renderContas();
@@ -377,6 +428,7 @@ function showTab(t,btn){
   document.getElementById('tab-'+t).classList.add('active');
   btn.classList.add('active');
   if(t==='postagens')renderPostagens();
+  if(t==='hoje')renderHoje();
 }
 function tog(id){const p=document.getElementById(id);if(p)p.style.display=p.style.display==='none'?'block':'none';}
 function g(id){const el=document.getElementById(id);return el?el.value:'';}
@@ -1090,23 +1142,218 @@ function syncDrive(){
 }
 
 
+// ══════════════════════════════════════
+// DASHBOARD HOJE
+// ══════════════════════════════════════
+
+function renderHoje(){
+  renderResumo();
+  renderFila();
+  renderAgenda();
+  renderNotas();
+}
+
+function renderResumo(){
+  const todayStr=new Date().toISOString().slice(0,10);
+  const SIT=['Criar Perfil','Configuração Inicial','Aquecimento','Crescimento','Venda','SMS e Análise Selfie','Banida','Bugada'];
+  const COLORS={'Criar Perfil':'#fb923c','Configuração Inicial':'#38bdf8','Aquecimento':'#888','Crescimento':'#60a5fa','Venda':'#4ade80','SMS e Análise Selfie':'#fbbf24','Banida':'#f87171','Bugada':'#f87171'};
+
+  const estoqueCritico=Contas.filter(c=>['Aquecimento','Crescimento','Venda'].includes(c.situacao)&&Number(c.estoque_videos||0)<=1);
+  const checksHoje=Checks.filter(c=>c.data===todayStr);
+  const contasAtivas=Contas.filter(c=>['Aquecimento','Crescimento','Venda'].includes(c.situacao));
+  const pendentesHoje=contasAtivas.filter(c=>!checksHoje.find(ch=>ch.conta_id===c.id));
+
+  // Cards de situação
+  const sitCards=SIT.map(s=>{
+    const count=s==='Banida'?Contas.filter(x=>['Banida','Bugada'].includes(x.situacao)).length:Contas.filter(x=>x.situacao===s).length;
+    if(s==='Bugada')return'';
+    return`<div class="resumo-card" onclick="goToContas('${s}')">
+      <div class="rc-label" style="color:${COLORS[s]||'#888'}">${s==='SMS e Análise Selfie'?'SMS/Selfie':s}</div>
+      <div class="rc-val">${count}</div>
+    </div>`;
+  }).join('');
+
+  const alertCards=`
+    <div class="resumo-card" style="border-color:${estoqueCritico.length>0?'#3a1515':'#2a2a2a'}">
+      <div class="rc-label" style="color:${estoqueCritico.length>0?'#f87171':'#555'}"><i class="ti ti-alert-triangle"></i> Estoque crítico</div>
+      <div class="rc-val" style="color:${estoqueCritico.length>0?'#f87171':'#555'}">${estoqueCritico.length}</div>
+      <div class="rc-sub">${estoqueCritico.length>0?estoqueCritico.slice(0,2).map(c=>c.user_ig).join(', ')+(estoqueCritico.length>2?'...':''):'Tudo ok'}</div>
+    </div>
+    <div class="resumo-card">
+      <div class="rc-label" style="color:#60a5fa"><i class="ti ti-calendar-check"></i> Checks hoje</div>
+      <div class="rc-val">${checksHoje.length}</div>
+      <div class="rc-sub">${pendentesHoje.length} pendente${pendentesHoje.length!==1?'s':''}</div>
+    </div>`;
+
+  document.getElementById('hoje-resumo').innerHTML=`
+    <div style="font-size:12px;font-weight:600;color:#888;margin-bottom:10px;display:flex;align-items:center;gap:6px;text-transform:uppercase;letter-spacing:.5px"><i class="ti ti-chart-bar" style="color:#60a5fa"></i> Visão geral — ${new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})}</div>
+    <div class="resumo-grid">${sitCards}${alertCards}</div>`;
+}
+
+function goToContas(sit){
+  cSit=sit;
+  const btn=document.querySelector('.nb[onclick*="contas"]');
+  if(btn)showTab('contas',btn);
+}
+
+function renderFila(){
+  const todayStr=new Date().toISOString().slice(0,10);
+  const checksHoje=Checks.filter(c=>c.data===todayStr);
+  const items=[];
+
+  // Contas ativas sem check hoje
+  const contasAtivas=Contas.filter(c=>['Aquecimento','Crescimento','Venda'].includes(c.situacao));
+  const semCheck=contasAtivas.filter(c=>!checksHoje.find(ch=>ch.conta_id===c.id));
+  if(semCheck.length>0){
+    items.push({icon:'ti-calendar-x',color:'#fb923c',bg:'#2a1a0a',title:`${semCheck.length} conta${semCheck.length!==1?'s':''} sem check hoje`,sub:semCheck.slice(0,3).map(c=>c.user_ig).join(', ')+(semCheck.length>3?` +${semCheck.length-3} mais`:''),action:"showTab('postagens',document.querySelector('.nb[onclick*=postagens]'))"});
+  }
+
+  // Estoque crítico
+  const criticos=Contas.filter(c=>['Aquecimento','Crescimento','Venda'].includes(c.situacao)&&Number(c.estoque_videos||0)<=1);
+  if(criticos.length>0){
+    items.push({icon:'ti-alert-triangle',color:'#f87171',bg:'#2a0f0f',title:`${criticos.length} conta${criticos.length!==1?'s com estoque crítico':' com estoque crítico'}`,sub:criticos.slice(0,3).map(c=>`${c.user_ig} (${c.estoque_videos||0} vídeo${Number(c.estoque_videos||0)!==1?'s':''}`).join('), ')+(criticos.length>0?')':''),action:"showTab('contas',document.querySelector('.nb[onclick*=contas]'))"});
+  }
+
+  // Configuração inicial pendente
+  const configPendentes=Contas.filter(c=>c.situacao==='Configuração Inicial').filter(c=>{
+    const cfg=ConfigsIniciais.find(x=>x.conta_id===c.id)||{};
+    return!['pasta_drive','foto_perfil','conta_profissional','descricao_bio','link_bio'].every(k=>cfg[k]);
+  });
+  if(configPendentes.length>0){
+    items.push({icon:'ti-settings',color:'#38bdf8',bg:'#0a1f30',title:`${configPendentes.length} conta${configPendentes.length!==1?'s':''} com configuração pendente`,sub:configPendentes.slice(0,3).map(c=>c.user_ig).join(', ')+(configPendentes.length>3?` +${configPendentes.length-3} mais`:''),action:"showTab('postagens',document.querySelector('.nb[onclick*=postagens]'))"});
+  }
+
+  // Contas que podem avançar de status (Aquecimento com 2+ dias)
+  const podeAvancar=Contas.filter(c=>{
+    if(c.situacao!=='Aquecimento')return false;
+    const dias=new Set(Checks.filter(x=>x.conta_id===c.id).map(x=>x.data)).size;
+    return dias>=2;
+  });
+  if(podeAvancar.length>0){
+    items.push({icon:'ti-arrow-up-circle',color:'#4ade80',bg:'#0a2a15',title:`${podeAvancar.length} conta${podeAvancar.length!==1?'s prontas':' pronta'} para avançar`,sub:podeAvancar.map(c=>c.user_ig).join(', '),action:"showTab('postagens',document.querySelector('.nb[onclick*=postagens]'))"});
+  }
+
+  const el=document.getElementById('hoje-fila');
+  if(!items.length){
+    el.innerHTML=`<div style="text-align:center;padding:24px;color:#333;font-size:12px"><i class="ti ti-circle-check" style="font-size:24px;color:#4ade80;display:block;margin-bottom:8px"></i>Tudo em dia!</div>`;
+    return;
+  }
+  el.innerHTML=`<div class="dash-section" style="padding:12px">`+items.map(it=>`
+    <div class="fila-item" onclick="${it.action}">
+      <div class="fila-icon" style="background:${it.bg};color:${it.color}"><i class="ti ${it.icon}"></i></div>
+      <div class="fila-content">
+        <div class="fila-title">${it.title}</div>
+        <div class="fila-sub">${it.sub}</div>
+      </div>
+      <i class="ti ti-chevron-right" style="color:#333;font-size:12px"></i>
+    </div>`).join('')+`</div>`;
+}
+
+// ── AGENDA GOOGLE ──
+function renderAgenda(){
+  const el=document.getElementById('hoje-agenda');
+  if(!gToken){
+    el.innerHTML=`<div class="dash-section" style="padding:16px;text-align:center">
+      <i class="ti ti-calendar" style="font-size:28px;color:#a78bfa;display:block;margin-bottom:8px"></i>
+      <p style="font-size:12px;color:#666;margin-bottom:10px">Conecte sua conta Google para ver a agenda</p>
+      <button class="btn bsm" style="background:#1e1a2e;border-color:#a78bfa;color:#a78bfa" onclick="connectCalendar()"><i class="ti ti-brand-google"></i> Conectar Google Agenda</button>
+    </div>`;
+    return;
+  }
+  fetchCalendar();
+}
+
+function connectCalendar(){
+  initGoogleAuth(()=>{fetchCalendar();},true);
+}
+
+function fetchCalendar(){
+  const el=document.getElementById('hoje-agenda');
+  el.innerHTML=`<div class="dash-section" style="padding:12px;text-align:center;color:#555;font-size:12px">Carregando agenda...</div>`;
+  const now=new Date();
+  const end=new Date(now);end.setHours(23,59,59);
+  const url=`https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${now.toISOString()}&timeMax=${end.toISOString()}&singleEvents=true&orderBy=startTime&maxResults=10`;
+  fetch(url,{headers:{Authorization:'Bearer '+gToken}})
+    .then(r=>r.json())
+    .then(data=>{
+      const events=(data.items||[]);
+      gCalendarEvents=events;
+      if(!events.length){
+        el.innerHTML=`<div class="dash-section" style="padding:16px;text-align:center;color:#444;font-size:12px"><i class="ti ti-calendar-off" style="display:block;font-size:22px;margin-bottom:6px"></i>Nenhum evento hoje</div>`;
+        return;
+      }
+      el.innerHTML=`<div class="dash-section" style="padding:12px">`+events.map(ev=>{
+        const start=ev.start.dateTime?new Date(ev.start.dateTime):null;
+        const timeStr=start?start.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'Dia todo';
+        return`<div class="agenda-item">
+          <div class="agenda-time">${timeStr}</div>
+          <div class="agenda-title">${esc(ev.summary||'Sem título')}</div>
+        </div>`;
+      }).join('')+`</div>`;
+    })
+    .catch(()=>{
+      el.innerHTML=`<div class="dash-section" style="padding:12px;text-align:center;color:#555;font-size:12px">Erro ao carregar agenda. <button class="btn bsm" onclick="connectCalendar()" style="margin-top:6px">Reconectar</button></div>`;
+    });
+}
+
+// ── NOTAS DO DIA ──
+function renderNotas(){
+  const el=document.getElementById('hoje-notas');
+  const todayStr=new Date().toISOString().slice(0,10);
+  const notas=NotasDia.filter(n=>n.data===todayStr);
+
+  const form=`<div class="nota-form">
+    <input type="text" id="nota-autor" placeholder="Seu nome" value="${localStorage.getItem('igm_autor')||''}" oninput="localStorage.setItem('igm_autor',this.value)">
+    <textarea id="nota-texto" placeholder="Escreva uma nota para a equipe..." rows="2"></textarea>
+    <button class="btn bp bsm" onclick="addNota()" style="flex-shrink:0"><i class="ti ti-send"></i></button>
+  </div>`;
+
+  const notasHtml=notas.length
+    ? notas.map(n=>`<div class="nota-item">
+        <div class="nota-header">
+          <span class="nota-autor">${esc(n.autor||'Anônimo')}</span>
+          <span class="nota-hora">${new Date(n.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span>
+        </div>
+        <div class="nota-text">${esc(n.conteudo||'').replace(/\n/g,'<br>')}</div>
+      </div>`).join('')
+    : `<div style="text-align:center;padding:16px;color:#333;font-size:12px">Nenhuma nota ainda hoje.</div>`;
+
+  el.innerHTML=`<div class="dash-section">${notasHtml}${form}</div>`;
+}
+
+async function addNota(){
+  const autor=document.getElementById('nota-autor')?.value.trim()||'Anônimo';
+  const texto=document.getElementById('nota-texto')?.value.trim();
+  if(!texto)return;
+  try{
+    const r=await api('notas_dia','POST',{conteudo:texto,autor,data:new Date().toISOString().slice(0,10)});
+    NotasDia.unshift(r[0]);
+    document.getElementById('nota-texto').value='';
+    renderNotas();
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+
 function syncDriveContas(){syncDrive();}
-function initGoogleAuth(cb){
+function initGoogleAuth(cb,includeCalendar=false){
   if(!window.google){
     const s=document.createElement('script');
     s.src='https://accounts.google.com/gsi/client';
-    s.onload=()=>doGoogleAuth(cb);
+    s.onload=()=>doGoogleAuth(cb,includeCalendar);
     document.head.appendChild(s);
-  } else doGoogleAuth(cb);
+  } else doGoogleAuth(cb,includeCalendar);
 }
-function doGoogleAuth(cb){
+function doGoogleAuth(cb,includeCalendar=false){
   if(!GCLIENT||GCLIENT.length<10){
-    alert('Cole seu Google Client ID no campo acima antes de sincronizar.');
+    alert('Client ID do Google não configurado.');
     return;
   }
+  const scope=includeCalendar
+    ?'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/calendar.readonly'
+    :'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/calendar.readonly';
   const client=google.accounts.oauth2.initTokenClient({
     client_id:GCLIENT,
-    scope:'https://www.googleapis.com/auth/drive.readonly',
+    scope,
     callback:(resp)=>{if(resp.access_token){gToken=resp.access_token;if(cb)cb();}}
   });
   client.requestAccessToken();
