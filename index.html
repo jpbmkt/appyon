@@ -159,6 +159,13 @@ td.iec select{cursor:pointer}
 .nota-hora{font-size:10px;color:#444}
 .nota-text{font-size:12px;color:#aaa;line-height:1.5}
 .nota-form{display:flex;gap:8px;margin-top:10px;align-items:flex-start}
+.avatar-circle{width:32px;height:32px;border-radius:50%;object-fit:cover;cursor:pointer;border:1px solid #2a2a2a;background:#1a2a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;transition:border-color .15s}
+.avatar-circle:hover{border-color:#60a5fa}
+.avatar-circle img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.avatar-initials{font-size:12px;font-weight:700;color:#60a5fa;pointer-events:none}
+.foto-modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:600;align-items:center;justify-content:center;cursor:pointer}
+.foto-modal-bg.open{display:flex}
+.foto-modal-img{max-width:80vw;max-height:80vh;border-radius:12px;object-fit:contain;box-shadow:0 20px 60px rgba(0,0,0,.8)}
 .state-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;border:1px solid #2a2a2a;background:transparent;cursor:pointer;font-size:14px;transition:all .15s}
 .state-btn:hover{border-color:#444;background:#1e1e1e}
 .state-empty{color:#2a2a2a}
@@ -333,6 +340,7 @@ td.iec select{cursor:pointer}
     <div class="fg">
       <div class="f"><label>Nome / código</label><input id="av-n" placeholder="Maria Silva / AV-01"></div>
       <div class="f"><label>Características</label><input id="av-c" placeholder="28 anos, morena, lifestyle..."></div>
+      <div class="f"><label>Foto do avatar</label><input type="file" id="av-foto" accept="image/*" style="font-size:12px;color:#888;padding:4px 0"></div>
     </div>
     <div class="f" style="margin-bottom:12px"><label>Prompt</label><textarea id="av-p" placeholder="Você é Maria, uma jovem de 28 anos..."></textarea></div>
     <button class="btn bp bsm" onclick="addAvatar()">Salvar</button>
@@ -637,13 +645,66 @@ function statsProxies(){
 // ── AVATARES ──
 async function addAvatar(){
   const nome=g('av-n');if(!nome)return;
-  try{const r=await api('avatares','POST',{nome,caracteristicas:g('av-c'),prompt:g('av-p')});Avatares.unshift(r[0]);clr(['av-n','av-c','av-p']);tog('padd-av');renderAvatares();fillSelects();}
-  catch(e){alert('Erro: '+e.message);}
+  try{
+    // Upload da foto se houver
+    let foto_url=null;
+    const fotoInput=document.getElementById('av-foto');
+    if(fotoInput&&fotoInput.files&&fotoInput.files[0]){
+      foto_url=await uploadAvatarFoto(fotoInput.files[0],nome);
+    }
+    const r=await api('avatares','POST',{nome,caracteristicas:g('av-c'),prompt:g('av-p'),foto_url});
+    Avatares.unshift(r[0]);
+    clr(['av-n','av-c','av-p']);
+    fotoInput.value='';
+    tog('padd-av');renderAvatares();fillSelects();
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+async function uploadAvatarFoto(file,nome){
+  const ext=file.name.split('.').pop();
+  const fileName=`${nome.replace(/[^a-zA-Z0-9]/g,'_')}_${Date.now()}.${ext}`;
+  const res=await fetch(`${SB}/storage/v1/object/avatares/${fileName}`,{
+    method:'POST',
+    headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':file.type},
+    body:file
+  });
+  if(!res.ok){const e=await res.text();throw new Error('Upload falhou: '+e);}
+  return `${SB}/storage/v1/object/public/avatares/${fileName}`;
+}
+
+async function uploadAvatarFotoExistente(avId){
+  const input=document.createElement('input');
+  input.type='file';input.accept='image/*';
+  input.onchange=async()=>{
+    const file=input.files[0];if(!file)return;
+    try{
+      const av=Avatares.find(x=>x.id===avId);if(!av)return;
+      const url=await uploadAvatarFoto(file,av.nome||'av'+avId);
+      await api('avatares','PATCH',{foto_url:url},`?id=eq.${avId}`);
+      av.foto_url=url;
+      renderAvatares();fillSelects();
+      // Atualizar avatares nas contas
+      renderContas();
+    }catch(e){alert('Erro ao fazer upload: '+e.message);}
+  };
+  input.click();
+}
+
+function openFotoModal(url){
+  const bg=document.getElementById('foto-modal');
+  const img=document.getElementById('foto-modal-img');
+  if(!bg||!img)return;
+  img.src=url;
+  bg.classList.add('open');
+}
+function closeFotoModal(){
+  const bg=document.getElementById('foto-modal');
+  if(bg)bg.classList.remove('open');
 }
 async function delAvatar(id){if(!confirm('Excluir avatar?'))return;await api('avatares','DELETE',null,'?id=eq.'+id);Avatares=Avatares.filter(x=>x.id!==id);renderAvatares();fillSelects();}
 function renderAvatares(){
   const tb=document.getElementById('tb-av');
-  if(!Avatares.length){tb.innerHTML=`<tr><td colspan="6" class="empty">Nenhum avatar cadastrado</td></tr>`;return;}
+  if(!Avatares.length){tb.innerHTML=`<tr><td colspan="7" class="empty">Nenhum avatar cadastrado</td></tr>`;return;}
   tb.innerHTML=Avatares.map(a=>{
     const usingContas=Contas.filter(c=>Number(c.avatar_id)===a.id);
     const emUso=usingContas.length>0;
@@ -651,7 +712,17 @@ function renderAvatares(){
     const statusCell=emUso?`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span class="badge b-venda" style="flex-shrink:0">Em uso</span>${pills}</div>`:`<span style="color:#333;font-size:11px">Disponível</span>`;
     const promptPreview=a.prompt?(a.prompt.length>60?a.prompt.slice(0,60)+'…':a.prompt):'—';
     const promptCell=a.prompt?`<span style="font-size:11px;color:#888;cursor:pointer" onclick="expandPrompt(${a.id})" title="Clique para editar">${esc(promptPreview)}</span>`:`<span style="color:#333;font-size:11px">—</span>`;
+    // Foto cell
+    const fotoCell=a.foto_url
+      ?`<div style="display:flex;align-items:center;gap:8px">
+          <div class="avatar-circle" onclick="openFotoModal('${a.foto_url}')">
+            <img src="${a.foto_url}" alt="${esc(a.nome)}" onerror="this.parentElement.innerHTML='<span class=\"avatar-initials\">${(a.nome||'?')[0].toUpperCase()}</span>'">
+          </div>
+          <button class="btn bd bsm" onclick="uploadAvatarFotoExistente(${a.id})" title="Trocar foto"><i class="ti ti-camera"></i></button>
+        </div>`
+      :`<button class="btn bsm" onclick="uploadAvatarFotoExistente(${a.id})" style="font-size:11px;color:#666"><i class="ti ti-upload"></i> Adicionar foto</button>`;
     return`<tr id="av-row-${a.id}">
+      <td style="padding:6px 8px">${fotoCell}</td>
       <td>${ieTxt(a.nome,`(async(val)=>{await patch('avatares',${a.id},'nome',val);const av=Avatares.find(x=>x.id===${a.id});if(av){av.nome=val;}fillSelects();})(val)`)}</td>
       <td>${ieTxt(a.caracteristicas,`(async(val)=>{await patch('avatares',${a.id},'caracteristicas',val);const av=Avatares.find(x=>x.id===${a.id});if(av)av.caracteristicas=val;})(val)`)}</td>
       <td>${promptCell}</td>
@@ -880,14 +951,13 @@ function renderContas(){
   const YN=['Não','Sim'];
 
   tb.innerHTML=f.map(c=>`<tr>
-    <td onclick="openContaModal(${c.id})" style="cursor:pointer;padding:6px 8px">
-      <div style="display:flex;align-items:center;gap:6px">
-        <div style="width:28px;height:28px;border-radius:50%;background:#1a2a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:700;color:#60a5fa">${(c.user_ig||'?')[0].toUpperCase()}</div>
-        <div>
-          <div style="font-size:12px;font-weight:500;color:#e8e8e8">${esc(c.user_ig)}</div>
-          ${c.fb_perfil?`<div style="font-size:10px;color:#555;margin-top:1px">${esc(c.fb_perfil)}</div>`:''}
+    <td style="cursor:pointer;padding:6px 8px">
+      <div style="display:flex;align-items:center;gap:8px">
+        ${avatarThumb(c.avatar_id,c.user_ig)}
+        <div style="flex:1;min-width:0">
+          <input class="ie" value="${esc(c.user_ig)}" style="font-size:12px;font-weight:500;color:#e8e8e8;background:transparent;border:none;padding:0;width:100%" onblur="ctPatch(${c.id},'user_ig',this.value)" onkeydown="if(event.key==='Enter')this.blur()" onclick="event.stopPropagation()">
         </div>
-        <i class="ti ti-pencil" style="font-size:9px;color:#333;margin-left:auto"></i>
+        <i class="ti ti-info-circle" style="font-size:12px;color:#333;flex-shrink:0" onclick="openContaModal(${c.id})" title="Ver detalhes"></i>
       </div>
     </td>
     <td class="iec"><input value="${esc(c.dispositivo)}" placeholder="—" onblur="ctPatch(${c.id},'dispositivo',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></td>
@@ -983,6 +1053,20 @@ async function plPatch(id,field,value){
 
 
 // ── 3 ESTADOS: vazio → alerta → ok ──
+function avatarThumb(avatarId,userIg){
+  const av=Avatares.find(x=>x.id===Number(avatarId));
+  const initial=(userIg||'?')[0].toUpperCase();
+  if(av&&av.foto_url){
+    return`<div class="avatar-circle" onclick="event.stopPropagation();openFotoModal('${av.foto_url}')" style="width:28px;height:28px">
+      <img src="${av.foto_url}" alt="${esc(av.nome||'')}" onerror="this.parentElement.innerHTML='<span class=\"avatar-initials\" style=\"font-size:11px\">${initial}</span>'">
+    </div>`;
+  }
+  return`<div class="avatar-circle" style="width:28px;height:28px;pointer-events:none">
+    <span class="avatar-initials" style="font-size:11px">${initial}</span>
+  </div>`;
+}
+
+
 function stateVal(v){
   // Normaliza: '', null, 'Não' → vazio; 'alerta' → alerta; 'ok', 'Sim' → ok
   if(!v||v==='Não')return '';
@@ -1671,6 +1755,9 @@ loadAll();
 
 <div id="modal-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;align-items:flex-start;justify-content:center;padding-top:40px;overflow-y:auto">
   <div id="modal-inner" style="background:#161616;border:1px solid #2a2a2a;border-radius:14px;padding:20px;width:90%;max-width:620px;margin-bottom:40px"></div>
+</div>
+<div class="foto-modal-bg" id="foto-modal" onclick="closeFotoModal()">
+  <img class="foto-modal-img" id="foto-modal-img" src="" alt="Avatar">
 </div>
 </body>
 </html>
