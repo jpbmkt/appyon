@@ -446,15 +446,26 @@ async function api(tbl,method='GET',body=null,qs=''){
 
 let Emails=[],Proxies=[],Avatares=[],Contas=[],Checks=[],ConfigsIniciais=[],NotasDia=[],gCalendarEvents=[],TodosJessica=[],TodosFilipe=[];
 let cQ='',cSit='',eMailFilter='',proxyFilter='';
-const today=new Date().toISOString().slice(0,10);
+const today=localDateStr(new Date());
 
 // days of current week Mon-Sun
+function localDateStr(d){
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return`${y}-${m}-${day}`;
+}
 function weekDays(){
   const d=new Date();
-  const day=d.getDay();
+  const dow=d.getDay(); // 0=Dom,1=Seg...6=Sab
   const mon=new Date(d);
-  mon.setDate(d.getDate()-(day===0?6:day-1));
-  return Array.from({length:7},(_,i)=>{const x=new Date(mon);x.setDate(mon.getDate()+i);return x.toISOString().slice(0,10);});
+  mon.setDate(d.getDate()-(dow===0?6:dow-1));
+  mon.setHours(0,0,0,0);
+  return Array.from({length:7},(_,i)=>{
+    const x=new Date(mon);
+    x.setDate(mon.getDate()+i);
+    return localDateStr(x);
+  });
 }
 
 async function loadAll(){
@@ -466,7 +477,7 @@ async function loadAll(){
       api('contas','GET',null,'?order=id.desc'),
       api('checks_postagem','GET',null,'?order=data.desc'),
       api('config_inicial','GET',null,''),
-      api('notas_dia','GET',null,'?order=created_at.desc&data=eq.'+new Date().toISOString().slice(0,10)),
+      api('notas_dia','GET',null,'?order=created_at.desc&data=eq.'+localDateStr(new Date())),
       api('todo_items','GET',null,'?pessoa=eq.Jessica&order=id.asc'),
       api('todo_items','GET',null,'?pessoa=eq.Filipe&order=id.asc')
     ]);
@@ -1403,7 +1414,10 @@ function renderPostagens(){
           <th style="min-width:90px">Dispositivo</th>
           <th style="min-width:80px">Estoque</th>
           <th>${sec.showConfig?'Configuração Inicial':'Progresso'}</th>
-          ${sec.showConfig?'':dayNames.map((d,i)=>'<th style="'+(wk[i]===today?'color:#fff':'')+';text-align:center">'+d+'<br><span style="font-size:9px;color:#444">'+wk[i].slice(5)+'</span></th>').join('')}
+          ${sec.showConfig?'':dayNames.map((d,i)=>{
+  const isT=wk[i]===today;
+  return '<th style="text-align:center;'+(isT?'background:#1a2a1a;':'')+'"><span style="'+(isT?'color:#4ade80;font-weight:700':'color:#555')+'">'+d+'</span><br><span style="font-size:9px;'+(isT?'color:#4ade80':'color:#333')+'">'+wk[i].slice(5)+'</span>'+(isT?'<div style="width:4px;height:4px;border-radius:50%;background:#4ade80;margin:2px auto 0"></div>':'')+'</th>';
+}).join('')}
         </tr></thead>
         <tbody>${tableRows}</tbody>
       </table></div>
@@ -1480,7 +1494,7 @@ function renderHoje(){
 }
 
 function renderResumo(){
-  const todayStr=new Date().toISOString().slice(0,10);
+  const todayStr=localDateStr(new Date());
   const SIT=['Criar Perfil','Configuração Inicial','Aquecimento','Crescimento','Venda','SMS e Análise Selfie','Banida','Bugada'];
   const COLORS={'Criar Perfil':'#fb923c','Configuração Inicial':'#38bdf8','Aquecimento':'#888','Crescimento':'#60a5fa','Venda':'#4ade80','SMS e Análise Selfie':'#fbbf24','Banida':'#f87171','Bugada':'#f87171'};
 
@@ -1546,7 +1560,7 @@ function goToContas(sit){
 }
 
 function renderFila(){
-  const todayStr=new Date().toISOString().slice(0,10);
+  const todayStr=localDateStr(new Date());
   const checksHoje=Checks.filter(c=>c.data===todayStr);
   const items=[];
 
@@ -1661,7 +1675,7 @@ function fetchCalendar(){
 // ── NOTAS DO DIA ──
 function renderNotas(){
   const el=document.getElementById('hoje-notas');
-  const todayStr=new Date().toISOString().slice(0,10);
+  const todayStr=localDateStr(new Date());
   const notas=NotasDia.filter(n=>n.data===todayStr);
 
   const form=`<div class="nota-form">
@@ -1756,7 +1770,7 @@ async function addNota(){
   const texto=document.getElementById('nota-texto')?.value.trim();
   if(!texto)return;
   try{
-    const r=await api('notas_dia','POST',{conteudo:texto,autor,data:new Date().toISOString().slice(0,10)});
+    const r=await api('notas_dia','POST',{conteudo:texto,autor,data:localDateStr(new Date())});
     NotasDia.unshift(r[0]);
     document.getElementById('nota-texto').value='';
     renderNotas();
