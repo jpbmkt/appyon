@@ -179,12 +179,18 @@ td.iec select{cursor:pointer}
 .planilha-table tr:hover td{background:#111}
 .planilha-table tr:last-child td{border-bottom:none}
 .pl-idx{background:#1a1a1a;color:#444;font-size:10px;text-align:center;padding:6px 6px;border-right:1px solid #222;width:28px;user-select:none}
-.todo-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#111;border:1px solid #1e1e1e;border-radius:7px;margin-bottom:5px;transition:opacity .15s,transform .15s;user-select:none}
-.todo-item.dragging{opacity:.4;border-color:#444}
-.todo-item.drag-over{border-color:#60a5fa;background:#0a1520}
-.drag-handle{color:#2a2a2a;cursor:grab;font-size:14px;flex-shrink:0;padding:0 2px}
+.todo-block{background:#111;border:1px solid #1e1e1e;border-radius:9px;margin-bottom:10px;overflow:hidden;min-height:44px}
+.todo-block-header{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #1e1e1e;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.todo-block-body{padding:6px 6px 2px;min-height:32px}
+.todo-block.drag-target .todo-block-body{background:#0a1520;border-radius:0 0 9px 9px}
+.todo-item{display:flex;align-items:center;gap:7px;padding:6px 8px;background:#1a1a1a;border:1px solid #222;border-radius:7px;margin-bottom:4px;transition:opacity .15s;user-select:none}
+.todo-item.dragging{opacity:.3;border-style:dashed}
+.todo-item.drag-over-item{border-color:#60a5fa;background:#0a1520}
+.drag-handle{color:#2a2a2a;cursor:grab;font-size:13px;flex-shrink:0}
 .drag-handle:hover{color:#555}
 .drag-handle:active{cursor:grabbing}
+.prio-alta{color:#f87171}.prio-media{color:#fbbf24}.prio-baixa{color:#4ade80}
+.prio-alta-bg{border-left:2px solid #f87171}.prio-media-bg{border-left:2px solid #fbbf24}.prio-baixa-bg{border-left:2px solid #4ade80}
 .todo-item input[type=checkbox]{accent-color:#4ade80;width:14px;height:14px;cursor:pointer;flex-shrink:0}
 .todo-item label{font-size:12px;color:#ccc;flex:1;cursor:pointer;line-height:1.4}
 .todo-item label.done,.todo-item span.done{text-decoration:line-through;color:#555}
@@ -483,8 +489,8 @@ async function loadAll(){
       api('checks_postagem','GET',null,'?order=data.desc'),
       api('config_inicial','GET',null,''),
       api('notas_dia','GET',null,'?order=created_at.desc&data=eq.'+localDateStr(new Date())),
-      api('todo_items','GET',null,'?pessoa=eq.Jessica&order=ordem.asc,id.asc'),
-      api('todo_items','GET',null,'?pessoa=eq.Filipe&order=ordem.asc,id.asc')
+      api('todo_items','GET',null,'?pessoa=eq.Jessica&order=prioridade.asc,ordem.asc,id.asc'),
+      api('todo_items','GET',null,'?pessoa=eq.Filipe&order=prioridade.asc,ordem.asc,id.asc')
     ]);
     document.getElementById('cdot').className='dot';
     renderEmails();renderProxies();renderAvatares();renderContas();
@@ -1715,73 +1721,124 @@ function renderTodos(pessoa){
   if(!el)return;
   const todos=getTodos(pessoa);
   const inputId='todo-input-'+pessoa;
-  const listId='todo-list-'+pessoa;
+  const PRIOS=[
+    {key:'alta',  label:'Alta',   color:'#f87171', icon:'🔴'},
+    {key:'media', label:'Média',  color:'#fbbf24', icon:'🟡'},
+    {key:'baixa', label:'Baixa',  color:'#4ade80', icon:'🟢'},
+  ];
+
+  const blocks=PRIOS.map(p=>{
+    const items=todos.filter(t=>(t.prioridade||'media')===p.key);
+    return`<div class="todo-block" data-prio="${p.key}" data-pessoa="${pessoa}">
+      <div class="todo-block-header" style="color:${p.color}">
+        <span>${p.icon} ${p.label}</span>
+        <span style="color:#444;font-size:10px;margin-left:auto">${items.length}</span>
+      </div>
+      <div class="todo-block-body" id="todo-body-${pessoa}-${p.key}">
+        ${items.map(t=>`<div class="todo-item prio-${p.key}-bg" draggable="true" data-id="${t.id}" data-pessoa="${pessoa}" data-prio="${p.key}">
+          <span class="drag-handle"><i class="ti ti-grip-vertical"></i></span>
+          <input type="checkbox" id="tc-${t.id}" ${t.feito?'checked':''} onchange="toggleTodo(${t.id},'${pessoa}',this.checked)">
+          <span id="todo-label-${t.id}" class="${t.feito?'done':''}" style="flex:1;font-size:12px;color:#ccc;cursor:text" ondblclick="editTodo(${t.id},'${pessoa}')" title="Duplo clique para editar">${esc(t.texto)}</span>
+          <button class="del-todo" onclick="editTodo(${t.id},'${pessoa}')" title="Editar" style="color:#555"><i class="ti ti-pencil"></i></button>
+          <button class="del-todo" onclick="delTodo(${t.id},'${pessoa}')" title="Remover"><i class="ti ti-x"></i></button>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
 
   el.innerHTML=`<div class="dash-section" style="padding:10px">
-    <div id="${listId}">
-      ${todos.length
-        ? todos.map(t=>`<div class="todo-item" draggable="true" data-id="${t.id}" data-pessoa="${pessoa}">
-            <span class="drag-handle" title="Arrastar para reordenar"><i class="ti ti-grip-vertical"></i></span>
-            <input type="checkbox" id="tc-${t.id}" ${t.feito?'checked':''} onchange="toggleTodo(${t.id},'${pessoa}',this.checked)">
-            <span id="todo-label-${t.id}" class="${t.feito?'done':''}" style="flex:1;font-size:12px;color:#ccc;cursor:text" ondblclick="editTodo(${t.id},'${pessoa}')" title="Clique duplo para editar">${esc(t.texto)}</span>
-            <button class="del-todo" onclick="editTodo(${t.id},'${pessoa}')" title="Editar" style="color:#555"><i class="ti ti-pencil"></i></button>
-            <button class="del-todo" onclick="delTodo(${t.id},'${pessoa}')" title="Remover"><i class="ti ti-x"></i></button>
-          </div>`).join('')
-        : '<div style="text-align:center;padding:14px;color:#333;font-size:11px">Nenhuma tarefa</div>'}
-    </div>
-    <div class="todo-add">
+    ${blocks}
+    <div class="todo-add" style="margin-top:8px">
+      <select id="todo-prio-${pessoa}" style="font-size:12px;padding:5px 7px;border-radius:6px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none">
+        <option value="alta">🔴 Alta</option>
+        <option value="media" selected>🟡 Média</option>
+        <option value="baixa">🟢 Baixa</option>
+      </select>
       <input id="${inputId}" type="text" placeholder="Nova tarefa..." onkeydown="if(event.key==='Enter')addTodo('${pessoa}')">
       <button class="btn bp bsm" onclick="addTodo('${pessoa}')"><i class="ti ti-plus"></i></button>
     </div>
   </div>`;
 
-  bindTodoDrag(listId, pessoa);
+  bindTodoDrag(pessoa);
 }
 
-function bindTodoDrag(listId, pessoa){
-  const list=document.getElementById(listId);
-  if(!list)return;
+function bindTodoDrag(pessoa){
+  const PRIOS=['alta','media','baixa'];
   let dragEl=null;
+  let dragOriginPrio=null;
 
-  list.querySelectorAll('.todo-item[draggable]').forEach(item=>{
+  // Bind drag em todos os items
+  document.querySelectorAll(`[data-pessoa="${pessoa}"].todo-item`).forEach(item=>{
     item.addEventListener('dragstart',e=>{
       dragEl=item;
+      dragOriginPrio=item.dataset.prio;
       item.classList.add('dragging');
       e.dataTransfer.effectAllowed='move';
     });
-    item.addEventListener('dragend',()=>{
+    item.addEventListener('dragend',async()=>{
       item.classList.remove('dragging');
-      list.querySelectorAll('.todo-item').forEach(i=>i.classList.remove('drag-over'));
+      document.querySelectorAll('.todo-item').forEach(i=>i.classList.remove('drag-over-item'));
+      document.querySelectorAll('.todo-block').forEach(b=>b.classList.remove('drag-target'));
+      if(dragEl){
+        const newPrio=dragEl.closest('.todo-block')?.dataset.prio;
+        if(newPrio&&newPrio!==dragOriginPrio){
+          // Mudou de bloco — atualizar prioridade no banco
+          const id=Number(dragEl.dataset.id);
+          await api('todo_items','PATCH',{prioridade:newPrio},`?id=eq.${id}`);
+          const t=getTodos(pessoa).find(x=>x.id===id);
+          if(t)t.prioridade=newPrio;
+        }
+        await saveTodoOrder(pessoa);
+      }
       dragEl=null;
-      saveTodoOrder(pessoa);
     });
     item.addEventListener('dragover',e=>{
       e.preventDefault();
-      if(dragEl&&dragEl!==item){
-        list.querySelectorAll('.todo-item').forEach(i=>i.classList.remove('drag-over'));
-        item.classList.add('drag-over');
-        const rect=item.getBoundingClientRect();
-        const mid=rect.top+rect.height/2;
-        if(e.clientY<mid) list.insertBefore(dragEl,item);
-        else list.insertBefore(dragEl,item.nextSibling);
+      if(!dragEl||dragEl===item)return;
+      document.querySelectorAll(`[data-pessoa="${pessoa}"] .todo-item`).forEach(i=>i.classList.remove('drag-over-item'));
+      item.classList.add('drag-over-item');
+      const rect=item.getBoundingClientRect();
+      if(e.clientY<rect.top+rect.height/2) item.parentNode.insertBefore(dragEl,item);
+      else item.parentNode.insertBefore(dragEl,item.nextSibling);
+    });
+    item.addEventListener('dragleave',()=>item.classList.remove('drag-over-item'));
+    item.addEventListener('drop',e=>e.preventDefault());
+  });
+
+  // Bind drag nos corpos dos blocos (para soltar em bloco vazio)
+  PRIOS.forEach(p=>{
+    const body=document.getElementById(`todo-body-${pessoa}-${p}`);
+    if(!body)return;
+    body.addEventListener('dragover',e=>{
+      e.preventDefault();
+      body.closest('.todo-block').classList.add('drag-target');
+      if(dragEl&&!body.contains(dragEl)){
+        // Mover para bloco vazio
+        const items=[...body.querySelectorAll('.todo-item')];
+        if(items.length===0) body.appendChild(dragEl);
       }
     });
-    item.addEventListener('dragleave',()=>item.classList.remove('drag-over'));
-    item.addEventListener('drop',e=>{e.preventDefault();item.classList.remove('drag-over');});
+    body.addEventListener('dragleave',e=>{
+      if(!body.contains(e.relatedTarget))
+        body.closest('.todo-block').classList.remove('drag-target');
+    });
+    body.addEventListener('drop',e=>{e.preventDefault();body.closest('.todo-block').classList.remove('drag-target');});
   });
 }
 
+
 async function saveTodoOrder(pessoa){
-  const list=document.getElementById('todo-list-'+pessoa);
-  if(!list)return;
-  const ids=[...list.querySelectorAll('.todo-item[data-id]')].map(el=>Number(el.dataset.id));
+  // Coletar todos os items na ordem visual atual (todos os blocos)
+  const allItems=[...document.querySelectorAll(`[data-pessoa="${pessoa}"].todo-item[data-id]`)];
+  const ids=allItems.map(el=>Number(el.dataset.id));
+  const prios=allItems.map(el=>el.closest('.todo-block')?.dataset.prio||'media');
   // Atualizar ordem local
   const todos=getTodos(pessoa);
+  ids.forEach((id,i)=>{const t=todos.find(x=>x.id===id);if(t){t.ordem=i;t.prioridade=prios[i];}});
   const reordered=ids.map(id=>todos.find(t=>t.id===id)).filter(Boolean);
   setTodos(pessoa,reordered);
-  // Salvar ordem no banco (campo ordem)
   try{
-    await Promise.all(ids.map((id,i)=>api('todo_items','PATCH',{ordem:i},`?id=eq.${id}`)));
+    await Promise.all(ids.map((id,i)=>api('todo_items','PATCH',{ordem:i,prioridade:prios[i]},`?id=eq.${id}`)));
   }catch(e){console.error('Erro ao salvar ordem:',e);}
 }
 
@@ -1833,11 +1890,14 @@ async function updateTodo(id,pessoa,texto){
 async function addTodo(pessoa){
   const inputId='todo-input-'+pessoa;
   const el=document.getElementById(inputId);
+  const prioEl=document.getElementById('todo-prio-'+pessoa);
   if(!el||!el.value.trim())return;
   const texto=el.value.trim();
+  const prioridade=prioEl?prioEl.value:'media';
   try{
-    const r=await api('todo_items','POST',{pessoa,texto,feito:false});
+    const r=await api('todo_items','POST',{pessoa,texto,feito:false,prioridade,ordem:getTodos(pessoa).length});
     getTodos(pessoa).push(r[0]);
+    el.value='';
     renderTodos(pessoa);
   }catch(e){alert('Erro: '+e.message);}
 }
