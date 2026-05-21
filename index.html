@@ -179,7 +179,12 @@ td.iec select{cursor:pointer}
 .planilha-table tr:hover td{background:#111}
 .planilha-table tr:last-child td{border-bottom:none}
 .pl-idx{background:#1a1a1a;color:#444;font-size:10px;text-align:center;padding:6px 6px;border-right:1px solid #222;width:28px;user-select:none}
-.todo-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#111;border:1px solid #1e1e1e;border-radius:7px;margin-bottom:5px}
+.todo-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#111;border:1px solid #1e1e1e;border-radius:7px;margin-bottom:5px;transition:opacity .15s,transform .15s;user-select:none}
+.todo-item.dragging{opacity:.4;border-color:#444}
+.todo-item.drag-over{border-color:#60a5fa;background:#0a1520}
+.drag-handle{color:#2a2a2a;cursor:grab;font-size:14px;flex-shrink:0;padding:0 2px}
+.drag-handle:hover{color:#555}
+.drag-handle:active{cursor:grabbing}
 .todo-item input[type=checkbox]{accent-color:#4ade80;width:14px;height:14px;cursor:pointer;flex-shrink:0}
 .todo-item label{font-size:12px;color:#ccc;flex:1;cursor:pointer;line-height:1.4}
 .todo-item label.done{text-decoration:line-through;color:#444}
@@ -478,8 +483,8 @@ async function loadAll(){
       api('checks_postagem','GET',null,'?order=data.desc'),
       api('config_inicial','GET',null,''),
       api('notas_dia','GET',null,'?order=created_at.desc&data=eq.'+localDateStr(new Date())),
-      api('todo_items','GET',null,'?pessoa=eq.Jessica&order=id.asc'),
-      api('todo_items','GET',null,'?pessoa=eq.Filipe&order=id.asc')
+      api('todo_items','GET',null,'?pessoa=eq.Jessica&order=ordem.asc,id.asc'),
+      api('todo_items','GET',null,'?pessoa=eq.Filipe&order=ordem.asc,id.asc')
     ]);
     document.getElementById('cdot').className='dot';
     renderEmails();renderProxies();renderAvatares();renderContas();
@@ -1710,21 +1715,119 @@ function renderTodos(pessoa){
   if(!el)return;
   const todos=getTodos(pessoa);
   const inputId='todo-input-'+pessoa;
-  const items=todos.length
-    ? todos.map(t=>`<div class="todo-item">
-        <input type="checkbox" id="tc-${t.id}" ${t.feito?'checked':''} onchange="toggleTodo(${t.id},'${pessoa}',this.checked)">
-        <label for="tc-${t.id}" class="${t.feito?'done':''}">${esc(t.texto)}</label>
-        <button class="del-todo" onclick="delTodo(${t.id},'${pessoa}')" title="Remover"><i class="ti ti-x"></i></button>
-      </div>`).join('')
-    : `<div style="text-align:center;padding:14px;color:#333;font-size:11px">Nenhuma tarefa</div>`;
+  const listId='todo-list-'+pessoa;
 
   el.innerHTML=`<div class="dash-section" style="padding:10px">
-    ${items}
+    <div id="${listId}">
+      ${todos.length
+        ? todos.map(t=>`<div class="todo-item" draggable="true" data-id="${t.id}" data-pessoa="${pessoa}">
+            <span class="drag-handle" title="Arrastar para reordenar"><i class="ti ti-grip-vertical"></i></span>
+            <input type="checkbox" id="tc-${t.id}" ${t.feito?'checked':''} onchange="toggleTodo(${t.id},'${pessoa}',this.checked)">
+            <span id="todo-label-${t.id}" class="${t.feito?'done':''}" style="flex:1;font-size:12px;color:#ccc;cursor:text" ondblclick="editTodo(${t.id},'${pessoa}')" title="Clique duplo para editar">${esc(t.texto)}</span>
+            <button class="del-todo" onclick="editTodo(${t.id},'${pessoa}')" title="Editar" style="color:#555"><i class="ti ti-pencil"></i></button>
+            <button class="del-todo" onclick="delTodo(${t.id},'${pessoa}')" title="Remover"><i class="ti ti-x"></i></button>
+          </div>`).join('')
+        : '<div style="text-align:center;padding:14px;color:#333;font-size:11px">Nenhuma tarefa</div>'}
+    </div>
     <div class="todo-add">
       <input id="${inputId}" type="text" placeholder="Nova tarefa..." onkeydown="if(event.key==='Enter')addTodo('${pessoa}')">
       <button class="btn bp bsm" onclick="addTodo('${pessoa}')"><i class="ti ti-plus"></i></button>
     </div>
   </div>`;
+
+  bindTodoDrag(listId, pessoa);
+}
+
+function bindTodoDrag(listId, pessoa){
+  const list=document.getElementById(listId);
+  if(!list)return;
+  let dragEl=null;
+
+  list.querySelectorAll('.todo-item[draggable]').forEach(item=>{
+    item.addEventListener('dragstart',e=>{
+      dragEl=item;
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed='move';
+    });
+    item.addEventListener('dragend',()=>{
+      item.classList.remove('dragging');
+      list.querySelectorAll('.todo-item').forEach(i=>i.classList.remove('drag-over'));
+      dragEl=null;
+      saveTodoOrder(pessoa);
+    });
+    item.addEventListener('dragover',e=>{
+      e.preventDefault();
+      if(dragEl&&dragEl!==item){
+        list.querySelectorAll('.todo-item').forEach(i=>i.classList.remove('drag-over'));
+        item.classList.add('drag-over');
+        const rect=item.getBoundingClientRect();
+        const mid=rect.top+rect.height/2;
+        if(e.clientY<mid) list.insertBefore(dragEl,item);
+        else list.insertBefore(dragEl,item.nextSibling);
+      }
+    });
+    item.addEventListener('dragleave',()=>item.classList.remove('drag-over'));
+    item.addEventListener('drop',e=>{e.preventDefault();item.classList.remove('drag-over');});
+  });
+}
+
+async function saveTodoOrder(pessoa){
+  const list=document.getElementById('todo-list-'+pessoa);
+  if(!list)return;
+  const ids=[...list.querySelectorAll('.todo-item[data-id]')].map(el=>Number(el.dataset.id));
+  // Atualizar ordem local
+  const todos=getTodos(pessoa);
+  const reordered=ids.map(id=>todos.find(t=>t.id===id)).filter(Boolean);
+  setTodos(pessoa,reordered);
+  // Salvar ordem no banco (campo ordem)
+  try{
+    await Promise.all(ids.map((id,i)=>api('todo_items','PATCH',{ordem:i},`?id=eq.${id}`)));
+  }catch(e){console.error('Erro ao salvar ordem:',e);}
+}
+
+function editTodo(id,pessoa){
+  const label=document.getElementById('todo-label-'+id);
+  if(!label)return;
+  const current=label.textContent;
+  const input=document.createElement('input');
+  input.type='text';
+  input.value=current;
+  input.style.cssText='flex:1;background:#1a1a1a;border:1px solid #444;border-radius:5px;color:#e8e8e8;font-size:12px;padding:2px 7px;outline:none;width:100%';
+  label.replaceWith(input);
+  input.focus();
+  input.select();
+
+  const save=async()=>{
+    const val=input.value.trim();
+    if(val&&val!==current){
+      await updateTodo(id,pessoa,val);
+    } else {
+      // Restaurar label sem salvar
+      const span=document.createElement('span');
+      span.id='todo-label-'+id;
+      span.className=label.className;
+      span.style=label.style.cssText;
+      span.setAttribute('style','flex:1;font-size:12px;color:#ccc;cursor:text');
+      span.setAttribute('title','Clique duplo para editar');
+      span.setAttribute('ondblclick',`editTodo(${id},'${pessoa}')`);
+      span.textContent=current;
+      input.replaceWith(span);
+    }
+  };
+  input.addEventListener('blur',save);
+  input.addEventListener('keydown',e=>{
+    if(e.key==='Enter')input.blur();
+    if(e.key==='Escape'){input.value=current;input.blur();}
+  });
+}
+
+async function updateTodo(id,pessoa,texto){
+  try{
+    await api('todo_items','PATCH',{texto},`?id=eq.${id}`);
+    const t=getTodos(pessoa).find(x=>x.id===id);
+    if(t)t.texto=texto;
+    renderTodos(pessoa);
+  }catch(e){alert('Erro: '+e.message);}
 }
 
 async function addTodo(pessoa){
