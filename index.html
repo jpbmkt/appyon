@@ -402,6 +402,7 @@ td.iec select{cursor:pointer}
   <div class="toolbar" style="margin-top:-6px;margin-bottom:10px">
     <button class="btn bg bsm" id="btn-sync-drive-ct" onclick="syncDrive()"><i class="ti ti-brand-google-drive"></i> Sincronizar estoque via Drive</button>
     <button class="btn bsm" id="btn-planilha" onclick="togglePlanilha()" style="border-color:#a78bfa;color:#a78bfa"><i class="ti ti-table"></i> Planilha</button>
+    <button class="btn bsm" onclick="exportarContas()" style="border-color:#4ade80;color:#4ade80"><i class="ti ti-download"></i> Exportar CSV</button>
   </div>
   <!-- PLANILHA -->
   <div id="planilha-wrap" style="display:none;margin-bottom:16px;overflow-x:auto;border-radius:9px;border:1px solid #2a2a2a">
@@ -1058,6 +1059,63 @@ const PLAN_COLS=[
   {label:'ID pasta Drive',   field:'drive_folder_id',type:'text',w:160},
   {label:'Estoque vídeos',   field:'estoque_videos',type:'number',w:80},
 ];
+
+function exportarContas(){
+  // Aplicar os mesmos filtros ativos
+  let f=Contas;
+  if(cQ)f=f.filter(x=>((x.fb_perfil||'')+(x.user_ig||'')+(x.email||'')).toLowerCase().includes(cQ.toLowerCase()));
+  if(cSit==='__banidas__')f=f.filter(x=>['Banida','Bugada'].includes(x.situacao));
+  else if(cSit)f=f.filter(x=>x.situacao===cSit);
+  f=applyCtFilters(f);
+  f=applySort(f);
+
+  const cols=[
+    {label:'Perfil',        field:'fb_perfil'},
+    {label:'User IG',       field:'user_ig'},
+    {label:'Senha IG',      field:'senha_ig'},
+    {label:'E-mail',        field:'email'},
+    {label:'Senha e-mail',  field:'senha_email'},
+    {label:'Dispositivo',   field:'dispositivo'},
+    {label:'Situação',      field:'situacao'},
+    {label:'Proxy',         field:'proxy'},
+    {label:'Avatar',        field:'avatar_id', fn:id=>(Avatares.find(x=>x.id===Number(id))||{}).nome||''},
+    {label:'Voz',           field:'voz'},
+    {label:'FB Page',       field:'fb_page_status'},
+    {label:'MB Suite',      field:'mb_suite'},
+    {label:'Automação',     field:'automacao'},
+    {label:'Conta Facebook',field:'conta_fb'},
+    {label:'Página Facebook',field:'fb_page'},
+    {label:'Link venda IG', field:'link_venda_ig'},
+    {label:'Link venda FB', field:'link_venda_fb'},
+    {label:'ID pasta Drive',field:'drive_folder_id'},
+    {label:'Estoque vídeos',field:'estoque_videos'},
+  ];
+
+  const escape=v=>{
+    const s=String(v??'');
+    return s.includes(',')||s.includes('"')||s.includes('
+')?`"${s.replace(/"/g,'""')}"`:s;
+  };
+
+  const header=cols.map(c=>escape(c.label)).join(',');
+  const rows=f.map(c=>cols.map(col=>{
+    const val=col.fn?col.fn(c[col.field]):c[col.field];
+    return escape(val??'');
+  }).join(','));
+
+  const csv='﻿'+[header,...rows].join('
+'); // BOM para Excel reconhecer UTF-8
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const now=new Date();
+  const dateStr=now.toLocaleDateString('pt-BR').replace(/\//g,'-');
+  a.href=url;
+  a.download=`gestao-contas-${dateStr}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 
 function togglePlanilha(){
   planilhaAberta=!planilhaAberta;
