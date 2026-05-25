@@ -918,69 +918,118 @@ function renderFerramentas(q=''){
 
   const list=document.getElementById('ferr-list');
   if(!f.length){list.innerHTML='<div class="empty">Nenhuma ferramenta cadastrada</div>';return;}
-  list.innerHTML=f.map(ferr=>buildFerrCard(ferr)).join('');
+  list.innerHTML='';f.forEach(ferr=>{const card=buildFerrCard(ferr);list.appendChild(card);});
 }
 
 function buildFerrCard(ferr){
   const dias=diasParaVencer(ferr.data_vencimento);
   const vencClass=dias===null?'':dias<0?'vencido':dias<=7?'vencendo':'';
-  const vencText=dias===null?'—':dias<0?'Vencida há '+Math.abs(dias)+' dias':dias===0?'Vence hoje':'Vence em '+dias+' dia'+(dias!==1?'s':'');
+  const vencText=dias===null?'—':dias<0?'Vencida há '+Math.abs(dias)+' dias':dias===0?'Vence hoje':'Vence em '+dias+(dias!==1?' dias':' dia');
   const perfil=ferr.perfil_id?Contas.find(c=>c.id===ferr.perfil_id):null;
-  const tipoCls='tipo-'+(ferr.tipo_pagamento||'mensal');
-  const tipoLabel=ferr.tipo_pagamento==='mensal'?'Mensal':ferr.tipo_pagamento==='anual'?'Anual':'Único';
   const id=ferr.id;
+  const tipoCls='tipo-'+(ferr.tipo_pagamento||'mensal');
+  const tipoLabel={'mensal':'Mensal','anual':'Anual','unico':'Único'}[ferr.tipo_pagamento]||'Mensal';
+  const valor=Number(ferr.valor||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+  const perfilNome=perfil?esc(perfil.fb_perfil||perfil.user_ig):'';
 
-  const perfilOpts='<option value="">— geral —</option>'+Contas.map(c=>{
-    const sel=ferr.perfil_id===c.id?'selected':'';
-    return '<option value="'+c.id+'" '+sel+'>'+esc(c.fb_perfil||c.user_ig)+'</option>';
-  }).join('');
+  // Criar elemento principal
+  const wrap=document.createElement('div');
+  wrap.className='ferr-card';
 
-  const cb=(field,extra)=>`patchFerr(${id},'${field}',this.value${extra||''})`;
+  // Header
+  const hdr=document.createElement('div');
+  hdr.className='ferr-header';
+  hdr.innerHTML=[
+    '<div style="width:36px;height:36px;border-radius:8px;background:#1e1e1e;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px">💳</div>',
+    '<div style="flex:1;min-width:0">',
+      '<div class="ferr-nome">'+esc(ferr.nome)+'</div>',
+      '<div style="display:flex;align-items:center;gap:6px;margin-top:2px">',
+        '<span class="tipo-badge '+tipoCls+'">'+tipoLabel+'</span>',
+        perfilNome?'<span style="font-size:10px;color:#555">'+perfilNome+'</span>':'',
+      '</div>',
+    '</div>',
+    '<div style="text-align:right">',
+      '<div class="ferr-valor">R$ '+valor+'</div>',
+      '<div class="ferr-venc '+vencClass+'">'+vencText+'</div>',
+    '</div>',
+    '<i class="ti ti-chevron-down" style="color:#333;margin-left:8px;font-size:12px"></i>',
+  ].join('');
+  hdr.addEventListener('click',()=>toggleFerr(id));
+  wrap.appendChild(hdr);
 
-  return `<div class="ferr-card">
-    <div class="ferr-header" onclick="toggleFerr(${id})">
-      <div style="width:36px;height:36px;border-radius:8px;background:#1e1e1e;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px">💳</div>
-      <div style="flex:1;min-width:0">
-        <div class="ferr-nome">${esc(ferr.nome)}</div>
-        <div style="display:flex;align-items:center;gap:6px;margin-top:2px">
-          <span class="tipo-badge ${tipoCls}">${tipoLabel}</span>
-          ${perfil?`<span style="font-size:10px;color:#555">${esc(perfil.fb_perfil||perfil.user_ig)}</span>`:''}
-        </div>
-      </div>
-      <div style="text-align:right">
-        <div class="ferr-valor">R$ ${Number(ferr.valor||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
-        <div class="ferr-venc ${vencClass}">${vencText}</div>
-      </div>
-      <i class="ti ti-chevron-down" style="color:#333;margin-left:8px;font-size:12px"></i>
-    </div>
-    <div class="ferr-body" id="ferr-body-${id}">
-      <div class="ferr-grid">
-        <div class="f"><label>Nome</label><input class="ie" value="${esc(ferr.nome)}" onblur="${cb('nome')}" onkeydown="if(event.key==='Enter')this.blur()"></div>
-        <div class="f"><label>Perfil vinculado</label><select class="ie" onchange="${cb('perfil_id',`||null`);renderFerramentas()}">${perfilOpts}</select></div>
-        <div class="f"><label>Login / usuário</label><input class="ie" value="${esc(ferr.login_usuario||'')}" onblur="${cb('login_usuario')}" onkeydown="if(event.key==='Enter')this.blur()"></div>
-        <div class="f"><label>Senha</label><input class="ie" type="text" value="${esc(ferr.login_senha||'')}" onblur="${cb('login_senha')}" onkeydown="if(event.key==='Enter')this.blur()"></div>
-        <div class="f"><label>Tipo pagamento</label>
-          <select class="ie" onchange="${cb('tipo_pagamento')};renderFerramentas()">
-            <option value="mensal" ${ferr.tipo_pagamento==='mensal'?'selected':''}>Mensal</option>
-            <option value="anual" ${ferr.tipo_pagamento==='anual'?'selected':''}>Anual</option>
-            <option value="unico" ${ferr.tipo_pagamento==='unico'?'selected':''}>Único</option>
-          </select>
-        </div>
-        <div class="f"><label>Forma de pagamento</label><input class="ie" value="${esc(ferr.forma_pagamento||'')}" placeholder="Cartão, PIX, Boleto..." onblur="${cb('forma_pagamento')}"></div>
-        <div class="f"><label>Valor (R$)</label><input class="ie" type="number" min="0" step="0.01" value="${Number(ferr.valor||0)}" onblur="${cb('valor')};renderFerramentas()"></div>
-        <div class="f"><label>Data vencimento</label><input class="ie" type="date" value="${ferr.data_vencimento||''}" onblur="${cb('data_vencimento',`||null`)};renderFerramentas()"></div>
-        <div class="f"><label>Status</label>
-          <select class="ie" onchange="${cb('status')};renderFerramentas()">
-            <option value="ativo" ${ferr.status==='ativo'?'selected':''}>Ativo</option>
-            <option value="inativo" ${ferr.status==='inativo'?'selected':''}>Inativo</option>
-          </select>
-        </div>
-        <div class="f"><label>Observações</label><input class="ie" value="${esc(ferr.observacoes||'')}" onblur="${cb('observacoes')}"></div>
-      </div>
-      <button class="btn bd bsm" onclick="delFerramenta(${id})"><i class="ti ti-trash"></i> Excluir</button>
-    </div>
-  </div>`;
+  // Body
+  const body=document.createElement('div');
+  body.className='ferr-body';
+  body.id='ferr-body-'+id;
+
+  const mkOpt=(v,label,cur)=>'<option value="'+v+'" '+(cur===v?'selected':'')+'>'+label+'</option>';
+  const perfilOpts='<option value="">— geral —</option>'+Contas.map(c=>'<option value="'+c.id+'" '+(ferr.perfil_id===c.id?'selected':'')+'>'+esc(c.fb_perfil||c.user_ig)+'</option>').join('');
+  const tipoOpts=mkOpt('mensal','Mensal',ferr.tipo_pagamento)+mkOpt('anual','Anual',ferr.tipo_pagamento)+mkOpt('unico','Único',ferr.tipo_pagamento);
+  const statusOpts=mkOpt('ativo','Ativo',ferr.status)+mkOpt('inativo','Inativo',ferr.status);
+
+  const fields=[
+    {label:'Nome',field:'nome',type:'text',value:ferr.nome||''},
+    {label:'Perfil vinculado',field:'perfil_id',type:'select',opts:perfilOpts,num:true},
+    {label:'Login / usuário',field:'login_usuario',type:'text',value:ferr.login_usuario||''},
+    {label:'Senha',field:'login_senha',type:'text',value:ferr.login_senha||''},
+    {label:'Tipo pagamento',field:'tipo_pagamento',type:'select',opts:tipoOpts,rerender:true},
+    {label:'Forma de pagamento',field:'forma_pagamento',type:'text',value:ferr.forma_pagamento||''},
+    {label:'Valor (R$)',field:'valor',type:'number',value:Number(ferr.valor||0),rerender:true},
+    {label:'Data vencimento',field:'data_vencimento',type:'date',value:ferr.data_vencimento||'',rerender:true,nullable:true},
+    {label:'Status',field:'status',type:'select',opts:statusOpts,rerender:true},
+    {label:'Observações',field:'observacoes',type:'text',value:ferr.observacoes||''},
+  ];
+
+  const grid=document.createElement('div');
+  grid.className='ferr-grid';
+
+  fields.forEach(f=>{
+    const fdiv=document.createElement('div');
+    fdiv.className='f';
+    const lbl=document.createElement('label');
+    lbl.textContent=f.label;
+    fdiv.appendChild(lbl);
+
+    let el;
+    if(f.type==='select'){
+      el=document.createElement('select');
+      el.className='ie';
+      el.innerHTML=f.opts;
+      el.addEventListener('change',()=>{
+        const v=f.num?(Number(el.value)||null):(f.nullable?(el.value||null):el.value);
+        patchFerr(id,f.field,v);
+        if(f.rerender)setTimeout(renderFerramentas,300);
+      });
+    } else {
+      el=document.createElement('input');
+      el.className='ie';
+      el.type=f.type||'text';
+      el.value=f.value;
+      const save=()=>{
+        const v=f.type==='number'?(Number(el.value)||0):(f.nullable?(el.value||null):el.value||null);
+        patchFerr(id,f.field,v);
+        if(f.rerender)setTimeout(renderFerramentas,300);
+      };
+      el.addEventListener('blur',save);
+      el.addEventListener('keydown',e=>{if(e.key==='Enter')save();});
+    }
+    fdiv.appendChild(el);
+    grid.appendChild(fdiv);
+  });
+
+  body.appendChild(grid);
+
+  const delBtn=document.createElement('button');
+  delBtn.className='btn bd bsm';
+  delBtn.innerHTML='<i class="ti ti-trash"></i> Excluir';
+  delBtn.addEventListener('click',()=>delFerramenta(id));
+  body.appendChild(delBtn);
+
+  wrap.appendChild(body);
+  return wrap;
 }
+
+
 
 function toggleFerr(id){
   const body=document.getElementById('ferr-body-'+id);
