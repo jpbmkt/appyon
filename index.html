@@ -452,6 +452,7 @@ td.iec select{cursor:pointer}
       <div class="f"><label>Situação</label><select id="ct-sit"><option>Criar Perfil</option><option>Configuração Inicial</option><option>Aquecimento</option><option>Crescimento</option><option>Venda</option><option>SMS e Análise Selfie</option><option>Banida</option><option>Bugada</option></select></div>
       <div class="f"><label>Proxy</label><select id="ct-px"><option value="">— sem proxy —</option></select></div>
       <div class="f"><label>Avatar</label><select id="ct-av"><option value="">— sem avatar —</option></select></div>
+      <div class="f"><label>Grupo do avatar</label><input id="ct-grupo" placeholder="ex: asiática mulher, negro jovem..."></div>
       <div class="f"><label>Voz</label><input id="ct-vz" placeholder="Voz jovem feminina..."></div>
       <div class="f"><label>MB Suite</label><select id="ct-mb"><option value="">— Vazio</option><option value="alerta">⚠ Alerta</option><option value="ok">✓ OK</option></select></div>
       <div class="f"><label>Automação</label><select id="ct-au"><option value="">— Vazio</option><option value="alerta">⚠ Alerta</option><option value="ok">✓ OK</option></select></div>
@@ -478,6 +479,7 @@ td.iec select{cursor:pointer}
   <div class="tw"><table id="tbl-ct">
     <thead><tr>
       <th style="min-width:160px"><div class="th-inner">Perfil<div class="flt-wrap"><button class="flt-btn" id="fbt-user" onclick="toggleFlt('user',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-user"></div></div><button class="sort-btn" onclick="sortContas('fb_perfil',event)" id="srt-fb_perfil2" title="Ordenar">↕</button></div></th>
+      <th style="min-width:120px"><div class="th-inner">Grupo Avatar<div class="flt-wrap"><button class="flt-btn" id="fbt-grupo" onclick="toggleFlt('grupo',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-grupo"></div></div><button class="sort-btn" onclick="sortContas('grupo_avatar',event)" id="srt-grupo_avatar" title="Ordenar">↕</button></div></th>
       <th style="min-width:110px"><div class="th-inner">Dispositivo<div class="flt-wrap"><button class="flt-btn" id="fbt-disp" onclick="toggleFlt('disp',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-disp"></div></div><button class="sort-btn" onclick="sortContas('dispositivo',event)" id="srt-dispositivo" title="Ordenar">↕</button></div></th>
       <th style="min-width:110px"><div class="th-inner">Situação<div class="flt-wrap"><button class="flt-btn" id="fbt-sit" onclick="toggleFlt('sit',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-sit"></div></div><button class="sort-btn" onclick="sortContas('situacao',event)" id="srt-situacao" title="Ordenar">↕</button></div></th>
       <th style="min-width:140px"><div class="th-inner">Conta Facebook<div class="flt-wrap"><button class="flt-btn" id="fbt-fbp" onclick="toggleFlt('fbp',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-fbp"></div></div><button class="sort-btn" onclick="sortContas('fb_perfil',event)" id="srt-fb_perfil" title="Ordenar">↕</button></div></th>
@@ -569,7 +571,16 @@ const SB='https://celnqfvjucollfcuwxrn.supabase.co';
 const KEY='sb_publishable_NKRCmfTzf9giPR7v4eHLXg_jlZMci05';
 // Google OAuth — substitua pelo seu Client ID do Google Cloud Console
 const GCLIENT='975610078004-mb1qdpurmirmf15gndhj8d9k874v2mku.apps.googleusercontent.com';
-let gToken=null; // Sempre autenticar ao iniciar — sessionStorage só como cache temporário
+// Token Google — persiste na sessão do navegador
+let gToken=(()=>{
+  try{
+    const saved=sessionStorage.getItem('gToken');
+    const ts=Number(sessionStorage.getItem('gTokenTs')||0);
+    // Token válido por 55 minutos (margem de 5 min antes dos 60 do Google)
+    if(saved&&Date.now()-ts<55*60*1000)return saved;
+  }catch(e){}
+  return null;
+})();
 
 async function api(tbl,method='GET',body=null,qs=''){
   const h={'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+KEY};
@@ -1371,7 +1382,7 @@ async function savePrompt(avId,val){
 // ── CONTAS — add ──
 async function addConta(){
   const avId=g('ct-av')||null;
-  const o={user_ig:g('ct-u'),senha_ig:g('ct-si'),email:g('ct-e'),senha_email:g('ct-se'),dispositivo:g('ct-d'),situacao:g('ct-sit'),proxy:g('ct-px')||null,avatar_id:avId?Number(avId):null,voz:g('ct-vz'),mb_suite:g('ct-mb'),automacao:g('ct-au'),fb_page_status:g('ct-fp'),fb_page:g('ct-fbpg'),conta_fb:g('ct-fbconta'),fb_perfil:g('ct-fbpr'),link_venda_ig:g('ct-lig'),link_venda_fb:g('ct-lfb'),drive_folder_id:g('ct-drv')||null,estoque_videos:0,aquecimento_dias:0,crescimento_posts:0};
+  const o={user_ig:g('ct-u'),senha_ig:g('ct-si'),email:g('ct-e'),senha_email:g('ct-se'),dispositivo:g('ct-d'),situacao:g('ct-sit'),proxy:g('ct-px')||null,avatar_id:avId?Number(avId):null,grupo_avatar:g('ct-grupo'),voz:g('ct-vz'),mb_suite:g('ct-mb'),automacao:g('ct-au'),fb_page_status:g('ct-fp'),fb_page:g('ct-fbpg'),conta_fb:g('ct-fbconta'),fb_perfil:g('ct-fbpr'),link_venda_ig:g('ct-lig'),link_venda_fb:g('ct-lfb'),drive_folder_id:g('ct-drv')||null,estoque_videos:0,aquecimento_dias:0,crescimento_posts:0};
   if(!o.fb_perfil&&!o.user_ig)return;
   try{const r=await api('contas','POST',o);Contas.unshift(r[0]);clr(['ct-u','ct-si','ct-e','ct-se','ct-d','ct-vz','ct-fbpg','ct-fbpr','ct-lig','ct-lfb','ct-drv']);tog('padd-ct');renderContas();renderProxies();renderAvatares();}
   catch(e){alert('Erro: '+e.message);}
@@ -1432,12 +1443,13 @@ function sitBadge(s){
 }
 
 // ── FILTROS MULTI-SELECT ──
-const ctFilters={user:new Set(),disp:new Set(),sit:new Set(),fbp:new Set(),fb:new Set(),mb:new Set(),auto:new Set(),est:new Set()};
+const ctFilters={user:new Set(),grupo:new Set(),disp:new Set(),sit:new Set(),fbp:new Set(),fb:new Set(),mb:new Set(),auto:new Set(),est:new Set()};
 let ctSort={field:null,dir:1};
 
 function getColValues(key){
   const map={
     user:c=>c.fb_perfil||c.user_ig||'',
+    grupo:c=>c.grupo_avatar||'',
     disp:c=>c.dispositivo||'',
     sit:c=>c.situacao||'',
     fbp:c=>c.conta_fb||'',
@@ -1569,7 +1581,7 @@ function sortContas(field,e){
 function filterContas(k,v){if(k==='q')cQ=v;else cSit=v;renderContas();}
 
 function applyCtFilters(f){
-  const fns={user:c=>c.fb_perfil||c.user_ig||'',disp:c=>c.dispositivo||'',sit:c=>c.situacao||'',fbp:c=>c.conta_fb||'',fb:c=>c.fb_page_status||'Não',mb:c=>c.mb_suite||'Não',auto:c=>c.automacao||'Não',est:c=>String(Number(c.estoque_videos||0))};
+  const fns={user:c=>c.fb_perfil||c.user_ig||'',grupo:c=>c.grupo_avatar||'',disp:c=>c.dispositivo||'',sit:c=>c.situacao||'',fbp:c=>c.conta_fb||'',fb:c=>c.fb_page_status||'Não',mb:c=>c.mb_suite||'Não',auto:c=>c.automacao||'Não',est:c=>String(Number(c.estoque_videos||0))};
   Object.keys(ctFilters).forEach(k=>{if(ctFilters[k].size>0)f=f.filter(c=>ctFilters[k].has(fns[k](c)));});
   return f;
 }
@@ -1608,6 +1620,7 @@ function renderContas(){
         <i class="ti ti-info-circle" style="font-size:12px;color:#333;flex-shrink:0;cursor:pointer" onclick="openContaModal(${c.id})" title="Ver detalhes"></i>
       </div>
     </td>
+    <td class="iec"><input value="${esc(c.grupo_avatar)}" placeholder="ex: asiática mulher" onblur="ctPatch(${c.id},'grupo_avatar',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></td>
     <td class="iec"><input value="${esc(c.dispositivo)}" placeholder="—" onblur="ctPatch(${c.id},'dispositivo',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></td>
     <td class="iec"><select onchange="ctPatch(${c.id},'situacao',this.value);renderContas()">${SIT_OPTS.map(o=>`<option${o===c.situacao?' selected':''}>${o}</option>`).join('')}</select></td>
     <td class="iec"><input value="${esc(c.conta_fb)}" placeholder="—" onblur="ctPatch(${c.id},'conta_fb',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></td>
@@ -1641,6 +1654,7 @@ const PLAN_COLS=[
   {label:'Dispositivo',      field:'dispositivo',type:'text',w:110},
   {label:'Situação',         field:'situacao', type:'select', opts:['Criar Perfil','Configuração Inicial','Aquecimento','Crescimento','Venda','SMS e Análise Selfie','Banida','Bugada'], w:130},
   {label:'Proxy',            field:'proxy',    type:'text', w:140},
+  {label:'Grupo avatar',     field:'grupo_avatar',type:'text',w:140},
   {label:'Voz',              field:'voz',      type:'text', w:110},
   {label:'Desc. Automação',  field:'desc_automacao',type:'text',w:140},
   {label:'Conta Facebook',   field:'conta_fb', type:'text', w:140},
@@ -1836,6 +1850,7 @@ function openContaModal(id){
       ${mFieldSel(id,'Situação','situacao',c.situacao,SIT_OPTS)}
       ${mFieldSel(id,'Proxy','proxy',c.proxy||'',[''].concat(Proxies.map(p=>p.ip)),['— sem proxy —'].concat(Proxies.map(p=>p.ip+(p.numero_pedido?' ('+p.numero_pedido+')':''))))}
       ${mFieldSel(id,'Avatar','avatar_id',String(c.avatar_id||''),[''].concat(Avatares.map(a=>String(a.id))),['— sem avatar —'].concat(Avatares.map(a=>a.nome)),true)}
+      ${mField(id,'Grupo do avatar','grupo_avatar',c.grupo_avatar,'text')}
       ${mField(id,'Voz','voz',c.voz,'text')}
       ${mFieldState(id,'MB Suite','mb_suite',c.mb_suite)}
       ${mFieldState(id,'Automação','automacao',c.automacao)}
@@ -2107,7 +2122,7 @@ async function syncDrive(){
       if(r.status===401){
         // Token expirado — limpar e reautenticar
         gToken=null;
-        sessionStorage.removeItem('igm_gtoken');
+        try{sessionStorage.removeItem('gToken');sessionStorage.removeItem('gTokenTs');}catch(e){}
         if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-refresh"></i> Sincronizar estoque';}
         alert('Sessão do Google expirada. Clique em Sincronizar novamente para reconectar.');
         return;
@@ -2626,12 +2641,12 @@ function doGoogleAuth(cb,includeCalendar=false){
       }
       if(resp.access_token){
         gToken=resp.access_token;
-        
+        try{sessionStorage.setItem('gToken',gToken);sessionStorage.setItem('gTokenTs',String(Date.now()));}catch(e){}
         if(cb)cb();
       }
     }
   });
-  client.requestAccessToken({prompt:'select_account'});
+  client.requestAccessToken({prompt:''});
 }
 
 loadAll();
