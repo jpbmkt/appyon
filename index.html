@@ -247,6 +247,25 @@ td.iec select{cursor:pointer}
 .diario-date{font-size:11px;color:#555;margin-bottom:6px}
 .diario-text{font-size:13px;color:#ccc;line-height:1.6;white-space:pre-wrap}
 .backlog-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;margin-bottom:6px}
+.ferr-card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:11px;padding:0;overflow:hidden;margin-bottom:10px}
+.ferr-header{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #222;cursor:pointer}
+.ferr-header:hover{background:#1e1e1e}
+.ferr-nome{font-size:13px;font-weight:500;color:#e8e8e8;flex:1}
+.ferr-valor{font-size:13px;font-weight:600;color:#4ade80}
+.ferr-venc{font-size:11px;color:#555}
+.ferr-venc.vencendo{color:#fbbf24}
+.ferr-venc.vencido{color:#f87171}
+.ferr-body{padding:14px;display:none}
+.ferr-body.open{display:block}
+.ferr-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.ferr-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:18px}
+.tipo-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:500}
+.tipo-mensal{background:#0f1f2a;color:#60a5fa}
+.tipo-anual{background:#14291a;color:#4ade80}
+.tipo-unico{background:#1f1020;color:#c084fc}
+.status-ativo{background:#14291a;color:#4ade80}
+.status-inativo{background:#1e1e1e;color:#555}
+.status-vencido{background:#2a0f0f;color:#f87171}
 /* DRIVE PANEL */
 .drive-panel{background:#111;border:1px solid #1e3a1e;border-radius:9px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .drive-panel i{color:#4ade80;font-size:18px}
@@ -268,6 +287,7 @@ td.iec select{cursor:pointer}
     <button class="nb" onclick="showTab('postagens',this)"><i class="ti ti-calendar-check"></i> Postagens</button>
     <button class="nb" onclick="showTab('kaizen',this)"><i class="ti ti-brain"></i> Kaizen</button>
     <button class="nb" onclick="showTab('projetos',this)"><i class="ti ti-bulb"></i> Projetos</button>
+    <button class="nb" onclick="showTab('ferramentas',this)"><i class="ti ti-credit-card"></i> Ferramentas</button>
   </div>
   <div id="cdot" class="dot" title="Conectado"></div>
 </div>
@@ -496,6 +516,42 @@ td.iec select{cursor:pointer}
   <div id="kz-content"></div>
 </div>
 
+<!-- ===== FERRAMENTAS ===== -->
+<div class="tab" id="tab-ferramentas">
+  <div class="stats" id="stats-ferr"></div>
+  <div class="toolbar">
+    <input type="text" placeholder="Buscar ferramenta..." oninput="renderFerramentas(this.value)">
+    <select onchange="filterFerrTipo(this.value)">
+      <option value="">Todos os tipos</option>
+      <option value="mensal">Mensal</option>
+      <option value="anual">Anual</option>
+      <option value="unico">Pagamento único</option>
+    </select>
+    <button class="btn bp" onclick="tog('padd-ferr')"><i class="ti ti-plus"></i> Adicionar</button>
+  </div>
+  <div class="panel" id="padd-ferr" style="display:none">
+    <div class="fg">
+      <div class="f"><label>Nome da ferramenta</label><input id="ferr-nome" placeholder="Ex: MB Suite, ChatGPT..."></div>
+      <div class="f"><label>Perfil vinculado</label><select id="ferr-perfil"><option value="">— geral / sem perfil —</option></select></div>
+      <div class="f"><label>Login / usuário</label><input id="ferr-login" placeholder="email ou usuário"></div>
+      <div class="f"><label>Senha</label><input id="ferr-senha" placeholder="senha123"></div>
+      <div class="f"><label>Tipo de pagamento</label>
+        <select id="ferr-tipo"><option value="mensal">Mensal</option><option value="anual">Anual</option><option value="unico">Pagamento único</option></select>
+      </div>
+      <div class="f"><label>Forma de pagamento</label><input id="ferr-forma" placeholder="Cartão, PIX, Boleto..."></div>
+      <div class="f"><label>Valor (R$)</label><input id="ferr-valor" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div class="f"><label>Data de vencimento</label><input id="ferr-venc" type="date"></div>
+      <div class="f"><label>Status</label>
+        <select id="ferr-status"><option value="ativo">Ativo</option><option value="inativo">Inativo</option></select>
+      </div>
+      <div class="f" style="grid-column:span 2"><label>Observações</label><input id="ferr-obs" placeholder="Notas adicionais..."></div>
+    </div>
+    <button class="btn bp bsm" onclick="addFerramenta()">Salvar</button>
+    <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-ferr')">Cancelar</button>
+  </div>
+  <div id="ferr-list"></div>
+</div>
+
 <!-- ===== PROJETOS ===== -->
 <div class="tab" id="tab-projetos">
   <div class="proj-tabs">
@@ -526,7 +582,8 @@ async function api(tbl,method='GET',body=null,qs=''){
 }
 
 let Emails=[],Proxies=[],Avatares=[],Contas=[],Checks=[],ConfigsIniciais=[],NotasDia=[],gCalendarEvents=[],TodosJessica=[],TodosFilipe=[];
-let KzDiario={},KzTarefas=[],KzDesempenho=[],KzFocus={},Ideias=[],DiarioEntries=[];
+let KzDiario={},KzTarefas=[],KzDesempenho=[],KzFocus={},Ideias=[],DiarioEntries=[],Ferramentas=[];
+let ferrTipoFilter='';
 let kzCurrentDate='',projCurrentTab='diario';
 let cQ='',cSit='',eMailFilter='',proxyFilter='';
 const today=localDateStr(new Date());
@@ -812,6 +869,129 @@ async function addBacklog(){
 }
 
 
+// ══════════════════════════════════════
+// FERRAMENTAS
+// ══════════════════════════════════════
+
+async function initFerramentas(){
+  try{
+    Ferramentas=await api('ferramentas','GET',null,'?order=nome.asc');
+    fillFerrPerfilSelect();
+    renderFerramentas();
+  }catch(e){console.error('initFerramentas',e);}
+}
+
+function fillFerrPerfilSelect(){
+  const sel=document.getElementById('ferr-perfil');
+  if(!sel)return;
+  sel.innerHTML='<option value="">— geral / sem perfil —</option>'+
+    Contas.map(c=>'<option value="'+c.id+'">'+esc(c.fb_perfil||c.user_ig)+'</option>').join('');
+}
+
+function filterFerrTipo(v){ferrTipoFilter=v;renderFerramentas();}
+
+function diasParaVencer(data){
+  if(!data)return null;
+  const d=new Date(data+'T12:00:00');
+  const hoje=new Date();
+  hoje.setHours(0,0,0,0);
+  return Math.round((d-hoje)/(1000*60*60*24));
+}
+
+function renderFerramentas(q=''){
+  let f=Ferramentas;
+  if(q)f=f.filter(x=>(x.nome||'').toLowerCase().includes(q.toLowerCase())||(x.forma_pagamento||'').toLowerCase().includes(q.toLowerCase()));
+  if(ferrTipoFilter)f=f.filter(x=>x.tipo_pagamento===ferrTipoFilter);
+
+  // Stats
+  const totalMes=Ferramentas.filter(x=>x.status==='ativo'&&x.tipo_pagamento==='mensal').reduce((a,x)=>a+Number(x.valor||0),0);
+  const totalAno=Ferramentas.filter(x=>x.status==='ativo'&&x.tipo_pagamento==='anual').reduce((a,x)=>a+Number(x.valor||0),0);
+  const vencendo=Ferramentas.filter(x=>{const d=diasParaVencer(x.data_vencimento);return d!==null&&d>=0&&d<=7;}).length;
+  const vencidas=Ferramentas.filter(x=>{const d=diasParaVencer(x.data_vencimento);return d!==null&&d<0;}).length;
+  document.getElementById('stats-ferr').innerHTML=
+    '<div class="stat"><div class="sl">Total ativo</div><div class="sv">'+Ferramentas.filter(x=>x.status==='ativo').length+'</div></div>'+
+    '<div class="stat"><div class="sl" style="color:#60a5fa">Custo mensal</div><div class="sv" style="font-size:16px">R$ '+totalMes.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div></div>'+
+    '<div class="stat"><div class="sl" style="color:#4ade80">Custo anual</div><div class="sv" style="font-size:16px">R$ '+totalAno.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div></div>'+
+    '<div class="stat" style="border-color:'+(vencendo>0?'#fbbf24':'#2a2a2a')+'"><div class="sl" style="color:#fbbf24">Vencendo em 7 dias</div><div class="sv">'+vencendo+'</div></div>'+
+    '<div class="stat" style="border-color:'+(vencidas>0?'#f87171':'#2a2a2a')+'"><div class="sl" style="color:#f87171">Vencidas</div><div class="sv">'+vencidas+'</div></div>';
+
+  const list=document.getElementById('ferr-list');
+  if(!f.length){list.innerHTML='<div class="empty">Nenhuma ferramenta cadastrada</div>';return;}
+
+  list.innerHTML=f.map(ferr=>{
+    const dias=diasParaVencer(ferr.data_vencimento);
+    const vencClass=dias===null?'':dias<0?'vencido':dias<=7?'vencendo':'';
+    const vencText=dias===null?'—':dias<0?'Vencida há '+Math.abs(dias)+' dias':dias===0?'Vence hoje':'Vence em '+dias+' dia'+(dias!==1?'s':'');
+    const perfil=ferr.perfil_id?Contas.find(c=>c.id===ferr.perfil_id):null;
+    const tipoCls='tipo-'+(ferr.tipo_pagamento||'mensal');
+    const statusCls='status-'+(dias!==null&&dias<0?'vencido':ferr.status||'ativo');
+    return '<div class="ferr-card">'+
+      '<div class="ferr-header" onclick="toggleFerr('+ferr.id+')">'+
+        '<div style="width:36px;height:36px;border-radius:8px;background:#1e1e1e;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px">💳</div>'+
+        '<div style="flex:1;min-width:0">'+
+          '<div class="ferr-nome">'+esc(ferr.nome)+'</div>'+
+          '<div style="display:flex;align-items:center;gap:6px;margin-top:2px">'+
+            '<span class="tipo-badge '+tipoCls+'">'+(ferr.tipo_pagamento==='mensal'?'Mensal':ferr.tipo_pagamento==='anual'?'Anual':'Único')+'</span>'+
+            (perfil?'<span style="font-size:10px;color:#555">'+esc(perfil.fb_perfil||perfil.user_ig)+'</span>':'')+'</div></div>'+
+        '<div style="text-align:right">'+
+          '<div class="ferr-valor">R$ '+Number(ferr.valor||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>'+
+          '<div class="ferr-venc '+vencClass+'">'+vencText+'</div></div>'+
+        '<i class="ti ti-chevron-down" style="color:#333;margin-left:8px;font-size:12px"></i>'+
+      '</div>'+
+      '<div class="ferr-body" id="ferr-body-'+ferr.id+'">'+
+        '<div class="ferr-grid">'+
+          '<div class="f"><label>Nome</label><input class="ie" value="'+esc(ferr.nome)+'" onblur="patchFerr('+ferr.id+','nome',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></div>'+
+          '<div class="f"><label>Perfil vinculado</label><select class="ie" onchange="patchFerr('+ferr.id+','perfil_id',this.value||null)"><option value="">— geral —</option>'+Contas.map(c=>'<option value="'+c.id+'" '+(ferr.perfil_id===c.id?'selected':'')+'>'+esc(c.fb_perfil||c.user_ig)+'</option>').join('')+'</select></div>'+
+          '<div class="f"><label>Login / usuário</label><input class="ie" value="'+esc(ferr.login_usuario||'')+'" onblur="patchFerr('+ferr.id+','login_usuario',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></div>'+
+          '<div class="f"><label>Senha</label><input class="ie" type="text" value="'+esc(ferr.login_senha||'')+'" onblur="patchFerr('+ferr.id+','login_senha',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></div>'+
+          '<div class="f"><label>Tipo pagamento</label><select class="ie" onchange="patchFerr('+ferr.id+','tipo_pagamento',this.value);renderFerramentas()"><option value="mensal" '+(ferr.tipo_pagamento==='mensal'?'selected':'')+'>Mensal</option><option value="anual" '+(ferr.tipo_pagamento==='anual'?'selected':'')+'>Anual</option><option value="unico" '+(ferr.tipo_pagamento==='unico'?'selected':'')+'>Único</option></select></div>'+
+          '<div class="f"><label>Forma de pagamento</label><input class="ie" value="'+esc(ferr.forma_pagamento||'')+'" placeholder="Cartão, PIX, Boleto..." onblur="patchFerr('+ferr.id+','forma_pagamento',this.value)"></div>'+
+          '<div class="f"><label>Valor (R$)</label><input class="ie" type="number" min="0" step="0.01" value="'+Number(ferr.valor||0)+'" onblur="patchFerr('+ferr.id+','valor',this.value);renderFerramentas()"></div>'+
+          '<div class="f"><label>Data vencimento</label><input class="ie" type="date" value="'+(ferr.data_vencimento||'')+'" onblur="patchFerr('+ferr.id+','data_vencimento',this.value||null);renderFerramentas()"></div>'+
+          '<div class="f"><label>Status</label><select class="ie" onchange="patchFerr('+ferr.id+','status',this.value);renderFerramentas()"><option value="ativo" '+(ferr.status==='ativo'?'selected':'')+'>Ativo</option><option value="inativo" '+(ferr.status==='inativo'?'selected':'')+'>Inativo</option></select></div>'+
+          '<div class="f"><label>Observações</label><input class="ie" value="'+esc(ferr.observacoes||'')+'" onblur="patchFerr('+ferr.id+','observacoes',this.value)"></div>'+
+        '</div>'+
+        '<button class="btn bd bsm" onclick="delFerramenta('+ferr.id+')"><i class="ti ti-trash"></i> Excluir</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function toggleFerr(id){
+  const body=document.getElementById('ferr-body-'+id);
+  if(body)body.classList.toggle('open');
+}
+
+async function addFerramenta(){
+  const o={
+    nome:g('ferr-nome'),perfil_id:g('ferr-perfil')||null,
+    login_usuario:g('ferr-login'),login_senha:g('ferr-senha'),
+    tipo_pagamento:g('ferr-tipo'),forma_pagamento:g('ferr-forma'),
+    valor:Number(g('ferr-valor'))||0,
+    data_vencimento:g('ferr-venc')||null,
+    status:g('ferr-status'),observacoes:g('ferr-obs')
+  };
+  if(!o.nome)return;
+  try{
+    const r=await api('ferramentas','POST',o);
+    Ferramentas.unshift(r[0]);
+    clr(['ferr-nome','ferr-login','ferr-senha','ferr-forma','ferr-valor','ferr-venc','ferr-obs']);
+    tog('padd-ferr');renderFerramentas();
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+async function patchFerr(id,field,value){
+  const val=(field==='valor')?Number(value)||0:(field==='perfil_id'?Number(value)||null:value||null);
+  await patch('ferramentas',id,field,val);
+  const f=Ferramentas.find(x=>x.id===id);if(f)f[field]=val;
+}
+
+async function delFerramenta(id){
+  await api('ferramentas','DELETE',null,'?id=eq.'+id);
+  Ferramentas=Ferramentas.filter(x=>x.id!==id);renderFerramentas();
+}
+
+
 async function loadAll(){
   try{
     [Emails,Proxies,Avatares,Contas,Checks,ConfigsIniciais,NotasDia,TodosJessica,TodosFilipe]=await Promise.all([
@@ -847,6 +1027,7 @@ function showTab(t,btn){
   if(t==='contas')statsContas();
   if(t==='kaizen')initKaizen();
   if(t==='projetos')initProjetos();
+  if(t==='ferramentas')initFerramentas();
 }
 function tog(id){const p=document.getElementById(id);if(p)p.style.display=p.style.display==='none'?'block':'none';}
 function g(id){const el=document.getElementById(id);return el?el.value:'';}
@@ -1358,8 +1539,10 @@ function renderContas(){
     <td class="iec"><input value="${esc(c.conta_fb)}" placeholder="—" onblur="ctPatch(${c.id},'conta_fb',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></td>
     <td style="text-align:center;padding:4px 8px">${stateBtn(c.id,'fb_page_status',c.fb_page_status)}</td>
     <td style="text-align:center;padding:4px 8px">${stateBtn(c.id,'mb_suite',c.mb_suite)}</td>
-    <td style="text-align:center;padding:4px 8px">${stateBtn(c.id,'automacao',c.automacao)}</td>
-</td>
+    <td style="text-align:center;padding:4px 8px">
+      ${stateBtn(c.id,'automacao',c.automacao)}
+      <input type="text" value="${esc(c.desc_automacao||'')}" placeholder="qual automação?" style="width:100%;background:transparent;border:none;border-top:1px solid #1e1e1e;color:#666;font-size:10px;padding:3px 4px;outline:none;text-align:center;margin-top:3px" onblur="ctPatch(${c.id},'desc_automacao',this.value)" onkeydown="if(event.key==='Enter')this.blur()">
+    </td>
     <td style="padding:6px 8px">
       <div id="stk-el-${c.id}">${stockEl(c.estoque_videos)}</div>
       <input type="number" min="0" value="${Number(c.estoque_videos||0)}" style="width:54px;background:#111;border:1px solid #222;border-radius:4px;color:#888;font-size:11px;padding:2px 4px;margin-top:3px"
@@ -1385,8 +1568,8 @@ const PLAN_COLS=[
   {label:'Situação',         field:'situacao', type:'select', opts:['Criar Perfil','Configuração Inicial','Aquecimento','Crescimento','Venda','SMS e Análise Selfie','Banida','Bugada'], w:130},
   {label:'Proxy',            field:'proxy',    type:'text', w:140},
   {label:'Voz',              field:'voz',      type:'text', w:110},
+  {label:'Desc. Automação',  field:'desc_automacao',type:'text',w:140},
   {label:'Conta Facebook',   field:'conta_fb', type:'text', w:140},
-  {label:'Página Facebook',  field:'fb_page',  type:'text', w:140},
   {label:'Página Facebook',  field:'fb_page',  type:'text', w:140},
   {label:'Link venda IG',    field:'link_venda_ig',type:'text',w:150},
   {label:'Link venda FB',    field:'link_venda_fb',type:'text',w:150},
@@ -1582,6 +1765,7 @@ function openContaModal(id){
       ${mField(id,'Voz','voz',c.voz,'text')}
       ${mFieldState(id,'MB Suite','mb_suite',c.mb_suite)}
       ${mFieldState(id,'Automação','automacao',c.automacao)}
+      ${mField(id,'Qual automação?','desc_automacao',c.desc_automacao,'text')}
       ${mFieldState(id,'FB Page criada','fb_page_status',c.fb_page_status)}
       ${mField(id,'Conta Facebook','conta_fb',c.conta_fb,'text')}
       ${mField(id,'Página Facebook','fb_page',c.fb_page,'text')}
