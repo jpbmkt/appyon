@@ -2361,7 +2361,7 @@ function prioBtn(c){
   const p=c.prioridade_perfil||'';
   const fav=c.favorito?true:false;
   // Usar strings simples com data-attributes — eventos via delegação
-  return '<div class="prio-btn" onclick="event.stopPropagation()">'+
+  return '<div class="prio-btn">'+
     '<span class="fav-star '+(fav?'on':'')+'" data-fav="'+c.id+'" data-val="'+(fav?'false':'true')+'" title="Favorito">'+(fav?'★':'☆')+'</span>'+
     '<div style="display:flex;gap:4px;align-items:center;margin-top:3px">'+
       '<span class="prio-dot '+(p==='alta'?'alta':'none')+'" data-prio="'+c.id+'" data-key="alta" title="Alta"></span>'+
@@ -2682,7 +2682,9 @@ function renderPostagens(){
       </div>
       <div class="tw"><table class="pt">
         <thead><tr>
-          <th style="min-width:120px">Conta</th>
+          <th style="width:70px">Prioridade</th>
+          <th style="min-width:160px">Perfil</th>
+          <th style="min-width:110px">Conta FB</th>
           <th style="min-width:90px">Dispositivo</th>
           <th style="min-width:80px">Estoque</th>
           <th>${sec.showConfig?'Configuração Inicial':'Progresso'}</th>
