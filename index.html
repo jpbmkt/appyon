@@ -530,6 +530,15 @@ td.iec select{cursor:pointer}
 
 <!-- ===== POSTAGENS ===== -->
 <div class="tab" id="tab-postagens">
+  <div class="toolbar" style="margin-bottom:10px">
+    <button class="btn bsm" id="btn-fav-filter-post" onclick="toggleFavFilterPost()" style="color:#555"><i class="ti ti-star"></i> Favoritos</button>
+    <select onchange="setPostPrioFilter(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none">
+      <option value="">Todas as prioridades</option>
+      <option value="alta">🔴 Alta</option>
+      <option value="media">🟡 Média</option>
+      <option value="baixa">🟢 Baixa</option>
+    </select>
+  </div>
   <div class="drive-panel">
     <i class="ti ti-brand-google-drive"></i>
     <div class="drive-info">
@@ -2373,17 +2382,39 @@ function prioBtn(c){
 
 async function togglePrio(id,prio){
   const c=Contas.find(x=>x.id===id);if(!c)return;
-  const newPrio=c.prioridade_perfil===prio?'':prio; // clique duplo remove
+  const newPrio=c.prioridade_perfil===prio?'':prio;
   await patch('contas',id,'prioridade_perfil',newPrio||null);
   c.prioridade_perfil=newPrio;
-  renderContas();
+  refreshPrioBtn(id,c);
 }
 
 async function toggleFav(id,val){
   const c=Contas.find(x=>x.id===id);if(!c)return;
   await patch('contas',id,'favorito',val);
   c.favorito=val;
-  renderContas();
+  refreshPrioBtn(id,c);
+}
+
+function refreshPrioBtn(id,c){
+  // Atualizar todos os prioBtns desse id sem re-renderizar tudo
+  document.querySelectorAll('.prio-btn').forEach(btn=>{
+    const dot=btn.querySelector('[data-prio="'+id+'"]');
+    if(!dot)return;
+    const p=c.prioridade_perfil||'';
+    const fav=c.favorito?true:false;
+    // Atualizar estrela
+    const star=btn.querySelector('[data-fav="'+id+'"]');
+    if(star){
+      star.className='fav-star'+(fav?' on':'');
+      star.textContent=fav?'★':'☆';
+      star.dataset.val=fav?'false':'true';
+    }
+    // Atualizar dots
+    btn.querySelectorAll('[data-prio="'+id+'"]').forEach(d=>{
+      const k=d.dataset.key;
+      d.className='prio-dot '+(p===k?k:'none');
+    });
+  });
 }
 
 function stateVal(v){
@@ -2599,7 +2630,9 @@ function renderPostagens(){
   if(!ativas.length){el.innerHTML=`<div class="empty">Nenhuma conta ativa (Aquecimento, Crescimento ou Venda).</div>`;return;}
 
   el.innerHTML=sections.map(sec=>{
-    const contas=Contas.filter(x=>x.situacao===sec.sit);
+    let contas=Contas.filter(x=>x.situacao===sec.sit);
+    if(postPrio)contas=contas.filter(x=>x.prioridade_perfil===postPrio);
+    if(postFavOnly)contas=contas.filter(x=>x.favorito);
     if(!contas.length)return'';
     const tableRows=contas.map(c=>{
       const checked=checkedDays(c.id);
@@ -2666,7 +2699,7 @@ function renderPostagens(){
             </div>
           </div>
         </td>
-        <td style="color:#666;font-size:11px">${esc(c.conta_fb||'—')}</td>
+        <td style="padding:2px 6px"><input value="${esc(c.conta_fb||'')}" placeholder="—" style="background:transparent;border:none;color:#666;font-size:11px;width:100%;outline:none;min-width:80px" onblur="ctPatch(${c.id},'conta_fb',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></td>
         <td style="color:#666;font-size:11px">${esc(c.dispositivo||'—')}</td>
         ${estoqueCell}
         <td>${progHtml}</td>
