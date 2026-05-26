@@ -166,6 +166,15 @@ td.iec select{cursor:pointer}
 .foto-modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:600;align-items:center;justify-content:center;cursor:pointer}
 .foto-modal-bg.open{display:flex}
 .foto-modal-img{max-width:80vw;max-height:80vh;border-radius:12px;object-fit:contain;box-shadow:0 20px 60px rgba(0,0,0,.8)}
+.prio-btn{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:2px}
+.prio-dot{width:10px;height:10px;border-radius:50%;border:1.5px solid #333;transition:all .15s;cursor:pointer}
+.prio-dot.alta{background:#f87171;border-color:#f87171}
+.prio-dot.media{background:#fbbf24;border-color:#fbbf24}
+.prio-dot.baixa{background:#4ade80;border-color:#4ade80}
+.prio-dot.none{background:transparent}
+.fav-star{font-size:14px;line-height:1;cursor:pointer;transition:transform .1s;color:#333}
+.fav-star.on{color:#fbbf24}
+.fav-star:hover{transform:scale(1.2)}
 .state-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;border:1px solid #2a2a2a;background:transparent;cursor:pointer;font-size:14px;transition:all .15s}
 .state-btn:hover{border-color:#444;background:#1e1e1e}
 .state-empty{color:#2a2a2a}
@@ -484,6 +493,13 @@ td.iec select{cursor:pointer}
     <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-ct')">Cancelar</button>
   </div>
   <div class="toolbar" style="margin-top:-6px;margin-bottom:10px">
+    <button class="btn bsm" id="btn-fav-filter" onclick="toggleFavFilter()" style="color:#555"><i class="ti ti-star"></i> Favoritos</button>
+    <select onchange="setPrioFilter(this.value)" id="sel-prio-filter" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none">
+      <option value="">Todas as prioridades</option>
+      <option value="alta">🔴 Alta</option>
+      <option value="media">🟡 Média</option>
+      <option value="baixa">🟢 Baixa</option>
+    </select>
     <button class="btn bg bsm" id="btn-sync-drive-ct" onclick="syncDrive()"><i class="ti ti-brand-google-drive"></i> Sincronizar estoque via Drive</button>
     <button class="btn bsm" id="btn-planilha" onclick="togglePlanilha()" style="border-color:#a78bfa;color:#a78bfa"><i class="ti ti-table"></i> Planilha</button>
     <button class="btn bsm" onclick="exportarContas()" style="border-color:#4ade80;color:#4ade80"><i class="ti ti-download"></i> Exportar CSV</button>
@@ -494,6 +510,7 @@ td.iec select{cursor:pointer}
   </div>
   <div class="tw"><table id="tbl-ct">
     <thead><tr>
+      <th style="width:80px" title="Prioridade / Favorito">Prioridade</th>
       <th style="min-width:160px"><div class="th-inner">Perfil<div class="flt-wrap"><button class="flt-btn" id="fbt-user" onclick="toggleFlt('user',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-user"></div></div><button class="sort-btn" onclick="sortContas('fb_perfil',event)" id="srt-fb_perfil2" title="Ordenar">↕</button></div></th>
       <th style="min-width:120px"><div class="th-inner">Grupo Avatar<div class="flt-wrap"><button class="flt-btn" id="fbt-grupo" onclick="toggleFlt('grupo',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-grupo"></div></div><button class="sort-btn" onclick="sortContas('grupo_avatar',event)" id="srt-grupo_avatar" title="Ordenar">↕</button></div></th>
       <th style="min-width:110px"><div class="th-inner">Dispositivo<div class="flt-wrap"><button class="flt-btn" id="fbt-disp" onclick="toggleFlt('disp',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-disp"></div></div><button class="sort-btn" onclick="sortContas('dispositivo',event)" id="srt-dispositivo" title="Ordenar">↕</button></div></th>
@@ -574,14 +591,21 @@ td.iec select{cursor:pointer}
 <!-- ===== FACEBOOK ===== -->
 <div class="tab" id="tab-facebook">
   <div class="stats" id="stats-fb"></div>
-  <div style="display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap">
-    <button class="fb-connect-btn" onclick="connectFacebook()">
-      <i class="ti ti-brand-facebook"></i> Conectar perfil do Facebook
-    </button>
-    <button class="btn bg bsm" onclick="syncAllFbPages()"><i class="ti ti-refresh"></i> Sincronizar métricas</button>
-    <span id="fb-sync-label" class="fb-sync-status"></span>
+  <div class="toolbar">
+    <input type="text" placeholder="Buscar página..." oninput="renderFbPages(this.value)">
+    <button class="btn bp" onclick="tog('padd-fbpage')"><i class="ti ti-plus"></i> Adicionar página</button>
   </div>
-  <div id="fb-profiles-list"><div class="loading">Carregando perfis conectados...</div></div>
+  <div class="panel" id="padd-fbpage" style="display:none">
+    <div class="fg">
+      <div class="f"><label>Nome da página</label><input id="fbp-nome" placeholder="Ex: James Guidance"></div>
+      <div class="f"><label>Perfil vinculado</label><select id="fbp-perfil"><option value="">— selecionar conta IG —</option></select></div>
+      <div class="f"><label>URL da página</label><input id="fbp-url" placeholder="https://facebook.com/..."></div>
+      <div class="f"><label>Observações</label><input id="fbp-obs" placeholder="..."></div>
+    </div>
+    <button class="btn bp bsm" onclick="addFbPage()">Salvar</button>
+    <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-fbpage')">Cancelar</button>
+  </div>
+  <div id="fb-pages-list"></div>
 </div>
 
 <!-- ===== PROJETOS ===== -->
@@ -911,6 +935,331 @@ async function addBacklog(){
   try{const r=await api('ideias','POST',{titulo:'Novo item',status:'nova',tipo:'melhoria'});Ideias.unshift(r[0]);renderBacklog(document.getElementById('proj-content'));}catch(e){alert('Erro: '+e.message);}
 }
 
+
+// ══════════════════════════════════════
+// FERRAMENTAS
+// ══════════════════════════════════════
+
+async function initFerramentas(){
+  try{
+    Ferramentas=await api('ferramentas','GET',null,'?order=nome.asc');
+    fillFerrPerfilSelect();
+    renderFerramentas();
+  }catch(e){console.error('initFerramentas',e);}
+}
+
+function fillFerrPerfilSelect(){
+  const sel=document.getElementById('ferr-perfil');
+  if(!sel)return;
+  sel.innerHTML='<option value="">— geral / sem perfil —</option>'+
+    Contas.map(c=>'<option value="'+c.id+'">'+esc(c.fb_perfil||c.user_ig)+'</option>').join('');
+}
+
+function filterFerrTipo(v){ferrTipoFilter=v;renderFerramentas();}
+
+function diasParaVencer(data){
+  if(!data)return null;
+  const d=new Date(data+'T12:00:00');
+  const hoje=new Date();
+  hoje.setHours(0,0,0,0);
+  return Math.round((d-hoje)/(1000*60*60*24));
+}
+
+function renderFerramentas(q=''){
+  let f=Ferramentas;
+  if(q)f=f.filter(x=>(x.nome||'').toLowerCase().includes(q.toLowerCase())||(x.forma_pagamento||'').toLowerCase().includes(q.toLowerCase()));
+  if(ferrTipoFilter)f=f.filter(x=>x.tipo_pagamento===ferrTipoFilter);
+
+  // Stats
+  const totalMes=Ferramentas.filter(x=>x.status==='ativo'&&x.tipo_pagamento==='mensal').reduce((a,x)=>a+Number(x.valor||0),0);
+  const totalAno=Ferramentas.filter(x=>x.status==='ativo'&&x.tipo_pagamento==='anual').reduce((a,x)=>a+Number(x.valor||0),0);
+  const vencendo=Ferramentas.filter(x=>{const d=diasParaVencer(x.data_vencimento);return d!==null&&d>=0&&d<=7;}).length;
+  const vencidas=Ferramentas.filter(x=>{const d=diasParaVencer(x.data_vencimento);return d!==null&&d<0;}).length;
+
+  document.getElementById('stats-ferr').innerHTML=
+    '<div class="stat"><div class="sl">Total ativo</div><div class="sv">'+Ferramentas.filter(x=>x.status==='ativo').length+'</div></div>'+
+    '<div class="stat"><div class="sl" style="color:#60a5fa">Custo mensal</div><div class="sv" style="font-size:16px">R$ '+totalMes.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div></div>'+
+    '<div class="stat"><div class="sl" style="color:#4ade80">Custo anual</div><div class="sv" style="font-size:16px">R$ '+totalAno.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div></div>'+
+    '<div class="stat" style="border-color:'+(vencendo>0?'#fbbf24':'#2a2a2a')+'"><div class="sl" style="color:#fbbf24">Vencendo em 7 dias</div><div class="sv">'+vencendo+'</div></div>'+
+    '<div class="stat" style="border-color:'+(vencidas>0?'#f87171':'#2a2a2a')+'"><div class="sl" style="color:#f87171">Vencidas</div><div class="sv">'+vencidas+'</div></div>';
+
+  const list=document.getElementById('ferr-list');
+  if(!f.length){list.innerHTML='<div class="empty">Nenhuma ferramenta cadastrada</div>';return;}
+  list.innerHTML='';f.forEach(ferr=>{const card=buildFerrCard(ferr);list.appendChild(card);});
+}
+
+function buildFerrCard(ferr){
+  const dias=diasParaVencer(ferr.data_vencimento);
+  const vencClass=dias===null?'':dias<0?'vencido':dias<=7?'vencendo':'';
+  const vencText=dias===null?'—':dias<0?'Vencida há '+Math.abs(dias)+' dias':dias===0?'Vence hoje':'Vence em '+dias+(dias!==1?' dias':' dia');
+  const perfil=ferr.perfil_id?Contas.find(c=>c.id===ferr.perfil_id):null;
+  const id=ferr.id;
+  const tipoCls='tipo-'+(ferr.tipo_pagamento||'mensal');
+  const tipoLabel={'mensal':'Mensal','anual':'Anual','unico':'Único'}[ferr.tipo_pagamento]||'Mensal';
+  const valor=Number(ferr.valor||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+  const perfilNome=perfil?esc(perfil.fb_perfil||perfil.user_ig):'';
+
+  // Criar elemento principal
+  const wrap=document.createElement('div');
+  wrap.className='ferr-card';
+
+  // Header
+  const hdr=document.createElement('div');
+  hdr.className='ferr-header';
+  hdr.innerHTML=[
+    '<div style="width:36px;height:36px;border-radius:8px;background:#1e1e1e;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px">💳</div>',
+    '<div style="flex:1;min-width:0">',
+      '<div class="ferr-nome">'+esc(ferr.nome)+'</div>',
+      '<div style="display:flex;align-items:center;gap:6px;margin-top:2px">',
+        '<span class="tipo-badge '+tipoCls+'">'+tipoLabel+'</span>',
+        perfilNome?'<span style="font-size:10px;color:#555">'+perfilNome+'</span>':'',
+      '</div>',
+    '</div>',
+    '<div style="text-align:right">',
+      '<div class="ferr-valor">R$ '+valor+'</div>',
+      '<div class="ferr-venc '+vencClass+'">'+vencText+'</div>',
+    '</div>',
+    '<i class="ti ti-chevron-down" style="color:#333;margin-left:8px;font-size:12px"></i>',
+  ].join('');
+  hdr.addEventListener('click',()=>toggleFerr(id));
+  wrap.appendChild(hdr);
+
+  // Body
+  const body=document.createElement('div');
+  body.className='ferr-body';
+  body.id='ferr-body-'+id;
+
+  const mkOpt=(v,label,cur)=>'<option value="'+v+'" '+(cur===v?'selected':'')+'>'+label+'</option>';
+  const perfilOpts='<option value="">— geral —</option>'+Contas.map(c=>'<option value="'+c.id+'" '+(ferr.perfil_id===c.id?'selected':'')+'>'+esc(c.fb_perfil||c.user_ig)+'</option>').join('');
+  const tipoOpts=mkOpt('mensal','Mensal',ferr.tipo_pagamento)+mkOpt('anual','Anual',ferr.tipo_pagamento)+mkOpt('unico','Único',ferr.tipo_pagamento);
+  const statusOpts=mkOpt('ativo','Ativo',ferr.status)+mkOpt('inativo','Inativo',ferr.status);
+
+  const fields=[
+    {label:'Nome',field:'nome',type:'text',value:ferr.nome||''},
+    {label:'Perfil vinculado',field:'perfil_id',type:'select',opts:perfilOpts,num:true},
+    {label:'Login / usuário',field:'login_usuario',type:'text',value:ferr.login_usuario||''},
+    {label:'Senha',field:'login_senha',type:'text',value:ferr.login_senha||''},
+    {label:'Tipo pagamento',field:'tipo_pagamento',type:'select',opts:tipoOpts,rerender:true},
+    {label:'Forma de pagamento',field:'forma_pagamento',type:'text',value:ferr.forma_pagamento||''},
+    {label:'Valor (R$)',field:'valor',type:'number',value:Number(ferr.valor||0),rerender:true},
+    {label:'Data vencimento',field:'data_vencimento',type:'date',value:ferr.data_vencimento||'',rerender:true,nullable:true},
+    {label:'Status',field:'status',type:'select',opts:statusOpts,rerender:true},
+    {label:'Observações',field:'observacoes',type:'text',value:ferr.observacoes||''},
+  ];
+
+  const grid=document.createElement('div');
+  grid.className='ferr-grid';
+
+  fields.forEach(f=>{
+    const fdiv=document.createElement('div');
+    fdiv.className='f';
+    const lbl=document.createElement('label');
+    lbl.textContent=f.label;
+    fdiv.appendChild(lbl);
+
+    let el;
+    if(f.type==='select'){
+      el=document.createElement('select');
+      el.className='ie';
+      el.innerHTML=f.opts;
+      el.addEventListener('change',()=>{
+        const v=f.num?(Number(el.value)||null):(f.nullable?(el.value||null):el.value);
+        patchFerr(id,f.field,v);
+        if(f.rerender)setTimeout(renderFerramentas,300);
+      });
+    } else {
+      el=document.createElement('input');
+      el.className='ie';
+      el.type=f.type||'text';
+      el.value=f.value;
+      const save=()=>{
+        const v=f.type==='number'?(Number(el.value)||0):(f.nullable?(el.value||null):el.value||null);
+        patchFerr(id,f.field,v);
+        if(f.rerender)setTimeout(renderFerramentas,300);
+      };
+      el.addEventListener('blur',save);
+      el.addEventListener('keydown',e=>{if(e.key==='Enter')save();});
+    }
+    fdiv.appendChild(el);
+    grid.appendChild(fdiv);
+  });
+
+  body.appendChild(grid);
+
+  const delBtn=document.createElement('button');
+  delBtn.className='btn bd bsm';
+  delBtn.innerHTML='<i class="ti ti-trash"></i> Excluir';
+  delBtn.addEventListener('click',()=>delFerramenta(id));
+  body.appendChild(delBtn);
+
+  wrap.appendChild(body);
+  return wrap;
+}
+
+
+
+function toggleFerr(id){
+  const body=document.getElementById('ferr-body-'+id);
+  if(body)body.classList.toggle('open');
+}
+
+async function addFerramenta(){
+  const o={
+    nome:g('ferr-nome'),perfil_id:g('ferr-perfil')||null,
+    login_usuario:g('ferr-login'),login_senha:g('ferr-senha'),
+    tipo_pagamento:g('ferr-tipo'),forma_pagamento:g('ferr-forma'),
+    valor:Number(g('ferr-valor'))||0,
+    data_vencimento:g('ferr-venc')||null,
+    status:g('ferr-status'),observacoes:g('ferr-obs')
+  };
+  if(!o.nome)return;
+  try{
+    const r=await api('ferramentas','POST',o);
+    Ferramentas.unshift(r[0]);
+    clr(['ferr-nome','ferr-login','ferr-senha','ferr-forma','ferr-valor','ferr-venc','ferr-obs']);
+    tog('padd-ferr');renderFerramentas();
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+async function patchFerr(id,field,value){
+  const val=(field==='valor')?Number(value)||0:(field==='perfil_id'?Number(value)||null:value||null);
+  await patch('ferramentas',id,field,val);
+  const f=Ferramentas.find(x=>x.id===id);if(f)f[field]=val;
+}
+
+async function delFerramenta(id){
+  await api('ferramentas','DELETE',null,'?id=eq.'+id);
+  Ferramentas=Ferramentas.filter(x=>x.id!==id);renderFerramentas();
+}
+
+
+// ══════════════════════════════════════
+// FACEBOOK
+// ══════════════════════════════════════
+
+async function initFacebook(){
+  try{
+    FbPages=await api('fb_pages','GET',null,'?order=nome.asc');
+    fillFbPerfilSelect();
+    renderFbPages();
+  }catch(e){console.error('initFacebook',e);}
+}
+
+function fillFbPerfilSelect(){
+  const sel=document.getElementById('fbp-perfil');
+  if(!sel)return;
+  sel.innerHTML='<option value="">— selecionar conta IG —</option>'+
+    Contas.map(c=>'<option value="'+c.id+'">'+esc(c.fb_perfil||c.user_ig)+'</option>').join('');
+}
+
+function renderFbPages(q=''){
+  const f=q?FbPages.filter(p=>(p.nome||'').toLowerCase().includes(q.toLowerCase())):FbPages;
+
+  // Stats
+  const totalViews=FbPages.reduce((a,p)=>a+Number(p.visualizacoes_24h||0),0);
+  const totalComents=FbPages.reduce((a,p)=>a+Number(p.comentarios_24h||0),0);
+  const totalSeg=FbPages.reduce((a,p)=>a+Number(p.novos_seguidores_24h||0),0);
+  const totalFans=FbPages.reduce((a,p)=>a+Number(p.seguidores||0),0);
+  document.getElementById('stats-fb').innerHTML=
+    '<div class="stat"><div class="sl">Páginas</div><div class="sv">'+FbPages.length+'</div></div>'+
+    '<div class="stat"><div class="sl" style="color:#60a5fa">Seguidores totais</div><div class="sv">'+totalFans.toLocaleString('pt-BR')+'</div></div>'+
+    '<div class="stat"><div class="sl" style="color:#4ade80">Views 24h</div><div class="sv">'+totalViews.toLocaleString('pt-BR')+'</div></div>'+
+    '<div class="stat"><div class="sl" style="color:#fbbf24">Comentários 24h</div><div class="sv">'+totalComents.toLocaleString('pt-BR')+'</div></div>'+
+    '<div class="stat"><div class="sl" style="color:#a78bfa">Novos seguidores 24h</div><div class="sv">'+totalSeg.toLocaleString('pt-BR')+'</div></div>';
+
+  const el=document.getElementById('fb-pages-list');
+  if(!f.length){
+    el.innerHTML='<div class="empty">Nenhuma página cadastrada</div>';return;
+  }
+
+  el.innerHTML=f.map(page=>{
+    const conta=page.perfil_id?Contas.find(c=>c.id===page.perfil_id):null;
+    const updated=page.updated_at?new Date(page.updated_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+    return '<div class="fb-profile-card">'+
+      '<div class="fb-profile-header">'+
+        '<div style="width:38px;height:38px;border-radius:8px;background:#1877f2;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">'+
+          '<i class="ti ti-brand-facebook" style="color:#fff"></i>'+
+        '</div>'+
+        '<div style="flex:1;min-width:0">'+
+          '<div class="fb-profile-name">'+esc(page.nome)+'</div>'+
+          '<div class="fb-profile-status">'+
+            (conta?'<span style="color:#60a5fa">@'+esc(conta.user_ig)+'</span> · ':'')+'Atualizado: '+updated+
+          '</div>'+
+        '</div>'+
+        '<div style="display:flex;gap:6px;align-items:center">'+
+          '<button class="btn bp bsm" onclick="openFbRegistro('+page.id+')"><i class="ti ti-plus"></i> Registrar hoje</button>'+
+          (page.url?'<a href="'+esc(page.url)+'" target="_blank" class="btn bsm" style="color:#1877f2;border-color:#1877f2"><i class="ti ti-external-link"></i></a>':'')+''+
+          '<button class="btn bd bsm" onclick="delFbPage('+page.id+')"><i class="ti ti-trash"></i></button>'+
+        '</div>'+
+      '</div>'+
+      '<div class="fb-pages-grid" style="grid-template-columns:1fr">'+
+        '<div class="fb-page-row">'+
+          '<div class="fb-metrics" style="grid-template-columns:repeat(4,1fr)">'+
+            '<div class="fb-metric"><div class="fb-metric-val">'+Number(page.seguidores||0).toLocaleString('pt-BR')+'</div><div class="fb-metric-lbl">Seguidores</div></div>'+
+            '<div class="fb-metric"><div class="fb-metric-val">'+Number(page.visualizacoes_24h||0).toLocaleString('pt-BR')+'</div><div class="fb-metric-lbl">Views 24h</div></div>'+
+            '<div class="fb-metric"><div class="fb-metric-val">'+Number(page.comentarios_24h||0).toLocaleString('pt-BR')+'</div><div class="fb-metric-lbl">Comentários 24h</div></div>'+
+            '<div class="fb-metric"><div class="fb-metric-val">'+Number(page.novos_seguidores_24h||0).toLocaleString('pt-BR')+'</div><div class="fb-metric-lbl">Novos seguidores 24h</div></div>'+
+          '</div>'+
+          (page.obs?'<div style="font-size:11px;color:#555;margin-top:8px">'+esc(page.obs)+'</div>':'')+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+async function addFbPage(){
+  const o={nome:g('fbp-nome'),perfil_id:g('fbp-perfil')||null,url:g('fbp-url'),obs:g('fbp-obs'),seguidores:0,visualizacoes_24h:0,comentarios_24h:0,novos_seguidores_24h:0};
+  if(!o.nome)return;
+  try{
+    const r=await api('fb_pages','POST',o);
+    FbPages.push(r[0]);
+    FbPages.sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt'));
+    clr(['fbp-nome','fbp-url','fbp-obs']);
+    tog('padd-fbpage');renderFbPages();
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+async function delFbPage(id){
+  await api('fb_pages','DELETE',null,'?id=eq.'+id);
+  FbPages=FbPages.filter(x=>x.id!==id);renderFbPages();
+}
+
+function openFbRegistro(pageId){
+  const page=FbPages.find(x=>x.id===pageId);if(!page)return;
+  document.getElementById('modal-bg').style.display='flex';
+  document.getElementById('modal-inner').innerHTML=
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'+
+      '<h3 style="color:#fff;font-size:15px"><i class="ti ti-brand-facebook" style="color:#1877f2;margin-right:8px"></i>'+esc(page.nome)+'</h3>'+
+      '<button onclick="closeModal()" style="background:transparent;border:none;color:#666;font-size:22px;cursor:pointer;line-height:1">×</button>'+
+    '</div>'+
+    '<p style="font-size:12px;color:#555;margin-bottom:14px">Registre os dados das últimas 24 horas para esta página:</p>'+
+    '<div class="fg">'+
+      '<div class="f"><label>Seguidores totais</label><input id="fbr-seg" type="number" min="0" value="'+Number(page.seguidores||0)+'" class="kz-input"></div>'+
+      '<div class="f"><label>Visualizações 24h</label><input id="fbr-views" type="number" min="0" value="'+Number(page.visualizacoes_24h||0)+'" class="kz-input"></div>'+
+      '<div class="f"><label>Comentários 24h</label><input id="fbr-coments" type="number" min="0" value="'+Number(page.comentarios_24h||0)+'" class="kz-input"></div>'+
+      '<div class="f"><label>Novos seguidores 24h</label><input id="fbr-newseg" type="number" min="0" value="'+Number(page.novos_seguidores_24h||0)+'" class="kz-input"></div>'+
+    '</div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;border-top:1px solid #222;padding-top:14px">'+
+      '<button class="btn bsm" onclick="closeModal()">Cancelar</button>'+
+      '<button class="btn bp bsm" onclick="saveFbRegistro('+pageId+')"><i class="ti ti-device-floppy"></i> Salvar</button>'+
+    '</div>';
+}
+
+async function saveFbRegistro(pageId){
+  const upd={
+    seguidores:Number(document.getElementById('fbr-seg').value)||0,
+    visualizacoes_24h:Number(document.getElementById('fbr-views').value)||0,
+    comentarios_24h:Number(document.getElementById('fbr-coments').value)||0,
+    novos_seguidores_24h:Number(document.getElementById('fbr-newseg').value)||0,
+    updated_at:new Date().toISOString()
+  };
+  try{
+    await api('fb_pages','PATCH',upd,'?id=eq.'+pageId);
+    const page=FbPages.find(x=>x.id===pageId);
+    if(page)Object.assign(page,upd);
+    closeModal();renderFbPages();
+  }catch(e){alert('Erro: '+e.message);}
+}
 
 // ══════════════════════════════════════
 // FERRAMENTAS
@@ -1810,6 +2159,8 @@ function renderContas(){
   if(cSit==='__banidas__')f=f.filter(x=>['Banida','Bugada'].includes(x.situacao));
   else if(cSit)f=f.filter(x=>x.situacao===cSit);
   f=applyCtFilters(f);
+  if(cFavOnly)f=f.filter(x=>x.favorito);
+  if(cPrio)f=f.filter(x=>x.prioridade_perfil===cPrio);
   f=applySort(f);
   const tb=document.getElementById('tb-ct');
   if(!f.length){tb.innerHTML=`<tr><td colspan="9" class="empty">Nenhuma conta</td></tr>`;return statsContas();}
@@ -1818,6 +2169,7 @@ function renderContas(){
   const YN=['Não','Sim'];
 
   tb.innerHTML=f.map(c=>`<tr>
+    <td style="text-align:center;padding:4px 6px">${prioBtn(c)}</td>
     <td style="padding:6px 8px;cursor:default">
       <div style="display:flex;align-items:center;gap:8px">
         ${avatarThumb(c.avatar_id,c.user_ig)}
@@ -2001,6 +2353,35 @@ function avatarThumb(avatarId,userIg){
   </div>`;
 }
 
+
+function prioBtn(c){
+  const p=c.prioridade_perfil||'';
+  const fav=c.favorito?true:false;
+  const alta=p==='alta';const media=p==='media';const baixa=p==='baixa';
+  return '<div class="prio-btn">'+
+    '<span class="fav-star '+(fav?'on':'')+'" onclick="toggleFav('+c.id+','+(!fav)+')" title="Favorito">'+( fav?'★':'☆')+'</span>'+
+    '<div style="display:flex;gap:3px;align-items:center">'+
+      '<span class="prio-dot '+(alta?'alta':'none')+'" onclick="togglePrio('+c.id+','alta')" title="Alta"></span>'+
+      '<span class="prio-dot '+(media?'media':'none')+'" onclick="togglePrio('+c.id+','media')" title="Média"></span>'+
+      '<span class="prio-dot '+(baixa?'baixa':'none')+'" onclick="togglePrio('+c.id+','baixa')" title="Baixa"></span>'+
+    '</div>'+
+  '</div>';
+}
+
+async function togglePrio(id,prio){
+  const c=Contas.find(x=>x.id===id);if(!c)return;
+  const newPrio=c.prioridade_perfil===prio?'':prio; // clique duplo remove
+  await patch('contas',id,'prioridade_perfil',newPrio||null);
+  c.prioridade_perfil=newPrio;
+  renderContas();
+}
+
+async function toggleFav(id,val){
+  const c=Contas.find(x=>x.id===id);if(!c)return;
+  await patch('contas',id,'favorito',val);
+  c.favorito=val;
+  renderContas();
+}
 
 function stateVal(v){
   // Normaliza: '', null, 'Não' → vazio; 'alerta' → alerta; 'ok', 'Sim' → ok
@@ -2281,6 +2662,7 @@ function renderPostagens(){
             </div>
           </div>
         </td>
+        <td style="color:#666;font-size:11px">${esc(c.conta_fb||'—')}</td>
         <td style="color:#666;font-size:11px">${esc(c.dispositivo||'—')}</td>
         ${estoqueCell}
         <td>${progHtml}</td>
@@ -2415,6 +2797,14 @@ function renderResumo(){
     <div style="font-size:12px;font-weight:600;color:#888;margin-bottom:10px;display:flex;align-items:center;gap:6px;text-transform:uppercase;letter-spacing:.5px"><i class="ti ti-chart-bar" style="color:#60a5fa"></i> Visão geral — ${new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})}</div>
     <div class="resumo-grid">${alertCards}${sitCards}</div>`;
 }
+
+function toggleFavFilter(){
+  cFavOnly=!cFavOnly;
+  const btn=document.getElementById('btn-fav-filter');
+  if(btn){btn.style.color=cFavOnly?'#fbbf24':'#555';btn.style.borderColor=cFavOnly?'#fbbf24':'#252525';}
+  renderContas();
+}
+function setPrioFilter(v){cPrio=v;renderContas();}
 
 function goToTab(tabName){
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
