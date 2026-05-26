@@ -2844,6 +2844,13 @@ function toggleFavFilter(){
   renderContas();
 }
 function setPrioFilter(v){cPrio=v;renderContas();}
+function setPostPrioFilter(v){postPrio=v;renderPostagens();}
+function toggleFavFilterPost(){
+  postFavOnly=!postFavOnly;
+  const btn=document.getElementById('btn-fav-filter-post');
+  if(btn){btn.style.color=postFavOnly?'#fbbf24':'#555';btn.style.borderColor=postFavOnly?'#fbbf24':'#252525';}
+  renderPostagens();
+}
 
 function goToTab(tabName){
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
