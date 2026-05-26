@@ -2358,14 +2358,28 @@ function prioBtn(c){
   const p=c.prioridade_perfil||'';
   const fav=c.favorito?true:false;
   const alta=p==='alta';const media=p==='media';const baixa=p==='baixa';
-  return '<div class="prio-btn">'+
-    '<span class="fav-star '+(fav?'on':'')+'" onclick="toggleFav('+c.id+','+(!fav)+')" title="Favorito">'+( fav?'★':'☆')+'</span>'+
-    '<div style="display:flex;gap:3px;align-items:center">'+
-      '<span class="prio-dot '+(alta?'alta':'none')+'" onclick="togglePrio('+c.id+','alta')" title="Alta"></span>'+
-      '<span class="prio-dot '+(media?'media':'none')+'" onclick="togglePrio('+c.id+','media')" title="Média"></span>'+
-      '<span class="prio-dot '+(baixa?'baixa':'none')+'" onclick="togglePrio('+c.id+','baixa')" title="Baixa"></span>'+
-    '</div>'+
-  '</div>';
+  const wrap=document.createElement('div');
+  wrap.className='prio-btn';
+  // Estrela favorito
+  const star=document.createElement('span');
+  star.className='fav-star'+(fav?' on':'');
+  star.title='Favorito';
+  star.textContent=fav?'★':'☆';
+  star.addEventListener('click',e=>{e.stopPropagation();toggleFav(c.id,!fav);});
+  wrap.appendChild(star);
+  // Dots de prioridade
+  const dots=document.createElement('div');
+  dots.style.cssText='display:flex;gap:3px;align-items:center';
+  [['alta','Alta'],['media','Média'],['baixa','Baixa']].forEach(([key,label])=>{
+    const dot=document.createElement('span');
+    dot.className='prio-dot '+(p===key?key:'none');
+    dot.title=label;
+    dot.addEventListener('click',e=>{e.stopPropagation();togglePrio(c.id,key);});
+    dots.appendChild(dot);
+  });
+  wrap.appendChild(dots);
+  // Retornar HTML via outerHTML
+  return wrap.outerHTML;
 }
 
 async function togglePrio(id,prio){
