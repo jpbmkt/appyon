@@ -2656,11 +2656,12 @@ async function checkProgression(cid){
       ct.aquecimento_dias=dias;
     }
   } else if(ct.situacao==='Crescimento'){
-    const diasComCheck=new Set(myChecks.filter(x=>x.on_ig||x.on_fb).map(x=>x.data)).size;
-    if(diasComCheck>=4){
-      await api('contas','PATCH',{situacao:'Venda',crescimento_posts:diasComCheck},`?id=eq.${cid}`);
-      ct.situacao='Venda';ct.crescimento_posts=diasComCheck;
-      alert('🎉 '+ct.user_ig+' atingiu 4 dias → VENDA!');
+    const totalIG=myChecks.reduce((a,x)=>a+Number(x.qtd_ig||0),0);
+    const totalFB=myChecks.reduce((a,x)=>a+Number(x.qtd_fb||0),0);
+    if(totalIG>=10&&totalFB>=10){
+      await api('contas','PATCH',{situacao:'Venda',crescimento_posts:totalIG+totalFB},`?id=eq.${cid}`);
+      ct.situacao='Venda';ct.crescimento_posts=totalIG+totalFB;
+      alert('🎉 '+ct.user_ig+' atingiu 10 vídeos no IG e FB → VENDA!');
     } else {
       await api('contas','PATCH',{crescimento_posts:totalVideos},`?id=eq.${cid}`);
       ct.crescimento_posts=totalVideos;
@@ -2714,7 +2715,7 @@ function renderPostagens(){
   const sections=[
     {sit:'Aquecimento',cls:'b-aquecimento',prog:'pf-aq',max:2,label:'dias de aquecimento',getCount:c=>new Set(Checks.filter(x=>x.conta_id===c.id).map(x=>x.data)).size,showQtd:false,showConfig:false},
     {sit:'Configuração Inicial',cls:'b-config',prog:'pf-config',max:null,label:'configuração',getCount:()=>0,showQtd:false,showConfig:true},
-    {sit:'Crescimento',cls:'b-crescimento',prog:'pf-cr',max:4,label:'dias com check',getCount:c=>new Set(Checks.filter(x=>x.conta_id===c.id&&(x.on_ig||x.on_fb||(x.on_ig==null))).map(x=>x.data)).size,showQtd:false,showConfig:false},
+    {sit:'Crescimento',cls:'b-crescimento',prog:'pf-cr',max:10,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).reduce((a,x)=>a+(Number(x.qtd_ig||0)+Number(x.qtd_fb||0)+Number(x.qtd_videos||0)),0),showQtd:false,showConfig:false},
     {sit:'Venda',cls:'b-venda',prog:'pf-vd',max:null,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).reduce((a,ch)=>a+(Number(ch.qtd_videos)||0),0),showQtd:true,showConfig:false}
   ];
   const el=document.getElementById('post-sections');
@@ -2763,7 +2764,19 @@ function renderPostagens(){
         progHtml='<div style="display:flex;flex-direction:column;gap:0">'+grupoRows+'</div>'+(allDone?'<button class="btn bg bsm" style="margin-top:6px;font-size:11px" onclick="moverParaCrescimento('+c.id+')"><i class="ti ti-arrow-right"></i> Mover para Crescimento</button>':'')
 ;
       } else if(sec.max){
-        progHtml=`<div style="font-size:10px;color:#555;margin-bottom:2px">${count}/${sec.max}</div><div class="prog-bar"><div class="prog-fill ${sec.prog}" style="width:${pct}%"></div></div>`;
+        if(sec.getCountFB!==undefined){
+          // Crescimento: duas barras separadas IG e FB
+          const countFB=sec.getCountFB(c);
+          const pctIG=Math.min(100,Math.round(count/sec.max*100));
+          const pctFB=Math.min(100,Math.round(countFB/sec.max*100));
+          progHtml=
+            '<div style="font-size:10px;color:#60a5fa;margin-bottom:1px">IG: '+count+'/'+sec.max+'</div>'+
+            '<div class="prog-bar" style="margin-bottom:4px"><div class="prog-fill" style="width:'+pctIG+'%;background:#60a5fa"></div></div>'+
+            '<div style="font-size:10px;color:#1877f2;margin-bottom:1px">FB: '+countFB+'/'+sec.max+'</div>'+
+            '<div class="prog-bar"><div class="prog-fill" style="width:'+pctFB+'%;background:#1877f2"></div></div>';
+        } else {
+          progHtml=`<div style="font-size:10px;color:#555;margin-bottom:2px">${count}/${sec.max}</div><div class="prog-bar"><div class="prog-fill ${sec.prog}" style="width:${pct}%"></div></div>`;
+        }
       } else {
         progHtml=`<span style="font-size:11px;color:#555">${count} vídeos</span>`;
       }
