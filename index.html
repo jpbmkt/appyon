@@ -2862,7 +2862,7 @@ async function syncDrive(){
     initGoogleAuth(()=>syncDrive());
     return;
   }
-  const contasComDrive=Contas.filter(x=>x.drive_folder_id&&x.drive_folder_id.trim());
+  const contasComDrive=Contas.filter(x=>x.situacao==='Venda'&&x.drive_folder_id&&x.drive_folder_id.trim());
   if(!contasComDrive.length){
     alert('Nenhuma conta em VENDA com ID de pasta do Drive cadastrado.\nContas em Crescimento têm estoque gerenciado manualmente.');
     return;
