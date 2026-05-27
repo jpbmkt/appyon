@@ -2715,7 +2715,7 @@ function renderPostagens(){
   const sections=[
     {sit:'Aquecimento',cls:'b-aquecimento',prog:'pf-aq',max:2,label:'dias de aquecimento',getCount:c=>new Set(Checks.filter(x=>x.conta_id===c.id).map(x=>x.data)).size,showQtd:false,showConfig:false},
     {sit:'Configuração Inicial',cls:'b-config',prog:'pf-config',max:null,label:'configuração',getCount:()=>0,showQtd:false,showConfig:true},
-    {sit:'Crescimento',cls:'b-crescimento',prog:'pf-cr',max:10,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).reduce((a,x)=>a+(Number(x.qtd_ig||0)+Number(x.qtd_fb||0)+Number(x.qtd_videos||0)),0),showQtd:false,showConfig:false},
+    {sit:'Crescimento',cls:'b-crescimento',prog:'pf-cr',max:10,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).reduce((a,x)=>a+Number(x.qtd_ig||0),0),getCountFB:c=>Checks.filter(x=>x.conta_id===c.id).reduce((a,x)=>a+Number(x.qtd_fb||0),0),showQtd:false,showConfig:false},
     {sit:'Venda',cls:'b-venda',prog:'pf-vd',max:null,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).reduce((a,ch)=>a+(Number(ch.qtd_videos)||0),0),showQtd:true,showConfig:false}
   ];
   const el=document.getElementById('post-sections');
