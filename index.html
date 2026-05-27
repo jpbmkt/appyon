@@ -103,10 +103,15 @@ select.ie{cursor:pointer}
 .pt td:nth-child(2){text-align:left}
 .pt tr:last-child td{border-bottom:none}
 .pt tr:hover td{background:#0f0f0f}
-.chk{width:26px;height:26px;border-radius:6px;border:1px solid #2a2a2a;background:transparent;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;line-height:1}
-.chk:hover{background:#1e1e1e}
-.chk.on{background:#14291a;border-color:#4ade80;color:#4ade80}
-.chk.today{border-color:#555}
+.chk{width:24px;height:24px;border-radius:5px;border:1.5px solid #222;background:transparent;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:11px;transition:all .15s;line-height:1;flex-shrink:0}
+.chk:hover{background:#1e1e1e;border-color:#333}
+.chk.on1{background:#1a1400;border-color:#fbbf24;color:#fbbf24}
+.chk.on2{background:#0d2016;border-color:#22c55e;color:#22c55e}
+.chk.today{border-color:#2a4a2a}
+.chk-pair{display:flex;flex-direction:column;align-items:center;gap:2px;padding:2px 0}
+.chk-lbl{font-size:8px;color:#252525;font-weight:600;letter-spacing:.3px}
+.chk-lbl.active{color:#444}
+.qtd-mini{width:28px;font-size:9px;padding:1px 2px;text-align:center;background:#111;border:1px solid #1a1a1a;border-radius:3px;color:#555;outline:none}
 .prog-bar{height:4px;background:#222;border-radius:999px;overflow:hidden;margin-top:3px;width:60px}
 .prog-fill{height:100%;border-radius:999px}
 .pf-aq{background:#fbbf24}
@@ -2532,6 +2537,54 @@ function checkedDays(cid){
   return new Set(Checks.filter(x=>x.conta_id===cid).map(x=>x.data));
 }
 
+async function toggleCheckIG(cid,data,btn){
+  let chk=Checks.find(x=>x.conta_id===cid&&x.data===data);
+  const newVal=!chk?.on_ig;
+  if(chk){
+    await api('checks_postagem','PATCH',{on_ig:newVal},'?conta_id=eq.'+cid+'&data=eq.'+data);
+    chk.on_ig=newVal;
+  } else {
+    const r=await api('checks_postagem','POST',{conta_id:cid,data,on_ig:true,on_fb:false,qtd_ig:0,qtd_fb:0});
+    chk=r[0];Checks.push(chk);
+  }
+  renderPostagens();
+}
+
+async function toggleCheckFB(cid,data,btn){
+  let chk=Checks.find(x=>x.conta_id===cid&&x.data===data);
+  const newVal=!chk?.on_fb;
+  if(chk){
+    await api('checks_postagem','PATCH',{on_fb:newVal},'?conta_id=eq.'+cid+'&data=eq.'+data);
+    chk.on_fb=newVal;
+  } else {
+    const r=await api('checks_postagem','POST',{conta_id:cid,data,on_ig:false,on_fb:true,qtd_ig:0,qtd_fb:0});
+    chk=r[0];Checks.push(chk);
+  }
+  renderPostagens();
+}
+
+async function saveQtdIG(cid,data,val){
+  const n=Number(val)||0;
+  let chk=Checks.find(x=>x.conta_id===cid&&x.data===data);
+  if(chk){
+    await api('checks_postagem','PATCH',{qtd_ig:n},'?conta_id=eq.'+cid+'&data=eq.'+data);
+    chk.qtd_ig=n;
+    // Atualizar estoque da conta
+    const total=Checks.filter(x=>x.conta_id===cid).reduce((a,x)=>a+(Number(x.qtd_ig||0)+Number(x.qtd_fb||0)),0);
+    renderPostagens();
+  }
+}
+
+async function saveQtdFB(cid,data,val){
+  const n=Number(val)||0;
+  let chk=Checks.find(x=>x.conta_id===cid&&x.data===data);
+  if(chk){
+    await api('checks_postagem','PATCH',{qtd_fb:n},'?conta_id=eq.'+cid+'&data=eq.'+data);
+    chk.qtd_fb=n;
+    renderPostagens();
+  }
+}
+
 async function toggleCheck(cid,data,btn){
   const existing=Checks.find(x=>x.conta_id===cid&&x.data===data);
   if(existing){
@@ -2566,11 +2619,11 @@ async function checkProgression(cid){
       ct.aquecimento_dias=dias;
     }
   } else if(ct.situacao==='Crescimento'){
-    const totalVideos=myChecks.reduce((a,c)=>a+(Number(c.qtd_videos)||0),0);
-    if(totalVideos>=10){
-      await api('contas','PATCH',{situacao:'Venda',crescimento_posts:totalVideos},`?id=eq.${cid}`);
-      ct.situacao='Venda';ct.crescimento_posts=totalVideos;
-      alert(`🎉 ${ct.user_ig} atingiu 10 vídeos → VENDA!`);
+    const diasComCheck=new Set(myChecks.filter(x=>x.on_ig||x.on_fb).map(x=>x.data)).size;
+    if(diasComCheck>=4){
+      await api('contas','PATCH',{situacao:'Venda',crescimento_posts:diasComCheck},`?id=eq.${cid}`);
+      ct.situacao='Venda';ct.crescimento_posts=diasComCheck;
+      alert('🎉 '+ct.user_ig+' atingiu 4 dias → VENDA!');
     } else {
       await api('contas','PATCH',{crescimento_posts:totalVideos},`?id=eq.${cid}`);
       ct.crescimento_posts=totalVideos;
@@ -2624,7 +2677,7 @@ function renderPostagens(){
   const sections=[
     {sit:'Aquecimento',cls:'b-aquecimento',prog:'pf-aq',max:2,label:'dias de aquecimento',getCount:c=>new Set(Checks.filter(x=>x.conta_id===c.id).map(x=>x.data)).size,showQtd:false,showConfig:false},
     {sit:'Configuração Inicial',cls:'b-config',prog:'pf-config',max:null,label:'configuração',getCount:()=>0,showQtd:false,showConfig:true},
-    {sit:'Crescimento',cls:'b-crescimento',prog:'pf-cr',max:10,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).reduce((a,ch)=>a+(Number(ch.qtd_videos)||0),0),showQtd:true,showConfig:false},
+    {sit:'Crescimento',cls:'b-crescimento',prog:'pf-cr',max:4,label:'dias com check',getCount:c=>new Set(Checks.filter(x=>x.conta_id===c.id&&(x.on_ig||x.on_fb)).map(x=>x.data)).size,showQtd:false,showConfig:false},
     {sit:'Venda',cls:'b-venda',prog:'pf-vd',max:null,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).reduce((a,ch)=>a+(Number(ch.qtd_videos)||0),0),showQtd:true,showConfig:false}
   ];
   const el=document.getElementById('post-sections');
@@ -2681,16 +2734,28 @@ function renderPostagens(){
       // Day cells (só para não-Config)
       const dayCells=sec.showConfig?'':wk.map((d,i)=>{
         const isToday=d===today;
-        const on=checked.has(d);
-        const dayLabel=d.slice(8);
         const chk=Checks.find(x=>x.conta_id===c.id&&x.data===d);
-        const qtd=chk&&chk.qtd_videos!=null?chk.qtd_videos:'';
-        return`<td style="min-width:42px;text-align:center;padding:5px 4px;background:${isToday?'#0d1a0d':'transparent'}">
-          <button class="chk${on?' on':''}${isToday?' today':''}" onclick="toggleCheck(${c.id},'${d}',this)" title="${d}">
-            ${on?'<i class=\"ti ti-check\" style=\"font-size:13px\"></i>':''}
-          </button>
-          ${sec.showQtd&&on?`<input type="number" min="0" value="${qtd}" placeholder="vids" style="width:36px;background:#111;border:1px solid #222;border-radius:3px;color:#888;font-size:10px;padding:1px 3px;margin-top:2px;text-align:center" onclick="event.stopPropagation()" onblur="saveQtdVideos(${c.id},'${d}',this.value)" onkeydown="if(event.key==='Enter')this.blur()">`:''}`+
-        `</td>`;
+        const onIG=chk&&chk.on_ig;
+        const onFB=chk&&chk.on_fb;
+        const qtdIG=chk&&chk.qtd_ig!=null?chk.qtd_ig:'';
+        const qtdFB=chk&&chk.qtd_fb!=null?chk.qtd_fb:'';
+        const clsIG=onIG?(Number(chk.qtd_ig||0)>=2?'on2':'on1'):'';
+        const clsFB=onFB?(Number(chk.qtd_fb||0)>=2?'on2':'on1'):'';
+        const bg=isToday?'background:#0a140a':'';
+        const igBtn='<button class="chk '+clsIG+(isToday?' today':'')+'" onclick="toggleCheckIG('+c.id+',''+d+'',this)" title="IG '+d+'">'+( onIG?'✓':'')+'</button>';
+        const fbBtn='<button class="chk '+clsFB+(isToday?' today':'')+'" onclick="toggleCheckFB('+c.id+',''+d+'',this)" title="FB '+d+'">'+( onFB?'✓':'')+'</button>';
+        const qtdIGInput=onIG?'<input class="qtd-mini" type="number" min="0" value="'+qtdIG+'" placeholder="0" onclick="event.stopPropagation()" onblur="saveQtdIG('+c.id+',''+d+'',this.value)" onkeydown="if(event.key==='Enter')this.blur()">':'';
+        const qtdFBInput=onFB?'<input class="qtd-mini" type="number" min="0" value="'+qtdFB+'" placeholder="0" onclick="event.stopPropagation()" onblur="saveQtdFB('+c.id+',''+d+'',this.value)" onkeydown="if(event.key==='Enter')this.blur()">':'';
+        return '<td style="min-width:46px;text-align:center;padding:4px 3px;'+bg+'">'+
+          '<div class="chk-pair">'+
+            '<span class="chk-lbl'+(onIG?' active':'')+'">IG</span>'+
+            igBtn+
+            qtdIGInput+
+            '<span class="chk-lbl'+(onFB?' active':'')+'" style="margin-top:3px">FB</span>'+
+            fbBtn+
+            qtdFBInput+
+          '</div>'+
+        '</td>';
       }).join('');
 
       // Estoque
