@@ -2537,6 +2537,59 @@ function checkedDays(cid){
   return new Set(Checks.filter(x=>x.conta_id===cid).map(x=>x.data));
 }
 
+function buildDayCell(cid,d,onIG,onFB,qtdIG,qtdFB,clsIG,clsFB,todayCls,bg){
+  const td=document.createElement('td');
+  td.style.cssText='min-width:46px;text-align:center;padding:4px 3px;'+bg;
+  const pair=document.createElement('div');
+  pair.className='chk-pair';
+
+  // IG
+  const lblIG=document.createElement('span');
+  lblIG.className='chk-lbl'+(onIG?' active':'');
+  lblIG.textContent='IG';
+  const btnIG=document.createElement('button');
+  btnIG.className='chk'+clsIG+todayCls;
+  btnIG.title='IG '+d;
+  btnIG.textContent=onIG?'✓':'';
+  btnIG.addEventListener('click',()=>toggleCheckIG(cid,d,btnIG));
+  pair.appendChild(lblIG);
+  pair.appendChild(btnIG);
+  if(onIG){
+    const inp=document.createElement('input');
+    inp.className='qtd-mini';
+    inp.type='number';inp.min='0';inp.value=qtdIG||'';inp.placeholder='0';
+    inp.addEventListener('click',e=>e.stopPropagation());
+    inp.addEventListener('blur',()=>saveQtdIG(cid,d,inp.value));
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();});
+    pair.appendChild(inp);
+  }
+
+  // FB
+  const lblFB=document.createElement('span');
+  lblFB.className='chk-lbl'+(onFB?' active':'');
+  lblFB.style.marginTop='3px';
+  lblFB.textContent='FB';
+  const btnFB=document.createElement('button');
+  btnFB.className='chk'+clsFB+todayCls;
+  btnFB.title='FB '+d;
+  btnFB.textContent=onFB?'✓':'';
+  btnFB.addEventListener('click',()=>toggleCheckFB(cid,d,btnFB));
+  pair.appendChild(lblFB);
+  pair.appendChild(btnFB);
+  if(onFB){
+    const inp=document.createElement('input');
+    inp.className='qtd-mini';
+    inp.type='number';inp.min='0';inp.value=qtdFB||'';inp.placeholder='0';
+    inp.addEventListener('click',e=>e.stopPropagation());
+    inp.addEventListener('blur',()=>saveQtdFB(cid,d,inp.value));
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();});
+    pair.appendChild(inp);
+  }
+
+  td.appendChild(pair);
+  return td.outerHTML;
+}
+
 async function toggleCheckIG(cid,data,btn){
   let chk=Checks.find(x=>x.conta_id===cid&&x.data===data);
   const newVal=!chk?.on_ig;
@@ -2739,24 +2792,12 @@ function renderPostagens(){
         const onFB=chk&&chk.on_fb;
         const qtdIG=chk&&chk.qtd_ig!=null?chk.qtd_ig:'';
         const qtdFB=chk&&chk.qtd_fb!=null?chk.qtd_fb:'';
-        const clsIG=onIG?(Number(chk.qtd_ig||0)>=2?'on2':'on1'):'';
-        const clsFB=onFB?(Number(chk.qtd_fb||0)>=2?'on2':'on1'):'';
+        const clsIG=onIG?(Number(chk.qtd_ig||0)>=2?' on2':' on1'):'';
+        const clsFB=onFB?(Number(chk.qtd_fb||0)>=2?' on2':' on1'):'';
+        const todayCls=isToday?' today':'';
         const bg=isToday?'background:#0a140a':'';
-        const igBtn='<button class="chk '+clsIG+(isToday?' today':'')+'" onclick="toggleCheckIG('+c.id+',''+d+'',this)" title="IG '+d+'">'+( onIG?'✓':'')+'</button>';
-        const fbBtn='<button class="chk '+clsFB+(isToday?' today':'')+'" onclick="toggleCheckFB('+c.id+',''+d+'',this)" title="FB '+d+'">'+( onFB?'✓':'')+'</button>';
-        const qtdIGInput=onIG?'<input class="qtd-mini" type="number" min="0" value="'+qtdIG+'" placeholder="0" onclick="event.stopPropagation()" onblur="saveQtdIG('+c.id+',''+d+'',this.value)" onkeydown="if(event.key==='Enter')this.blur()">':'';
-        const qtdFBInput=onFB?'<input class="qtd-mini" type="number" min="0" value="'+qtdFB+'" placeholder="0" onclick="event.stopPropagation()" onblur="saveQtdFB('+c.id+',''+d+'',this.value)" onkeydown="if(event.key==='Enter')this.blur()">':'';
-        return '<td style="min-width:46px;text-align:center;padding:4px 3px;'+bg+'">'+
-          '<div class="chk-pair">'+
-            '<span class="chk-lbl'+(onIG?' active':'')+'">IG</span>'+
-            igBtn+
-            qtdIGInput+
-            '<span class="chk-lbl'+(onFB?' active':'')+'" style="margin-top:3px">FB</span>'+
-            fbBtn+
-            qtdFBInput+
-          '</div>'+
-        '</td>';
-      }).join('');
+        return buildDayCell(c.id,d,onIG,onFB,qtdIG,qtdFB,clsIG,clsFB,todayCls,bg);
+      }).join('');;
 
       // Estoque
       const estoqueCell=`<td style="padding:6px 8px">
