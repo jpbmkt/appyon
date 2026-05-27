@@ -2859,9 +2859,23 @@ function renderPostagens(){
 // ── GOOGLE DRIVE SYNC ──
 async function syncDrive(){
   if(!gToken){
-    initGoogleAuth(()=>syncDrive());
+    // Aguardar token antes de executar
+    initGoogleAuth(async()=>{
+      await new Promise(r=>setTimeout(r,200)); // pequena espera para garantir token
+      syncDrive();
+    });
     return;
   }
+  // Validar token com uma request simples antes de processar
+  try{
+    const test=await fetch('https://www.googleapis.com/drive/v3/about?fields=user',{headers:{Authorization:'Bearer '+gToken}});
+    if(test.status===401){
+      gToken=null;
+      try{sessionStorage.removeItem('gToken');sessionStorage.removeItem('gTokenTs');}catch(e){}
+      initGoogleAuth(async()=>{await new Promise(r=>setTimeout(r,200));syncDrive();});
+      return;
+    }
+  }catch(e){}
   const contasComDrive=Contas.filter(x=>x.situacao==='Venda'&&x.drive_folder_id&&x.drive_folder_id.trim());
   if(!contasComDrive.length){
     alert('Nenhuma conta em VENDA com ID de pasta do Drive cadastrado.\nContas em Crescimento têm estoque gerenciado manualmente.');
