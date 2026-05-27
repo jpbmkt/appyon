@@ -2603,13 +2603,20 @@ async function toggleCheckFB(cid,data,btn){
 async function saveQtdIG(cid,data,val){
   const n=Number(val)||0;
   let chk=Checks.find(x=>x.conta_id===cid&&x.data===data);
-  if(chk){
-    await api('checks_postagem','PATCH',{qtd_ig:n},'?conta_id=eq.'+cid+'&data=eq.'+data);
-    chk.qtd_ig=n;
-    // Atualizar estoque da conta
-    const total=Checks.filter(x=>x.conta_id===cid).reduce((a,x)=>a+(Number(x.qtd_ig||0)+Number(x.qtd_fb||0)),0);
-    renderPostagens();
+  if(!chk)return;
+  const oldN=Number(chk.qtd_ig||0);
+  await api('checks_postagem','PATCH',{qtd_ig:n},'?conta_id=eq.'+cid+'&data=eq.'+data);
+  chk.qtd_ig=n;
+
+  // Para contas em Crescimento: abater do estoque a quantidade postada no IG
+  const ct=Contas.find(x=>x.id===cid);
+  if(ct&&ct.situacao==='Crescimento'){
+    const diff=n-oldN; // diferença entre novo e antigo valor
+    const novoEstoque=Math.max(0,Number(ct.estoque_videos||0)-diff);
+    await patch('contas',cid,'estoque_videos',novoEstoque);
+    ct.estoque_videos=novoEstoque;
   }
+  renderPostagens();
 }
 
 async function saveQtdFB(cid,data,val){
@@ -2857,7 +2864,7 @@ async function syncDrive(){
   }
   const contasComDrive=Contas.filter(x=>x.drive_folder_id&&x.drive_folder_id.trim());
   if(!contasComDrive.length){
-    alert('Nenhuma conta com ID de pasta do Drive cadastrado.\nCadastre o ID da pasta em Gestão de Contas → modal da conta → campo "ID pasta Drive".');
+    alert('Nenhuma conta em VENDA com ID de pasta do Drive cadastrado.\nContas em Crescimento têm estoque gerenciado manualmente.');
     return;
   }
   const btn=document.getElementById('btn-sync-drive');
