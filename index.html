@@ -2119,6 +2119,15 @@ document.addEventListener('click',(e)=>{
   // Foto do avatar
   const circle=e.target.closest('.avatar-circle[data-foto]');
   if(circle){e.stopPropagation();openFotoModal(decodeURIComponent(circle.dataset.foto));return;}
+  // Check IG/FB
+  const chkBtn=e.target.closest('[data-chk-cid]');
+  if(chkBtn){
+    e.stopPropagation();
+    const cid=Number(chkBtn.dataset.chkCid),d=chkBtn.dataset.chkD,p=chkBtn.dataset.chkP;
+    if(p==='IG')toggleCheckIG(cid,d,chkBtn);
+    else toggleCheckFB(cid,d,chkBtn);
+    return;
+  }
   // Prioridade
   const dot=e.target.closest('[data-prio]');
   if(dot){e.stopPropagation();togglePrio(Number(dot.dataset.prio),dot.dataset.key);return;}
@@ -2128,6 +2137,15 @@ document.addEventListener('click',(e)=>{
   // Fechar dropdowns de filtro
   if(!e.target.closest('.flt-wrap')){
     document.querySelectorAll('.flt-drop').forEach(d=>d.classList.remove('open'));
+  }
+});
+
+document.addEventListener('change',(e)=>{
+  const qtdEl=e.target.closest('[data-qtd-cid]');
+  if(qtdEl){
+    const cid=Number(qtdEl.dataset.qtdCid),d=qtdEl.dataset.qtdD,p=qtdEl.dataset.qtdP;
+    if(p==='IG')saveQtdIG(cid,d,qtdEl.value);
+    else saveQtdFB(cid,d,qtdEl.value);
   }
 });
 document.addEventListener('keydown',(e)=>{
@@ -2538,57 +2556,23 @@ function checkedDays(cid){
 }
 
 function buildDayCell(cid,d,onIG,onFB,qtdIG,qtdFB,clsIG,clsFB,todayCls,bg){
-  const td=document.createElement('td');
-  td.style.cssText='min-width:46px;text-align:center;padding:4px 3px;'+bg;
-  const pair=document.createElement('div');
-  pair.className='chk-pair';
-
-  // IG
-  const lblIG=document.createElement('span');
-  lblIG.className='chk-lbl'+(onIG?' active':'');
-  lblIG.textContent='IG';
-  const btnIG=document.createElement('button');
-  btnIG.className='chk'+clsIG+todayCls;
-  btnIG.title='IG '+d;
-  btnIG.textContent=onIG?'✓':'';
-  btnIG.addEventListener('click',()=>toggleCheckIG(cid,d,btnIG));
-  pair.appendChild(lblIG);
-  pair.appendChild(btnIG);
-  if(onIG){
-    const inp=document.createElement('input');
-    inp.className='qtd-mini';
-    inp.type='number';inp.min='0';inp.value=qtdIG||'';inp.placeholder='0';
-    inp.addEventListener('click',e=>e.stopPropagation());
-    inp.addEventListener('blur',()=>saveQtdIG(cid,d,inp.value));
-    inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();});
-    pair.appendChild(inp);
-  }
-
-  // FB
-  const lblFB=document.createElement('span');
-  lblFB.className='chk-lbl'+(onFB?' active':'');
-  lblFB.style.marginTop='3px';
-  lblFB.textContent='FB';
-  const btnFB=document.createElement('button');
-  btnFB.className='chk'+clsFB+todayCls;
-  btnFB.title='FB '+d;
-  btnFB.textContent=onFB?'✓':'';
-  btnFB.addEventListener('click',()=>toggleCheckFB(cid,d,btnFB));
-  pair.appendChild(lblFB);
-  pair.appendChild(btnFB);
-  if(onFB){
-    const inp=document.createElement('input');
-    inp.className='qtd-mini';
-    inp.type='number';inp.min='0';inp.value=qtdFB||'';inp.placeholder='0';
-    inp.addEventListener('click',e=>e.stopPropagation());
-    inp.addEventListener('blur',()=>saveQtdFB(cid,d,inp.value));
-    inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();});
-    pair.appendChild(inp);
-  }
-
-  td.appendChild(pair);
-  return td.outerHTML;
+  const mkChk=(platform,on,cls,qtd)=>{
+    const chkHtml='<button class="chk'+cls+todayCls+'" data-chk-cid="'+cid+'" data-chk-d="'+d+'" data-chk-p="'+platform+'" title="'+platform+' '+d+'">'+(on?'✓':'')+'</button>';
+    const qtdHtml=on?'<input class="qtd-mini" type="number" min="0" value="'+(qtd||'')+'" placeholder="0" data-qtd-cid="'+cid+'" data-qtd-d="'+d+'" data-qtd-p="'+platform+'">':'';
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:1px">'+
+      '<span style="font-size:8px;color:'+(on?'#555':'#222')+';font-weight:600">'+platform+'</span>'+
+      chkHtml+
+      qtdHtml+
+    '</div>';
+  };
+  return '<td style="min-width:60px;text-align:center;padding:4px 3px;'+bg+'">'+
+    '<div style="display:flex;gap:4px;justify-content:center;align-items:flex-start">'+
+      mkChk('IG',onIG,clsIG,qtdIG)+
+      mkChk('FB',onFB,clsFB,qtdFB)+
+    '</div>'+
+  '</td>';
 }
+
 
 async function toggleCheckIG(cid,data,btn){
   let chk=Checks.find(x=>x.conta_id===cid&&x.data===data);
@@ -2730,7 +2714,7 @@ function renderPostagens(){
   const sections=[
     {sit:'Aquecimento',cls:'b-aquecimento',prog:'pf-aq',max:2,label:'dias de aquecimento',getCount:c=>new Set(Checks.filter(x=>x.conta_id===c.id).map(x=>x.data)).size,showQtd:false,showConfig:false},
     {sit:'Configuração Inicial',cls:'b-config',prog:'pf-config',max:null,label:'configuração',getCount:()=>0,showQtd:false,showConfig:true},
-    {sit:'Crescimento',cls:'b-crescimento',prog:'pf-cr',max:4,label:'dias com check',getCount:c=>new Set(Checks.filter(x=>x.conta_id===c.id&&(x.on_ig||x.on_fb)).map(x=>x.data)).size,showQtd:false,showConfig:false},
+    {sit:'Crescimento',cls:'b-crescimento',prog:'pf-cr',max:4,label:'dias com check',getCount:c=>new Set(Checks.filter(x=>x.conta_id===c.id&&(x.on_ig||x.on_fb||(x.on_ig==null))).map(x=>x.data)).size,showQtd:false,showConfig:false},
     {sit:'Venda',cls:'b-venda',prog:'pf-vd',max:null,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).reduce((a,ch)=>a+(Number(ch.qtd_videos)||0),0),showQtd:true,showConfig:false}
   ];
   const el=document.getElementById('post-sections');
@@ -2755,7 +2739,7 @@ function renderPostagens(){
         // Configuração Inicial — checkboxes
         const cfg=ConfigsIniciais.find(x=>x.conta_id===c.id)||{};
         const grupos=[
-          {label:null, items:[{key:'pasta_drive',label:'Pasta Drive'}]},
+          {label:null, items:[{key:'pasta_drive',label:'Pasta Drive'},{key:'id_pasta',label:'ID Pasta'}]},
           {label:'Instagram', items:[
             {key:'foto_perfil',label:'Foto perfil'},
             {key:'conta_profissional',label:'Conta profissional'},
