@@ -323,9 +323,11 @@ td.iec select{cursor:pointer}
     <button class="nb" onclick="showTab('avatares',this)"><i class="ti ti-user-circle"></i> Avatares</button>
     <button class="nb" onclick="showTab('contas',this)"><i class="ti ti-layout-dashboard"></i> Gestão de Contas</button>
     <button class="nb" onclick="showTab('postagens',this)"><i class="ti ti-calendar-check"></i> Postagens</button>
-    <button class="nb" onclick="showTab('projetos',this)"><i class="ti ti-bulb"></i> Projetos</button>
     <button class="nb" onclick="showTab('ferramentas',this)"><i class="ti ti-credit-card"></i> Ferramentas</button>
-    <button class="nb" onclick="showTab('facebook',this)"><i class="ti ti-brand-facebook"></i> Facebook</button>
+    <button class="nb" onclick="showTab('kaizen',this)" style="display:none"></button>
+    <button class="nb" onclick="showTab('emails',this)"><i class="ti ti-mail"></i> E-mails</button>
+    <button class="nb" onclick="showTab('proxies',this)"><i class="ti ti-server"></i> Proxies</button>
+    <button class="nb" onclick="showTab('avatares',this)"><i class="ti ti-user-circle"></i> Avatares</button>
   </div>
   <div id="cdot" class="dot" title="Conectado"></div>
 </div>
@@ -553,6 +555,14 @@ td.iec select{cursor:pointer}
       <option value="media">🟡 Média</option>
       <option value="baixa">🟢 Baixa</option>
     </select>
+    <input type="text" placeholder="Filtrar cluster..." oninput="setPostClusterFilter(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none;width:130px">
+    <div style="display:flex;gap:4px;flex-wrap:wrap">
+      <button class="btn bsm post-sit-btn" data-sit="" onclick="setPostSit('',this)" style="font-size:11px;background:#1a1a1a">Todas</button>
+      <button class="btn bsm post-sit-btn" data-sit="Configuração Inicial" onclick="setPostSit('Configuração Inicial',this)" style="font-size:11px;border-color:#38bdf8;color:#38bdf8">Config. Inicial</button>
+      <button class="btn bsm post-sit-btn" data-sit="Aquecimento" onclick="setPostSit('Aquecimento',this)" style="font-size:11px;border-color:#fbbf24;color:#fbbf24">Aquecimento</button>
+      <button class="btn bsm post-sit-btn" data-sit="Crescimento" onclick="setPostSit('Crescimento',this)" style="font-size:11px;border-color:#60a5fa;color:#60a5fa">Crescimento</button>
+      <button class="btn bsm post-sit-btn" data-sit="Venda" onclick="setPostSit('Venda',this)" style="font-size:11px;border-color:#4ade80;color:#4ade80">Venda</button>
+    </div>
   </div>
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:8px 12px;background:#161616;border:1px solid #222;border-radius:8px">
     <i class="ti ti-brand-google-drive" style="color:#4ade80;font-size:18px;flex-shrink:0"></i>
@@ -686,7 +696,7 @@ let ferrTipoFilter='';
 let FbProfiles=[],FbPages=[];
 const FB_APP_ID='1499689168525266';
 let kzCurrentDate='',projCurrentTab='diario';
-let cQ='',cSit='',cPrio='',cFavOnly=false,cCluster='',postPrio='',postFavOnly=false,postCluster='',eMailFilter='',proxyFilter='';
+let cQ='',cSit='',cPrio='',cFavOnly=false,cCluster='',postPrio='',postFavOnly=false,postCluster='',postSit='',eMailFilter='',proxyFilter='';
 const today=localDateStr(new Date());
 
 // days of current week Mon-Sun
@@ -2620,7 +2630,7 @@ function renderPostagens(){
   if(!ativas.length){el.innerHTML=`<div class='empty'>Nenhuma conta em Aquecimento, Crescimento ou Venda.</div>`;return;}
   if(!ativas.length){el.innerHTML=`<div class="empty">Nenhuma conta ativa (Aquecimento, Crescimento ou Venda).</div>`;return;}
 
-  el.innerHTML=sections.map(sec=>{
+  el.innerHTML=sections.filter(sec=>!postSit||sec.sit===postSit).map(sec=>{
     let contas=Contas.filter(x=>x.situacao===sec.sit);
     if(postPrio)contas=contas.filter(x=>x.prioridade_perfil===postPrio);
     if(postFavOnly)contas=contas.filter(x=>x.favorito);
@@ -2876,6 +2886,12 @@ function toggleFavFilter(){
 }
 function setPrioFilter(v){cPrio=v;renderContas();}
 function setClusterFilter(v){cCluster=v;renderContas();}
+function setPostSit(sit,btn){
+  postSit=sit;
+  document.querySelectorAll('.post-sit-btn').forEach(b=>{b.style.background='transparent';b.style.fontWeight='400';});
+  if(btn){btn.style.background='rgba(255,255,255,0.05)';btn.style.fontWeight='600';}
+  renderPostagens();
+}
 function setPostClusterFilter(v){postCluster=v;renderPostagens();}
 function setPostPrioFilter(v){postPrio=v;renderPostagens();}
 function toggleFavFilterPost(){
