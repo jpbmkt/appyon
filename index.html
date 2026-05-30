@@ -2887,26 +2887,28 @@ function renderPostStats(){
   const el=document.getElementById('stats-post');
   if(!el)return;
   const SECS=[
+    {sit:'',label:'Todas',color:'#aaa'},
     {sit:'Configuração Inicial',label:'Config. Inicial',color:'#38bdf8'},
     {sit:'Aquecimento',label:'Aquecimento',color:'#fbbf24'},
     {sit:'Crescimento',label:'Crescimento',color:'#60a5fa'},
     {sit:'Venda',label:'Venda',color:'#4ade80'},
   ];
-  const total=Contas.filter(c=>['Configuração Inicial','Aquecimento','Crescimento','Venda'].includes(c.situacao));
-  el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px">'+
-    '<div class="stat post-sit-card '+(postSit===''?'psc-active':'')+'" onclick="setPostSit('')" style="cursor:pointer;border-color:'+(postSit===''?'#fff':'#2a2a2a')+'">'+
-      '<div class="sl" style="color:#aaa">Todas</div>'+
-      '<div class="sv">'+total.length+'</div>'+
-    '</div>'+
-    SECS.map(s=>{
-      const count=Contas.filter(c=>c.situacao===s.sit).length;
-      const active=postSit===s.sit;
-      return '<div class="stat post-sit-card '+(active?'psc-active':'')+'" onclick="setPostSit(''+s.sit+'',this)" style="cursor:pointer;border-color:'+(active?s.color:'#2a2a2a')+'">'+
-        '<div class="sl" style="color:'+s.color+'">'+s.label+'</div>'+
-        '<div class="sv">'+count+'</div>'+
-      '</div>';
-    }).join('')+
-  '</div>';
+  const grid=document.createElement('div');
+  grid.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px';
+  SECS.forEach(s=>{
+    const count=s.sit===''
+      ?Contas.filter(c=>['Configuração Inicial','Aquecimento','Crescimento','Venda'].includes(c.situacao)).length
+      :Contas.filter(c=>c.situacao===s.sit).length;
+    const active=postSit===s.sit;
+    const card=document.createElement('div');
+    card.className='stat post-sit-card'+(active?' psc-active':'');
+    card.style.cssText='cursor:pointer;border-color:'+(active?s.color:'#2a2a2a');
+    card.innerHTML='<div class="sl" style="color:'+s.color+'">'+s.label+'</div><div class="sv">'+count+'</div>';
+    card.addEventListener('click',()=>setPostSit(s.sit));
+    grid.appendChild(card);
+  });
+  el.innerHTML='';
+  el.appendChild(grid);
 }
 
 function setPostSit(sit){
