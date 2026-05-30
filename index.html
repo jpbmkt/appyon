@@ -877,6 +877,7 @@ function renderKaizen(){
       '<div class="kz-section"><div class="kz-header" style="color:#38bdf8"><i class="ti ti-confetti"></i> 4 Coisas Boas que Aconteceram Ontem</div><div class="kz-body">'+coisasHtml+'</div></div>'+
     '</div>'+
     '</div>';
+}
 
 async function saveKzDiario(field,value){
   try{
@@ -1015,7 +1016,27 @@ function renderKaizenFilipe(){
     return row.outerHTML;
   }).join('');
 
+  const coisasLinhasF=(KzDiarioF.coisas_boas||'').split('\n');
+  const coisasHtmlF=[1,2,3,4].map(n=>{
+    const val=coisasLinhasF[n-1]||'';
+    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:11px;color:#555;flex-shrink:0">'+n+'.</span><input class="kz-input" value="'+esc(val)+'" placeholder="..." data-coisas-f data-idx="'+(n-1)+'"></div>';
+  }).join('');
 
+  el.innerHTML=
+    '<div class="kz-grid">'+
+    '<div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#60a5fa"><i class="ti ti-list"></i> Tarefas / Compromissos</div><div class="kz-body">'+tarefasHtml+'<button class="btn bsm" style="margin-top:4px;color:#555" data-kzf-add-tarefa="1"><i class="ti ti-plus"></i> Adicionar tarefa</button></div></div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#a78bfa"><i class="ti ti-focus"></i> Deep Focus</div><div class="kz-body">'+focusHtml+'</div></div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#fb923c"><i class="ti ti-chart-line"></i> Desempenho</div><div class="kz-body">'+despHtml+'<button class="btn bsm" style="margin-top:4px;color:#555" data-kzf-add-desp="1"><i class="ti ti-plus"></i> Adicionar</button></div></div>'+
+    '</div>'+
+    '<div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#f87171"><i class="ti ti-flame"></i> Prioridade Absoluta</div><div class="kz-body"><p style="font-size:11px;color:#555;margin-bottom:8px">Qual é a ÚNICA coisa que, se feita agora, tornará todo o resto mais fácil?</p><textarea class="kz-textarea" data-kzf-save="prioridade_absoluta" placeholder="Escreva aqui...">'+esc(KzDiarioF.prioridade_absoluta||'')+'</textarea></div></div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#4ade80"><i class="ti ti-heart"></i> Mentalidade Kaizen</div><div class="kz-body"><p style="font-size:11px;color:#555;margin-bottom:8px">EU SOU GRATO POR:</p><textarea class="kz-textarea" data-kzf-save="gratidao" placeholder="Escreva sua gratidão...">'+esc(KzDiarioF.gratidao||'')+'</textarea></div></div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#fbbf24"><i class="ti ti-stars"></i> Manifestações Diárias</div><div class="kz-body"><p style="font-size:11px;color:#555;margin-bottom:8px">Visualize enquanto escreve:</p><textarea class="kz-textarea" data-kzf-save="manifestacoes" placeholder="Escreva suas manifestações...">'+esc(KzDiarioF.manifestacoes||'')+'</textarea></div></div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#38bdf8"><i class="ti ti-confetti"></i> 4 Coisas Boas que Aconteceram Ontem</div><div class="kz-body">'+coisasHtmlF+'</div></div>'+
+    '</div>'+
+    '</div>';
+}
 
 async function addKzTarefa(){
   try{
@@ -1073,7 +1094,12 @@ function renderDiario(el){
   const today=localDateStr(new Date());
   const todayEntry=DiarioEntries.find(e=>e.data===today);
   const prev=DiarioEntries.filter(e=>e.data!==today);
-
+  el.innerHTML=
+    '<div class="kz-section" style="margin-bottom:14px"><div class="kz-header" style="color:#fbbf24"><i class="ti ti-notebook"></i> Entrada de hoje — '+new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'})+'</div><div class="kz-body"><textarea class="kz-textarea" id="diario-hoje" style="min-height:120px" placeholder="Escreva sobre evoluções, aprendizados, reflexões do dia...">'+esc(todayEntry?.conteudo||'')+'</textarea><button class="btn bp bsm" style="margin-top:8px" onclick="saveDiario()"><i class="ti ti-device-floppy"></i> Salvar</button></div></div>'+
+    '<div class="kz-section"><div class="kz-header" style="color:#888"><i class="ti ti-history"></i> Entradas anteriores</div><div class="kz-body">'+
+    (prev.length?prev.map(e=>'<div class="diario-entry"><div class="diario-date">'+new Date(e.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})+'</div><div class="diario-text">'+esc(e.conteudo||'')+'</div></div>').join(''):'<div class="empty">Nenhuma entrada anterior</div>')+
+    '</div></div>';
+}
 
 async function saveFbRegistro(pageId){
   const upd={
