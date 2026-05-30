@@ -858,23 +858,25 @@ function renderKaizen(){
   }).join('');
 
   const coisasLinhas=(KzDiario.coisas_boas||'').split('\n');
-  const coisasHtml=[1,2,3,4].map(n=>'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:11px;color:#555;flex-shrink:0">'+n+'.</span><input class="kz-input" value="'+esc(coisasLinhas[n-1]||'')+'" placeholder="..." data-idx="'+(n-1)+'" onblur="saveKzCoisasBoas()"></div>').join('');
+  const coisasHtml=[1,2,3,4].map(n=>{
+    const val=(KzDiarioF.coisas_boas||'').split('\n')[n-1]||'';
+    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:11px;color:#555;flex-shrink:0">'+n+'.</span><input class="kz-input" value="'+esc(val)+'" placeholder="..." data-coisas-f data-idx="'+(n-1)+'"></div>';
+  }).join('');
 
   el.innerHTML=
     '<div class="kz-grid">'+
     '<div>'+
-      '<div class="kz-section"><div class="kz-header" style="color:#60a5fa"><i class="ti ti-list"></i> Tarefas / Compromissos</div><div class="kz-body">'+tarefasHtml+'<button class="btn bsm" style="margin-top:4px;color:#555" onclick="addKzTarefa()"><i class="ti ti-plus"></i> Adicionar tarefa</button></div></div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#60a5fa"><i class="ti ti-list"></i> Tarefas / Compromissos</div><div class="kz-body">'+tarefasHtml+'<button class="btn bsm" style="margin-top:4px;color:#555" data-kzf-add-tarefa="1"><i class="ti ti-plus"></i> Adicionar tarefa</button></div></div>'+
       '<div class="kz-section"><div class="kz-header" style="color:#a78bfa"><i class="ti ti-focus"></i> Deep Focus</div><div class="kz-body">'+focusHtml+'</div></div>'+
-      '<div class="kz-section"><div class="kz-header" style="color:#fb923c"><i class="ti ti-chart-line"></i> Desempenho</div><div class="kz-body">'+despHtml+'<button class="btn bsm" style="margin-top:4px;color:#555" onclick="addKzDesemp()"><i class="ti ti-plus"></i> Adicionar</button></div></div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#fb923c"><i class="ti ti-chart-line"></i> Desempenho</div><div class="kz-body">'+despHtml+'<button class="btn bsm" style="margin-top:4px;color:#555" data-kzf-add-desp="1"><i class="ti ti-plus"></i> Adicionar</button></div></div>'+
     '</div>'+
     '<div>'+
-      '<div class="kz-section"><div class="kz-header" style="color:#f87171"><i class="ti ti-flame"></i> Prioridade Absoluta</div><div class="kz-body"><p style="font-size:11px;color:#555;margin-bottom:8px">Qual é a ÚNICA coisa que, se feita agora, tornará todo o resto mais fácil?</p><textarea class="kz-textarea" placeholder="Escreva aqui..." onblur="saveKzDiario(\'prioridade_absoluta\',this.value)">'+esc(KzDiario.prioridade_absoluta||'')+'</textarea></div></div>'+
-      '<div class="kz-section"><div class="kz-header" style="color:#4ade80"><i class="ti ti-heart"></i> Mentalidade Kaizen</div><div class="kz-body"><p style="font-size:11px;color:#555;margin-bottom:8px">EU SOU GRATO POR:</p><textarea class="kz-textarea" placeholder="Escreva sua gratidão..." onblur="saveKzDiario(\'gratidao\',this.value)">'+esc(KzDiario.gratidao||'')+'</textarea></div></div>'+
-      '<div class="kz-section"><div class="kz-header" style="color:#fbbf24"><i class="ti ti-stars"></i> Manifestações Diárias</div><div class="kz-body"><p style="font-size:11px;color:#555;margin-bottom:8px">Visualize enquanto escreve:</p><textarea class="kz-textarea" placeholder="Escreva suas manifestações..." onblur="saveKzDiario(\'manifestacoes\',this.value)">'+esc(KzDiario.manifestacoes||'')+'</textarea></div></div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#f87171"><i class="ti ti-flame"></i> Prioridade Absoluta</div><div class="kz-body"><p style="font-size:11px;color:#555;margin-bottom:8px">Qual é a ÚNICA coisa que, se feita agora, tornará todo o resto mais fácil?</p><textarea class="kz-textarea" data-kzf-save="prioridade_absoluta" placeholder="Escreva aqui...">'+esc(KzDiarioF.prioridade_absoluta||'')+'</textarea></div></div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#4ade80"><i class="ti ti-heart"></i> Mentalidade Kaizen</div><div class="kz-body"><p style="font-size:11px;color:#555;margin-bottom:8px">EU SOU GRATO POR:</p><textarea class="kz-textarea" data-kzf-save="gratidao" placeholder="Escreva sua gratidão...">'+esc(KzDiarioF.gratidao||'')+'</textarea></div></div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#fbbf24"><i class="ti ti-stars"></i> Manifestações Diárias</div><div class="kz-body"><p style="font-size:11px;color:#555;margin-bottom:8px">Visualize enquanto escreve:</p><textarea class="kz-textarea" data-kzf-save="manifestacoes" placeholder="Escreva suas manifestações...">'+esc(KzDiarioF.manifestacoes||'')+'</textarea></div></div>'+
       '<div class="kz-section"><div class="kz-header" style="color:#38bdf8"><i class="ti ti-confetti"></i> 4 Coisas Boas que Aconteceram Ontem</div><div class="kz-body">'+coisasHtml+'</div></div>'+
     '</div>'+
     '</div>';
-}
 
 async function saveKzDiario(field,value){
   try{
@@ -1013,24 +1015,7 @@ function renderKaizenFilipe(){
     return row.outerHTML;
   }).join('');
 
-  const coisasLinhas=(KzDiarioF.coisas_boas||'').split('\n');
-  const coisasHtml=[1,2,3,4].map(n=>'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:11px;color:#555;flex-shrink:0">'+n+'.</span><input class="kz-input" value="'+esc(coisasLinhas[n-1]||'')+'" placeholder="..." data-idx="'+(n-1)+'" onblur="saveKzCoisasBoasF()"></div>').join('');
 
-  el.innerHTML=
-    '<div class="kz-grid">'+
-    '<div>'+
-      '<div class="kz-section"><div class="kz-header" style="color:#60a5fa"><i class="ti ti-list"></i> Tarefas / Compromissos</div><div class="kz-body">'+tarefasHtml+'<button class="btn bsm" style="margin-top:4px;color:#555" onclick="addKzTarefaF()"><i class="ti ti-plus"></i> Adicionar tarefa</button></div></div>'+
-      '<div class="kz-section"><div class="kz-header" style="color:#a78bfa"><i class="ti ti-focus"></i> Deep Focus</div><div class="kz-body">'+focusHtml+'</div></div>'+
-      '<div class="kz-section"><div class="kz-header" style="color:#fb923c"><i class="ti ti-chart-line"></i> Desempenho</div><div class="kz-body">'+despHtml+'<button class="btn bsm" style="margin-top:4px;color:#555" onclick="addKzDespF()"><i class="ti ti-plus"></i> Adicionar</button></div></div>'+
-    '</div>'+
-    '<div>'+
-      '<div class="kz-section"><div class="kz-header" style="color:#f87171"><i class="ti ti-flame"></i> Prioridade Absoluta</div><div class="kz-body"><p style="font-size:11px;color:#555;margin-bottom:8px">Qual é a ÚNICA coisa que, se feita agora, tornará todo o resto mais fácil?</p><textarea class="kz-textarea" placeholder="Escreva aqui..." onblur="saveKzDiarioF('prioridade_absoluta',this.value)">'+esc(KzDiarioF.prioridade_absoluta||'')+'</textarea></div></div>'+
-      '<div class="kz-section"><div class="kz-header" style="color:#4ade80"><i class="ti ti-heart"></i> Mentalidade Kaizen</div><div class="kz-body"><p style="font-size:11px;color:#555;margin-bottom:8px">EU SOU GRATO POR:</p><textarea class="kz-textarea" placeholder="Escreva sua gratidão..." onblur="saveKzDiarioF('gratidao',this.value)">'+esc(KzDiarioF.gratidao||'')+'</textarea></div></div>'+
-      '<div class="kz-section"><div class="kz-header" style="color:#fbbf24"><i class="ti ti-stars"></i> Manifestações Diárias</div><div class="kz-body"><p style="font-size:11px;color:#555;margin-bottom:8px">Visualize enquanto escreve:</p><textarea class="kz-textarea" placeholder="Escreva suas manifestações..." onblur="saveKzDiarioF('manifestacoes',this.value)">'+esc(KzDiarioF.manifestacoes||'')+'</textarea></div></div>'+
-      '<div class="kz-section"><div class="kz-header" style="color:#38bdf8"><i class="ti ti-confetti"></i> 4 Coisas Boas que Aconteceram Ontem</div><div class="kz-body">'+coisasHtml+'</div></div>'+
-    '</div>'+
-    '</div>';
-}
 
 async function addKzTarefa(){
   try{
@@ -1088,378 +1073,7 @@ function renderDiario(el){
   const today=localDateStr(new Date());
   const todayEntry=DiarioEntries.find(e=>e.data===today);
   const prev=DiarioEntries.filter(e=>e.data!==today);
-  el.innerHTML=
-    '<div class="kz-section" style="margin-bottom:14px"><div class="kz-header" style="color:#fbbf24"><i class="ti ti-notebook"></i> Entrada de hoje — '+new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'})+'</div><div class="kz-body"><textarea class="kz-textarea" id="diario-hoje" style="min-height:120px" placeholder="Escreva sobre evoluções, aprendizados, reflexões do dia...">'+esc(todayEntry?.conteudo||'')+'</textarea><button class="btn bp bsm" style="margin-top:8px" onclick="saveDiario()"><i class="ti ti-device-floppy"></i> Salvar</button></div></div>'+
-    '<div class="kz-section"><div class="kz-header" style="color:#888"><i class="ti ti-history"></i> Entradas anteriores</div><div class="kz-body">'+
-    (prev.length?prev.map(e=>'<div class="diario-entry"><div class="diario-date">'+new Date(e.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})+'</div><div class="diario-text">'+esc(e.conteudo||'')+'</div></div>').join(''):'<div class="empty">Nenhuma entrada anterior</div>')+
-    '</div></div>';
-}
 
-async function saveDiario(){
-  const texto=document.getElementById('diario-hoje')?.value||'';
-  const today=localDateStr(new Date());
-  const existing=DiarioEntries.find(e=>e.data===today);
-  try{
-    if(existing){await api('diario','PATCH',{conteudo:texto},'?id=eq.'+existing.id);existing.conteudo=texto;}
-    else{const r=await api('diario','POST',{data:today,conteudo:texto});DiarioEntries.unshift(r[0]);}
-    const btn=document.querySelector('[onclick="saveDiario()"]');
-    if(btn){const orig=btn.innerHTML;btn.innerHTML='<i class="ti ti-check"></i> Salvo!';btn.style.background='#14291a';setTimeout(()=>{btn.innerHTML=orig;btn.style.background='';},1500);}
-  }catch(e){alert('Erro: '+e.message);}
-}
-
-const STATUS_IDEIAS=[['nova','Nova','st-nova'],['analise','Em análise','st-analise'],['aprovada','Aprovada','st-aprovada'],['descartada','Descartada','st-descartada']];
-
-function renderIdeias(el){
-  el.innerHTML='<div style="display:flex;gap:8px;margin-bottom:14px"><button class="btn bp bsm" onclick="addIdeia()"><i class="ti ti-plus"></i> Nova ideia</button></div>'+
-    (Ideias.length?Ideias.map(idea=>'<div class="idea-card">'+
-      '<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px">'+
-      '<input class="kz-input" value="'+esc(idea.titulo)+'" placeholder="Título da ideia" style="flex:1;font-weight:500" onblur="updateIdeia('+idea.id+',\'titulo\',this.value)" onkeydown="if(event.key===\'Enter\')this.blur()">'+
-      '<select class="andamento-sel" onchange="updateIdeia('+idea.id+',\'status\',this.value);renderIdeias(document.getElementById(\'proj-content\'))">'+STATUS_IDEIAS.map(s=>'<option value="'+s[0]+'" '+(idea.status===s[0]?'selected':'')+'>'+s[1]+'</option>').join('')+'</select>'+
-      '<button class="btn bd bsm" onclick="delIdeia('+idea.id+')"><i class="ti ti-trash"></i></button></div>'+
-      '<textarea class="kz-textarea" style="min-height:60px" placeholder="Descrição, contexto, próximos passos..." onblur="updateIdeia('+idea.id+',\'descricao\',this.value)">'+esc(idea.descricao||'')+'</textarea>'+
-      '<div style="display:flex;align-items:center;gap:8px;margin-top:8px"><span style="font-size:11px;color:#555">Responsável:</span>'+
-      '<input class="kz-input" value="'+esc(idea.responsavel||'')+'" placeholder="Nome..." style="width:140px" onblur="updateIdeia('+idea.id+',\'responsavel\',this.value)">'+
-      '<span class="idea-status '+(STATUS_IDEIAS.find(s=>s[0]===idea.status)?.[2]||'st-nova')+'">'+( STATUS_IDEIAS.find(s=>s[0]===idea.status)?.[1]||'Nova')+'</span></div></div>').join('')
-    :'<div class="empty">Nenhuma ideia cadastrada ainda</div>');
-}
-
-async function addIdeia(){
-  try{const r=await api('ideias','POST',{titulo:'Nova ideia',status:'nova',tipo:'ideia'});Ideias.unshift(r[0]);renderIdeias(document.getElementById('proj-content'));}catch(e){alert('Erro: '+e.message);}
-}
-async function updateIdeia(id,field,value){
-  try{await api('ideias','PATCH',{[field]:value},'?id=eq.'+id);const idea=Ideias.find(x=>x.id===id);if(idea)idea[field]=value;}catch(e){console.error(e);}
-}
-async function delIdeia(id){
-  await api('ideias','DELETE',null,'?id=eq.'+id);Ideias=Ideias.filter(x=>x.id!==id);renderProj();
-}
-
-function renderBacklog(el){
-  const TIPOS=[['melhoria','Melhoria'],['bug','Bug'],['feature','Feature'],['pesquisa','Pesquisa']];
-  el.innerHTML='<div style="display:flex;gap:8px;margin-bottom:14px"><button class="btn bp bsm" onclick="addBacklog()"><i class="ti ti-plus"></i> Adicionar item</button></div>'+
-    '<div class="kz-section"><div class="kz-body">'+
-    (Ideias.length?Ideias.map(item=>'<div class="backlog-row">'+
-      '<select class="andamento-sel" style="width:90px" onchange="updateIdeia('+item.id+',\'tipo\',this.value)">'+TIPOS.map(t=>'<option value="'+t[0]+'" '+(item.tipo===t[0]?'selected':'')+'>'+t[1]+'</option>').join('')+'</select>'+
-      '<input class="kz-input" value="'+esc(item.titulo)+'" style="flex:1" onblur="updateIdeia('+item.id+',\'titulo\',this.value)" onkeydown="if(event.key===\'Enter\')this.blur()">'+
-      '<select class="andamento-sel" onchange="updateIdeia('+item.id+',\'status\',this.value)">'+STATUS_IDEIAS.map(s=>'<option value="'+s[0]+'" '+(item.status===s[0]?'selected':'')+'>'+s[1]+'</option>').join('')+'</select>'+
-      '<input class="kz-input" value="'+esc(item.responsavel||'')+'" placeholder="Responsável" style="width:110px" onblur="updateIdeia('+item.id+',\'responsavel\',this.value)">'+
-      '<button class="btn bd bsm" onclick="delIdeia('+item.id+')"><i class="ti ti-trash"></i></button></div>').join('')
-    :'<div class="empty">Backlog vazio</div>')+
-    '</div></div>';
-}
-
-async function addBacklog(){
-  try{const r=await api('ideias','POST',{titulo:'Novo item',status:'nova',tipo:'melhoria'});Ideias.unshift(r[0]);renderBacklog(document.getElementById('proj-content'));}catch(e){alert('Erro: '+e.message);}
-}
-
-
-// ══════════════════════════════════════
-// FERRAMENTAS
-// ══════════════════════════════════════
-
-async function initFerramentas(){
-  try{
-    Ferramentas=await api('ferramentas','GET',null,'?order=nome.asc');
-    fillFerrPerfilSelect();
-    renderFerramentas();
-  }catch(e){console.error('initFerramentas',e);}
-}
-
-function fillFerrPerfilSelect(){
-  const sel=document.getElementById('ferr-perfil');
-  if(!sel)return;
-  sel.innerHTML='<option value="">— geral / sem perfil —</option>'+
-    Contas.map(c=>'<option value="'+c.id+'">'+esc(c.fb_perfil||c.user_ig)+'</option>').join('');
-}
-
-function filterFerrTipo(v){ferrTipoFilter=v;renderFerramentas();}
-
-function diasParaVencer(data){
-  if(!data)return null;
-  const d=new Date(data+'T12:00:00');
-  const hoje=new Date();
-  hoje.setHours(0,0,0,0);
-  return Math.round((d-hoje)/(1000*60*60*24));
-}
-
-function renderFerramentas(q=''){
-  let f=Ferramentas;
-  if(q)f=f.filter(x=>(x.nome||'').toLowerCase().includes(q.toLowerCase())||(x.forma_pagamento||'').toLowerCase().includes(q.toLowerCase()));
-  if(ferrTipoFilter)f=f.filter(x=>x.tipo_pagamento===ferrTipoFilter);
-
-  // Stats
-  const totalMes=Ferramentas.filter(x=>x.status==='ativo'&&x.tipo_pagamento==='mensal').reduce((a,x)=>a+Number(x.valor||0),0);
-  const totalAno=Ferramentas.filter(x=>x.status==='ativo'&&x.tipo_pagamento==='anual').reduce((a,x)=>a+Number(x.valor||0),0);
-  const vencendo=Ferramentas.filter(x=>{const d=diasParaVencer(x.data_vencimento);return d!==null&&d>=0&&d<=7;}).length;
-  const vencidas=Ferramentas.filter(x=>{const d=diasParaVencer(x.data_vencimento);return d!==null&&d<0;}).length;
-
-  document.getElementById('stats-ferr').innerHTML=
-    '<div class="stat"><div class="sl">Total ativo</div><div class="sv">'+Ferramentas.filter(x=>x.status==='ativo').length+'</div></div>'+
-    '<div class="stat"><div class="sl" style="color:#60a5fa">Custo mensal</div><div class="sv" style="font-size:16px">R$ '+totalMes.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div></div>'+
-    '<div class="stat"><div class="sl" style="color:#4ade80">Custo anual</div><div class="sv" style="font-size:16px">R$ '+totalAno.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div></div>'+
-    '<div class="stat" style="border-color:'+(vencendo>0?'#fbbf24':'#2a2a2a')+'"><div class="sl" style="color:#fbbf24">Vencendo em 7 dias</div><div class="sv">'+vencendo+'</div></div>'+
-    '<div class="stat" style="border-color:'+(vencidas>0?'#f87171':'#2a2a2a')+'"><div class="sl" style="color:#f87171">Vencidas</div><div class="sv">'+vencidas+'</div></div>';
-
-  const list=document.getElementById('ferr-list');
-  if(!f.length){list.innerHTML='<div class="empty">Nenhuma ferramenta cadastrada</div>';return;}
-  list.innerHTML='';f.forEach(ferr=>{const card=buildFerrCard(ferr);list.appendChild(card);});
-}
-
-function buildFerrCard(ferr){
-  const dias=diasParaVencer(ferr.data_vencimento);
-  const vencClass=dias===null?'':dias<0?'vencido':dias<=7?'vencendo':'';
-  const vencText=dias===null?'—':dias<0?'Vencida há '+Math.abs(dias)+' dias':dias===0?'Vence hoje':'Vence em '+dias+(dias!==1?' dias':' dia');
-  const perfil=ferr.perfil_id?Contas.find(c=>c.id===ferr.perfil_id):null;
-  const id=ferr.id;
-  const tipoCls='tipo-'+(ferr.tipo_pagamento||'mensal');
-  const tipoLabel={'mensal':'Mensal','anual':'Anual','unico':'Único'}[ferr.tipo_pagamento]||'Mensal';
-  const valor=Number(ferr.valor||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
-  const perfilNome=perfil?esc(perfil.fb_perfil||perfil.user_ig):'';
-
-  // Criar elemento principal
-  const wrap=document.createElement('div');
-  wrap.className='ferr-card';
-
-  // Header
-  const hdr=document.createElement('div');
-  hdr.className='ferr-header';
-  hdr.innerHTML=[
-    '<div style="width:36px;height:36px;border-radius:8px;background:#1e1e1e;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px">💳</div>',
-    '<div style="flex:1;min-width:0">',
-      '<div class="ferr-nome">'+esc(ferr.nome)+'</div>',
-      '<div style="display:flex;align-items:center;gap:6px;margin-top:2px">',
-        '<span class="tipo-badge '+tipoCls+'">'+tipoLabel+'</span>',
-        perfilNome?'<span style="font-size:10px;color:#555">'+perfilNome+'</span>':'',
-      '</div>',
-    '</div>',
-    '<div style="text-align:right">',
-      '<div class="ferr-valor">R$ '+valor+'</div>',
-      '<div class="ferr-venc '+vencClass+'">'+vencText+'</div>',
-    '</div>',
-    '<i class="ti ti-chevron-down" style="color:#333;margin-left:8px;font-size:12px"></i>',
-  ].join('');
-  hdr.addEventListener('click',()=>toggleFerr(id));
-  wrap.appendChild(hdr);
-
-  // Body
-  const body=document.createElement('div');
-  body.className='ferr-body';
-  body.id='ferr-body-'+id;
-
-  const mkOpt=(v,label,cur)=>'<option value="'+v+'" '+(cur===v?'selected':'')+'>'+label+'</option>';
-  const perfilOpts='<option value="">— geral —</option>'+Contas.map(c=>'<option value="'+c.id+'" '+(ferr.perfil_id===c.id?'selected':'')+'>'+esc(c.fb_perfil||c.user_ig)+'</option>').join('');
-  const tipoOpts=mkOpt('mensal','Mensal',ferr.tipo_pagamento)+mkOpt('anual','Anual',ferr.tipo_pagamento)+mkOpt('unico','Único',ferr.tipo_pagamento);
-  const statusOpts=mkOpt('ativo','Ativo',ferr.status)+mkOpt('inativo','Inativo',ferr.status);
-
-  const fields=[
-    {label:'Nome',field:'nome',type:'text',value:ferr.nome||''},
-    {label:'Perfil vinculado',field:'perfil_id',type:'select',opts:perfilOpts,num:true},
-    {label:'Login / usuário',field:'login_usuario',type:'text',value:ferr.login_usuario||''},
-    {label:'Senha',field:'login_senha',type:'text',value:ferr.login_senha||''},
-    {label:'Tipo pagamento',field:'tipo_pagamento',type:'select',opts:tipoOpts,rerender:true},
-    {label:'Forma de pagamento',field:'forma_pagamento',type:'text',value:ferr.forma_pagamento||''},
-    {label:'Valor (R$)',field:'valor',type:'number',value:Number(ferr.valor||0),rerender:true},
-    {label:'Data vencimento',field:'data_vencimento',type:'date',value:ferr.data_vencimento||'',rerender:true,nullable:true},
-    {label:'Status',field:'status',type:'select',opts:statusOpts,rerender:true},
-    {label:'Observações',field:'observacoes',type:'text',value:ferr.observacoes||''},
-  ];
-
-  const grid=document.createElement('div');
-  grid.className='ferr-grid';
-
-  fields.forEach(f=>{
-    const fdiv=document.createElement('div');
-    fdiv.className='f';
-    const lbl=document.createElement('label');
-    lbl.textContent=f.label;
-    fdiv.appendChild(lbl);
-
-    let el;
-    if(f.type==='select'){
-      el=document.createElement('select');
-      el.className='ie';
-      el.innerHTML=f.opts;
-      el.addEventListener('change',()=>{
-        const v=f.num?(Number(el.value)||null):(f.nullable?(el.value||null):el.value);
-        patchFerr(id,f.field,v);
-        if(f.rerender)setTimeout(renderFerramentas,300);
-      });
-    } else {
-      el=document.createElement('input');
-      el.className='ie';
-      el.type=f.type||'text';
-      el.value=f.value;
-      const save=()=>{
-        const v=f.type==='number'?(Number(el.value)||0):(f.nullable?(el.value||null):el.value||null);
-        patchFerr(id,f.field,v);
-        if(f.rerender)setTimeout(renderFerramentas,300);
-      };
-      el.addEventListener('blur',save);
-      el.addEventListener('keydown',e=>{if(e.key==='Enter')save();});
-    }
-    fdiv.appendChild(el);
-    grid.appendChild(fdiv);
-  });
-
-  body.appendChild(grid);
-
-  const delBtn=document.createElement('button');
-  delBtn.className='btn bd bsm';
-  delBtn.innerHTML='<i class="ti ti-trash"></i> Excluir';
-  delBtn.addEventListener('click',()=>delFerramenta(id));
-  body.appendChild(delBtn);
-
-  wrap.appendChild(body);
-  return wrap;
-}
-
-
-
-function toggleFerr(id){
-  const body=document.getElementById('ferr-body-'+id);
-  if(body)body.classList.toggle('open');
-}
-
-async function addFerramenta(){
-  const o={
-    nome:g('ferr-nome'),perfil_id:g('ferr-perfil')||null,
-    login_usuario:g('ferr-login'),login_senha:g('ferr-senha'),
-    tipo_pagamento:g('ferr-tipo'),forma_pagamento:g('ferr-forma'),
-    valor:Number(g('ferr-valor'))||0,
-    data_vencimento:g('ferr-venc')||null,
-    status:g('ferr-status'),observacoes:g('ferr-obs')
-  };
-  if(!o.nome)return;
-  try{
-    const r=await api('ferramentas','POST',o);
-    Ferramentas.unshift(r[0]);
-    clr(['ferr-nome','ferr-login','ferr-senha','ferr-forma','ferr-valor','ferr-venc','ferr-obs']);
-    tog('padd-ferr');renderFerramentas();
-  }catch(e){alert('Erro: '+e.message);}
-}
-
-async function patchFerr(id,field,value){
-  const val=(field==='valor')?Number(value)||0:(field==='perfil_id'?Number(value)||null:value||null);
-  await patch('ferramentas',id,field,val);
-  const f=Ferramentas.find(x=>x.id===id);if(f)f[field]=val;
-}
-
-async function delFerramenta(id){
-  await api('ferramentas','DELETE',null,'?id=eq.'+id);
-  Ferramentas=Ferramentas.filter(x=>x.id!==id);renderFerramentas();
-}
-
-
-// ══════════════════════════════════════
-// FACEBOOK
-// ══════════════════════════════════════
-
-async function initFacebook(){
-  try{
-    FbPages=await api('fb_pages','GET',null,'?order=nome.asc');
-    fillFbPerfilSelect();
-    renderFbPages();
-  }catch(e){console.error('initFacebook',e);}
-}
-
-function fillFbPerfilSelect(){
-  const sel=document.getElementById('fbp-perfil');
-  if(!sel)return;
-  sel.innerHTML='<option value="">— selecionar conta IG —</option>'+
-    Contas.map(c=>'<option value="'+c.id+'">'+esc(c.fb_perfil||c.user_ig)+'</option>').join('');
-}
-
-function renderFbPages(q=''){
-  const f=q?FbPages.filter(p=>(p.nome||'').toLowerCase().includes(q.toLowerCase())):FbPages;
-
-  // Stats
-  const totalViews=FbPages.reduce((a,p)=>a+Number(p.visualizacoes_24h||0),0);
-  const totalComents=FbPages.reduce((a,p)=>a+Number(p.comentarios_24h||0),0);
-  const totalSeg=FbPages.reduce((a,p)=>a+Number(p.novos_seguidores_24h||0),0);
-  const totalFans=FbPages.reduce((a,p)=>a+Number(p.seguidores||0),0);
-  document.getElementById('stats-fb').innerHTML=
-    '<div class="stat"><div class="sl">Páginas</div><div class="sv">'+FbPages.length+'</div></div>'+
-    '<div class="stat"><div class="sl" style="color:#60a5fa">Seguidores totais</div><div class="sv">'+totalFans.toLocaleString('pt-BR')+'</div></div>'+
-    '<div class="stat"><div class="sl" style="color:#4ade80">Views 24h</div><div class="sv">'+totalViews.toLocaleString('pt-BR')+'</div></div>'+
-    '<div class="stat"><div class="sl" style="color:#fbbf24">Comentários 24h</div><div class="sv">'+totalComents.toLocaleString('pt-BR')+'</div></div>'+
-    '<div class="stat"><div class="sl" style="color:#a78bfa">Novos seguidores 24h</div><div class="sv">'+totalSeg.toLocaleString('pt-BR')+'</div></div>';
-
-  const el=document.getElementById('fb-pages-list');
-  if(!f.length){
-    el.innerHTML='<div class="empty">Nenhuma página cadastrada</div>';return;
-  }
-
-  el.innerHTML=f.map(page=>{
-    const conta=page.perfil_id?Contas.find(c=>c.id===page.perfil_id):null;
-    const updated=page.updated_at?new Date(page.updated_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
-    return '<div class="fb-profile-card">'+
-      '<div class="fb-profile-header">'+
-        '<div style="width:38px;height:38px;border-radius:8px;background:#1877f2;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">'+
-          '<i class="ti ti-brand-facebook" style="color:#fff"></i>'+
-        '</div>'+
-        '<div style="flex:1;min-width:0">'+
-          '<div class="fb-profile-name">'+esc(page.nome)+'</div>'+
-          '<div class="fb-profile-status">'+
-            (conta?'<span style="color:#60a5fa">@'+esc(conta.user_ig)+'</span> · ':'')+'Atualizado: '+updated+
-          '</div>'+
-        '</div>'+
-        '<div style="display:flex;gap:6px;align-items:center">'+
-          '<button class="btn bp bsm" onclick="openFbRegistro('+page.id+')"><i class="ti ti-plus"></i> Registrar hoje</button>'+
-          (page.url?'<a href="'+esc(page.url)+'" target="_blank" class="btn bsm" style="color:#1877f2;border-color:#1877f2"><i class="ti ti-external-link"></i></a>':'')+''+
-          '<button class="btn bd bsm" onclick="delFbPage('+page.id+')"><i class="ti ti-trash"></i></button>'+
-        '</div>'+
-      '</div>'+
-      '<div class="fb-pages-grid" style="grid-template-columns:1fr">'+
-        '<div class="fb-page-row">'+
-          '<div class="fb-metrics" style="grid-template-columns:repeat(4,1fr)">'+
-            '<div class="fb-metric"><div class="fb-metric-val">'+Number(page.seguidores||0).toLocaleString('pt-BR')+'</div><div class="fb-metric-lbl">Seguidores</div></div>'+
-            '<div class="fb-metric"><div class="fb-metric-val">'+Number(page.visualizacoes_24h||0).toLocaleString('pt-BR')+'</div><div class="fb-metric-lbl">Views 24h</div></div>'+
-            '<div class="fb-metric"><div class="fb-metric-val">'+Number(page.comentarios_24h||0).toLocaleString('pt-BR')+'</div><div class="fb-metric-lbl">Comentários 24h</div></div>'+
-            '<div class="fb-metric"><div class="fb-metric-val">'+Number(page.novos_seguidores_24h||0).toLocaleString('pt-BR')+'</div><div class="fb-metric-lbl">Novos seguidores 24h</div></div>'+
-          '</div>'+
-          (page.obs?'<div style="font-size:11px;color:#555;margin-top:8px">'+esc(page.obs)+'</div>':'')+
-        '</div>'+
-      '</div>'+
-    '</div>';
-  }).join('');
-}
-
-async function addFbPage(){
-  const o={nome:g('fbp-nome'),perfil_id:g('fbp-perfil')||null,url:g('fbp-url'),obs:g('fbp-obs'),seguidores:0,visualizacoes_24h:0,comentarios_24h:0,novos_seguidores_24h:0};
-  if(!o.nome)return;
-  try{
-    const r=await api('fb_pages','POST',o);
-    FbPages.push(r[0]);
-    FbPages.sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt'));
-    clr(['fbp-nome','fbp-url','fbp-obs']);
-    tog('padd-fbpage');renderFbPages();
-  }catch(e){alert('Erro: '+e.message);}
-}
-
-async function delFbPage(id){
-  await api('fb_pages','DELETE',null,'?id=eq.'+id);
-  FbPages=FbPages.filter(x=>x.id!==id);renderFbPages();
-}
-
-function openFbRegistro(pageId){
-  const page=FbPages.find(x=>x.id===pageId);if(!page)return;
-  document.getElementById('modal-bg').style.display='flex';
-  document.getElementById('modal-inner').innerHTML=
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'+
-      '<h3 style="color:#fff;font-size:15px"><i class="ti ti-brand-facebook" style="color:#1877f2;margin-right:8px"></i>'+esc(page.nome)+'</h3>'+
-      '<button onclick="closeModal()" style="background:transparent;border:none;color:#666;font-size:22px;cursor:pointer;line-height:1">×</button>'+
-    '</div>'+
-    '<p style="font-size:12px;color:#555;margin-bottom:14px">Registre os dados das últimas 24 horas para esta página:</p>'+
-    '<div class="fg">'+
-      '<div class="f"><label>Seguidores totais</label><input id="fbr-seg" type="number" min="0" value="'+Number(page.seguidores||0)+'" class="kz-input"></div>'+
-      '<div class="f"><label>Visualizações 24h</label><input id="fbr-views" type="number" min="0" value="'+Number(page.visualizacoes_24h||0)+'" class="kz-input"></div>'+
-      '<div class="f"><label>Comentários 24h</label><input id="fbr-coments" type="number" min="0" value="'+Number(page.comentarios_24h||0)+'" class="kz-input"></div>'+
-      '<div class="f"><label>Novos seguidores 24h</label><input id="fbr-newseg" type="number" min="0" value="'+Number(page.novos_seguidores_24h||0)+'" class="kz-input"></div>'+
-    '</div>'+
-    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;border-top:1px solid #222;padding-top:14px">'+
-      '<button class="btn bsm" onclick="closeModal()">Cancelar</button>'+
-      '<button class="btn bp bsm" onclick="saveFbRegistro('+pageId+')"><i class="ti ti-device-floppy"></i> Salvar</button>'+
-    '</div>';
-}
 
 async function saveFbRegistro(pageId){
   const upd={
@@ -2384,7 +1998,16 @@ document.addEventListener('blur',(e)=>{
   if(kzfInp){updateKzTarefaF(Number(kzfInp.dataset.kzfId),kzfInp.dataset.kzfField,kzfInp.value);return;}
   const kzfdInp=e.target.closest('input[data-kzfd-id]');
   if(kzfdInp){updateKzDespF(Number(kzfdInp.dataset.kzfdId),kzfdInp.dataset.kzfdField,kzfdInp.value);return;}
+  const kzfSave=e.target.closest('[data-kzf-save]');
+  if(kzfSave){saveKzDiarioF(kzfSave.dataset.kzfSave,kzfSave.value);return;}
+  const coisasIdx=e.target.closest('[data-coisas-f]');
+  if(coisasIdx){saveKzCoisasBoasF();return;}
 },true);
+
+document.addEventListener('click',(e2)=>{
+  if(e2.target.closest('[data-kzf-add-tarefa]')){addKzTarefaF();return;}
+  if(e2.target.closest('[data-kzf-add-desp]')){addKzDespF();return;}
+},false);
 document.addEventListener('keydown',(e)=>{
   if(e.key==='Escape'){
     // Fechar foto modal
