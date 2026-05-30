@@ -315,13 +315,14 @@ td.iec select{cursor:pointer}
 <div class="topbar">
   <div class="logo"><i class="ti ti-coin"></i> Gestão Appyon</div>
   <div class="nav">
-    <button class="nb active" onclick="showTab('hoje',this)"><i class="ti ti-layout-dashboard"></i> Hoje</button>
+    <button class="nb active" onclick="showTab('kaizen-jessica',this)"><i class="ti ti-brain"></i> Kaizen Jessica</button>
+    <button class="nb" onclick="showTab('kaizen-filipe',this)"><i class="ti ti-brain"></i> Kaizen Filipe</button>
+    <button class="nb" onclick="showTab('hoje',this)"><i class="ti ti-layout-dashboard"></i> Hoje</button>
     <button class="nb" onclick="showTab('emails',this)"><i class="ti ti-mail"></i> E-mails</button>
     <button class="nb" onclick="showTab('proxies',this)"><i class="ti ti-server"></i> Proxies</button>
     <button class="nb" onclick="showTab('avatares',this)"><i class="ti ti-user-circle"></i> Avatares</button>
     <button class="nb" onclick="showTab('contas',this)"><i class="ti ti-layout-dashboard"></i> Gestão de Contas</button>
     <button class="nb" onclick="showTab('postagens',this)"><i class="ti ti-calendar-check"></i> Postagens</button>
-    <button class="nb" onclick="showTab('kaizen',this)"><i class="ti ti-brain"></i> Kaizen</button>
     <button class="nb" onclick="showTab('projetos',this)"><i class="ti ti-bulb"></i> Projetos</button>
     <button class="nb" onclick="showTab('ferramentas',this)"><i class="ti ti-credit-card"></i> Ferramentas</button>
     <button class="nb" onclick="showTab('facebook',this)"><i class="ti ti-brand-facebook"></i> Facebook</button>
@@ -332,7 +333,7 @@ td.iec select{cursor:pointer}
 <div class="content">
 
 <!-- ===== HOJE ===== -->
-<div class="tab active" id="tab-hoje">
+<div class="tab" id="tab-hoje">
   <!-- Resumo rápido -->
   <div id="hoje-resumo" style="margin-bottom:20px"></div>
   <!-- Grid principal -->
@@ -562,7 +563,7 @@ td.iec select{cursor:pointer}
 </div>
 
 <!-- ===== KAIZEN ===== -->
-<div class="tab" id="tab-kaizen">
+<div class="tab active" id="tab-kaizen-jessica">
   <div class="kz-day-selector">
     <button class="btn bsm" onclick="kzChangeDay(-1)"><i class="ti ti-chevron-left"></i></button>
     <input type="date" id="kz-date" onchange="loadKaizen()">
@@ -627,6 +628,18 @@ td.iec select{cursor:pointer}
     <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-fbpage')">Cancelar</button>
   </div>
   <div id="fb-pages-list"></div>
+</div>
+
+<!-- ===== KAIZEN FILIPE ===== -->
+<div class="tab" id="tab-kaizen-filipe">
+  <div class="kz-day-selector">
+    <button class="btn bsm" onclick="kzChangeDayF(-1)"><i class="ti ti-chevron-left"></i></button>
+    <input type="date" id="kz-date-f" onchange="loadKaizenFilipe()">
+    <button class="btn bsm" onclick="kzChangeDayF(1)"><i class="ti ti-chevron-right"></i></button>
+    <button class="btn bsm" onclick="kzTodayF()">Hoje</button>
+    <span id="kz-day-label-f" style="font-size:12px;color:#555;margin-left:4px"></span>
+  </div>
+  <div id="kz-content-f"></div>
 </div>
 
 <!-- ===== PROJETOS ===== -->
@@ -700,12 +713,68 @@ function weekDays(){
 // KAIZEN JOURNAL
 // ══════════════════════════════════════
 
-function initKaizen(){
-  if(!kzCurrentDate)kzCurrentDate=localDateStr(new Date());
-  const inp=document.getElementById('kz-date');
-  if(inp)inp.value=kzCurrentDate;
-  updateKzLabel();
-  loadKaizen();
+// Estado separado para Jessica e Filipe
+let kzCurrentDateF='';
+let KzDiarioF={},KzTarefasF=[],KzDesempenhoF=[],KzFocusF={};
+
+function initKaizen(pessoa){
+  pessoa=pessoa||'jessica';
+  if(pessoa==='filipe'){
+    if(!kzCurrentDateF)kzCurrentDateF=localDateStr(new Date());
+    const inp=document.getElementById('kz-date-f');
+    if(inp)inp.value=kzCurrentDateF;
+    updateKzLabelF();
+    loadKaizenFilipe();
+  } else {
+    if(!kzCurrentDate)kzCurrentDate=localDateStr(new Date());
+    const inp=document.getElementById('kz-date');
+    if(inp)inp.value=kzCurrentDate;
+    updateKzLabel();
+    loadKaizen();
+  }
+}
+
+function kzChangeDayF(d){
+  const dt=new Date(kzCurrentDateF+'T12:00:00');
+  dt.setDate(dt.getDate()+d);
+  kzCurrentDateF=localDateStr(dt);
+  document.getElementById('kz-date-f').value=kzCurrentDateF;
+  updateKzLabelF();
+  loadKaizenFilipe();
+}
+
+function kzTodayF(){
+  kzCurrentDateF=localDateStr(new Date());
+  document.getElementById('kz-date-f').value=kzCurrentDateF;
+  updateKzLabelF();
+  loadKaizenFilipe();
+}
+
+function updateKzLabelF(){
+  const dt=new Date(kzCurrentDateF+'T12:00:00');
+  const labels=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  const label=dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  const el=document.getElementById('kz-day-label-f');
+  if(el)el.textContent=labels[dt.getDay()]+', '+label;
+}
+
+async function loadKaizenFilipe(){
+  const dt=document.getElementById('kz-date-f')?.value||kzCurrentDateF;
+  kzCurrentDateF=dt;
+  const tag='filipe_'+dt; // usar tag para separar dados por pessoa
+  try{
+    const [diario,tarefas,desemp,focus]=await Promise.all([
+      api('kaizen_diario','GET',null,'?data=eq.'+dt+'&pessoa=eq.filipe'),
+      api('kaizen_tarefas','GET',null,'?data=eq.'+dt+'&pessoa=eq.filipe&order=ordem.asc,id.asc'),
+      api('kaizen_desempenho','GET',null,'?data=eq.'+dt+'&pessoa=eq.filipe&order=ordem.asc,id.asc'),
+      api('kaizen_deep_focus','GET',null,'?data=eq.'+dt+'&pessoa=eq.filipe'),
+    ]);
+    KzDiarioF=diario[0]||{data:dt,pessoa:'filipe'};
+    KzTarefasF=tarefas;
+    KzDesempenhoF=desemp;
+    KzFocusF=focus[0]||{data:dt,pessoa:'filipe'};
+    renderKaizenFilipe();
+  }catch(e){console.error('loadKaizenFilipe',e);}
 }
 
 function kzChangeDay(d){
@@ -737,10 +806,10 @@ async function loadKaizen(){
   kzCurrentDate=dt;
   try{
     const [diario,tarefas,desemp,focus]=await Promise.all([
-      api('kaizen_diario','GET',null,'?data=eq.'+dt),
-      api('kaizen_tarefas','GET',null,'?data=eq.'+dt+'&order=ordem.asc,id.asc'),
-      api('kaizen_desempenho','GET',null,'?data=eq.'+dt+'&order=ordem.asc,id.asc'),
-      api('kaizen_deep_focus','GET',null,'?data=eq.'+dt),
+      api('kaizen_diario','GET',null,'?data=eq.'+dt+'&pessoa=eq.jessica'),
+      api('kaizen_tarefas','GET',null,'?data=eq.'+dt+'&pessoa=eq.jessica&order=ordem.asc,id.asc'),
+      api('kaizen_desempenho','GET',null,'?data=eq.'+dt+'&pessoa=eq.jessica&order=ordem.asc,id.asc'),
+      api('kaizen_deep_focus','GET',null,'?data=eq.'+dt+'&pessoa=eq.jessica'),
     ]);
     KzDiario=diario[0]||{data:dt};
     KzTarefas=tarefas;
@@ -813,10 +882,63 @@ async function saveKzDiario(field,value){
       await api('kaizen_diario','PATCH',{[field]:value},'?id=eq.'+KzDiario.id);
       KzDiario[field]=value;
     } else {
-      const r=await api('kaizen_diario','POST',{data:kzCurrentDate,[field]:value});
+      const r=await api('kaizen_diario','POST',{data:kzCurrentDate,pessoa:'jessica',[field]:value});
       KzDiario=r[0];
     }
   }catch(e){console.error('saveKzDiario',e);}
+}
+
+async function saveKzDiarioF(field,value){
+  try{
+    if(KzDiarioF.id){
+      await api('kaizen_diario','PATCH',{[field]:value},'?id=eq.'+KzDiarioF.id);
+      KzDiarioF[field]=value;
+    } else {
+      const r=await api('kaizen_diario','POST',{data:kzCurrentDateF,pessoa:'filipe',[field]:value});
+      KzDiarioF=r[0];
+    }
+  }catch(e){console.error('saveKzDiarioF',e);}
+}
+
+async function saveKzCoisasBoasF(){
+  const inputs=document.querySelectorAll('#kz-content-f [data-idx]');
+  const lines=[...inputs].map(i=>i.value);
+  await saveKzDiarioF('coisas_boas',lines.join('\n'));
+}
+
+async function saveKzFocusF(field,value){
+  try{
+    if(KzFocusF.id){
+      await api('kaizen_deep_focus','PATCH',{[field]:value},'?id=eq.'+KzFocusF.id);
+      KzFocusF[field]=value;
+    } else {
+      const r=await api('kaizen_deep_focus','POST',{data:kzCurrentDateF,pessoa:'filipe',[field]:value});
+      KzFocusF=r[0];
+    }
+  }catch(e){console.error('saveKzFocusF',e);}
+}
+
+async function addKzTarefaF(){
+  try{
+    const r=await api('kaizen_tarefas','POST',{data:kzCurrentDateF,pessoa:'filipe',texto:'',prioridade:'media',andamento:'pendente',ordem:KzTarefasF.length});
+    KzTarefasF.push(r[0]);renderKaizenFilipe();
+  }catch(e){console.error(e);}
+}
+async function updateKzTarefaF(id,field,value){
+  try{await api('kaizen_tarefas','PATCH',{[field]:value},'?id=eq.'+id);const t=KzTarefasF.find(x=>x.id===id);if(t)t[field]=value;}catch(e){console.error(e);}
+}
+async function delKzTarefaF(id){
+  await api('kaizen_tarefas','DELETE',null,'?id=eq.'+id);KzTarefasF=KzTarefasF.filter(x=>x.id!==id);renderKaizenFilipe();
+}
+async function addKzDespF(){
+  try{const r=await api('kaizen_desempenho','POST',{data:kzCurrentDateF,pessoa:'filipe',tarefa:'',nota:0,ordem:KzDesempenhoF.length});KzDesempenhoF.push(r[0]);renderKaizenFilipe();}catch(e){console.error(e);}
+}
+async function updateKzDespF(id,field,value){
+  const val=field==='nota'?Number(value):value;
+  try{await api('kaizen_desempenho','PATCH',{[field]:val},'?id=eq.'+id);const d=KzDesempenhoF.find(x=>x.id===id);if(d)d[field]=val;}catch(e){console.error(e);}
+}
+async function delKzDespF(id){
+  await api('kaizen_desempenho','DELETE',null,'?id=eq.'+id);KzDesempenhoF=KzDesempenhoF.filter(x=>x.id!==id);renderKaizenFilipe();
 }
 
 async function saveKzCoisasBoas(){
@@ -831,15 +953,72 @@ async function saveKzFocus(field,value){
       await api('kaizen_deep_focus','PATCH',{[field]:value},'?id=eq.'+KzFocus.id);
       KzFocus[field]=value;
     } else {
-      const r=await api('kaizen_deep_focus','POST',{data:kzCurrentDate,[field]:value});
+      const r=await api('kaizen_deep_focus','POST',{data:kzCurrentDate,pessoa:'jessica',[field]:value});
       KzFocus=r[0];
     }
   }catch(e){console.error('saveKzFocus',e);}
 }
 
+function renderKaizenFilipe(){
+  const el=document.getElementById('kz-content-f');
+  if(!el)return;
+
+  const focusItems=[
+    {key:'celular_aviao',label:'Celular em modo avião'},
+    {key:'notificacoes',label:'Notificações desligadas'},
+    {key:'ambiente',label:'Ambiente limpo e silencioso'},
+    {key:'clareza',label:'Clareza total da tarefa'},
+    {key:'cronometro',label:'Cronômetro ativado (Pomodoro)'},
+    {key:'agua',label:'Garrafa ou copo de água'},
+  ];
+  const focusHtml=focusItems.map(item=>'<div class="kz-row"><input type="checkbox" class="kz-check" id="kzff-'+item.key+'" '+(KzFocusF[item.key]?'checked':'')+' onchange="saveKzFocusF(''+item.key+'',this.checked)"><label class="kz-label" for="kzff-'+item.key+'">'+item.label+'</label></div>').join('');
+
+  const AND_OPTS=[['pendente','Pendente','and-pendente'],['andamento','Em andamento','and-andamento'],['concluida','Concluída','and-concluida']];
+  const PRIO_OPTS=['alta','media','baixa'];
+  const tarefasHtml=KzTarefasF.map(t=>{
+    const andCls=t.andamento==='concluida'?'and-concluida':t.andamento==='andamento'?'and-andamento':'and-pendente';
+    const prioCls='prio-'+(t.prioridade||'media')+'-tag';
+    return '<div class="kz-row" style="gap:8px">'+
+      '<select class="andamento-sel '+andCls+'" onchange="updateKzTarefaF('+t.id+','andamento',this.value);this.className='andamento-sel '+(this.value==='concluida'?'and-concluida':this.value==='andamento'?'and-andamento':'and-pendente')">'+
+      AND_OPTS.map(a=>'<option value="'+a[0]+'" '+(t.andamento===a[0]?'selected':'')+'>'+a[1]+'</option>').join('')+'</select>'+
+      '<input class="kz-input" value="'+esc(t.texto||'')+'" placeholder="Tarefa..." style="flex:1" onblur="updateKzTarefaF('+t.id+','texto',this.value)" onkeydown="if(event.key==='Enter')this.blur()">'+
+      '<select class="andamento-sel '+prioCls+'" onchange="updateKzTarefaF('+t.id+','prioridade',this.value);this.className='andamento-sel prio-'+this.value+'-tag'">'+
+      PRIO_OPTS.map(p=>'<option value="'+p+'" '+((t.prioridade||'media')===p?'selected':'')+'>'+(p.charAt(0).toUpperCase()+p.slice(1))+'</option>').join('')+'</select>'+
+      '<button class="btn bd bsm" onclick="delKzTarefaF('+t.id+')"><i class="ti ti-x"></i></button></div>';
+  }).join('');
+
+  const despHtml=KzDesempenhoF.map(d=>{
+    const stars=[1,2,3,4,5].map(n=>'<span class="nota-star" onclick="updateKzDespF('+d.id+','nota','+n+');this.parentElement.querySelectorAll('.nota-star').forEach((s,i)=>s.textContent=i<'+n+'?'⭐':'☆')" title="'+n+'">'+(((d.nota||0)>=n)?'⭐':'☆')+'</span>').join('');
+    return '<div class="kz-row" style="gap:8px">'+
+      '<input class="kz-input" value="'+esc(d.tarefa||'')+'" placeholder="Tarefa-chave..." style="flex:1" onblur="updateKzDespF('+d.id+','tarefa',this.value)" onkeydown="if(event.key==='Enter')this.blur()">'+
+      '<input class="kz-input" value="'+esc(d.inicio||'')+'" placeholder="Início" style="width:70px" onblur="updateKzDespF('+d.id+','inicio',this.value)">'+
+      '<input class="kz-input" value="'+esc(d.fim||'')+'" placeholder="Fim" style="width:70px" onblur="updateKzDespF('+d.id+','fim',this.value)">'+
+      '<div style="display:flex;gap:2px">'+stars+'</div>'+
+      '<button class="btn bd bsm" onclick="delKzDespF('+d.id+')"><i class="ti ti-x"></i></button></div>';
+  }).join('');
+
+  const coisasLinhas=(KzDiarioF.coisas_boas||'').split('\n');
+  const coisasHtml=[1,2,3,4].map(n=>'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:11px;color:#555;flex-shrink:0">'+n+'.</span><input class="kz-input" value="'+esc(coisasLinhas[n-1]||'')+'" placeholder="..." data-idx="'+(n-1)+'" onblur="saveKzCoisasBoasF()"></div>').join('');
+
+  el.innerHTML=
+    '<div class="kz-grid">'+
+    '<div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#60a5fa"><i class="ti ti-list"></i> Tarefas / Compromissos</div><div class="kz-body">'+tarefasHtml+'<button class="btn bsm" style="margin-top:4px;color:#555" onclick="addKzTarefaF()"><i class="ti ti-plus"></i> Adicionar tarefa</button></div></div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#a78bfa"><i class="ti ti-focus"></i> Deep Focus</div><div class="kz-body">'+focusHtml+'</div></div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#fb923c"><i class="ti ti-chart-line"></i> Desempenho</div><div class="kz-body">'+despHtml+'<button class="btn bsm" style="margin-top:4px;color:#555" onclick="addKzDespF()"><i class="ti ti-plus"></i> Adicionar</button></div></div>'+
+    '</div>'+
+    '<div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#f87171"><i class="ti ti-flame"></i> Prioridade Absoluta</div><div class="kz-body"><p style="font-size:11px;color:#555;margin-bottom:8px">Qual é a ÚNICA coisa que, se feita agora, tornará todo o resto mais fácil?</p><textarea class="kz-textarea" placeholder="Escreva aqui..." onblur="saveKzDiarioF('prioridade_absoluta',this.value)">'+esc(KzDiarioF.prioridade_absoluta||'')+'</textarea></div></div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#4ade80"><i class="ti ti-heart"></i> Mentalidade Kaizen</div><div class="kz-body"><p style="font-size:11px;color:#555;margin-bottom:8px">EU SOU GRATO POR:</p><textarea class="kz-textarea" placeholder="Escreva sua gratidão..." onblur="saveKzDiarioF('gratidao',this.value)">'+esc(KzDiarioF.gratidao||'')+'</textarea></div></div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#fbbf24"><i class="ti ti-stars"></i> Manifestações Diárias</div><div class="kz-body"><p style="font-size:11px;color:#555;margin-bottom:8px">Visualize enquanto escreve:</p><textarea class="kz-textarea" placeholder="Escreva suas manifestações..." onblur="saveKzDiarioF('manifestacoes',this.value)">'+esc(KzDiarioF.manifestacoes||'')+'</textarea></div></div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#38bdf8"><i class="ti ti-confetti"></i> 4 Coisas Boas que Aconteceram Ontem</div><div class="kz-body">'+coisasHtml+'</div></div>'+
+    '</div>'+
+    '</div>';
+}
+
 async function addKzTarefa(){
   try{
-    const r=await api('kaizen_tarefas','POST',{data:kzCurrentDate,texto:'',prioridade:'media',andamento:'pendente',ordem:KzTarefas.length});
+    const r=await api('kaizen_tarefas','POST',{data:kzCurrentDate,pessoa:'jessica',texto:'',prioridade:'media',andamento:'pendente',ordem:KzTarefas.length});
     KzTarefas.push(r[0]);renderKaizen();
   }catch(e){console.error(e);}
 }
@@ -850,7 +1029,7 @@ async function delKzTarefa(id){
   await api('kaizen_tarefas','DELETE',null,'?id=eq.'+id);KzTarefas=KzTarefas.filter(x=>x.id!==id);renderKaizen();
 }
 async function addKzDesemp(){
-  try{const r=await api('kaizen_desempenho','POST',{data:kzCurrentDate,tarefa:'',nota:0,ordem:KzDesempenho.length});KzDesempenho.push(r[0]);renderKaizen();}catch(e){console.error(e);}
+  try{const r=await api('kaizen_desempenho','POST',{data:kzCurrentDate,pessoa:'jessica',tarefa:'',nota:0,ordem:KzDesempenho.length});KzDesempenho.push(r[0]);renderKaizen();}catch(e){console.error(e);}
 }
 async function updateKzDesemp(id,field,value){
   const val=field==='nota'?Number(value):value;
@@ -1671,7 +1850,7 @@ async function loadAll(){
     renderEmails();renderProxies();renderAvatares();renderContas();
     fillSelects();
     // Restaurar aba salva
-    const savedTab=sessionStorage.getItem('igm_tab')||'hoje';
+    const savedTab=sessionStorage.getItem('igm_tab')||'kaizen-jessica';
     const savedBtn=document.querySelector(`.nb[onclick*="${savedTab}"]`);
     if(savedBtn)showTab(savedTab,savedBtn);
     else renderHoje();
@@ -1687,7 +1866,8 @@ function showTab(t,btn){
   if(t==='postagens')renderPostagens();
   if(t==='hoje'){renderHoje();}
   if(t==='contas')statsContas();
-  if(t==='kaizen')initKaizen();
+  if(t==='kaizen-jessica')initKaizen('jessica');
+  if(t==='kaizen-filipe')initKaizen('filipe');
   if(t==='projetos')initProjetos();
   if(t==='ferramentas')initFerramentas();
   if(t==='facebook')initFacebook();
