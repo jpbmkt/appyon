@@ -987,23 +987,30 @@ function renderKaizenFilipe(){
   const tarefasHtml=KzTarefasF.map(t=>{
     const andCls=t.andamento==='concluida'?'and-concluida':t.andamento==='andamento'?'and-andamento':'and-pendente';
     const prioCls='prio-'+(t.prioridade||'media')+'-tag';
-    return '<div class="kz-row" style="gap:8px">'+
-      '<select class="andamento-sel '+andCls+'" onchange="updateKzTarefaF('+t.id+','andamento',this.value);this.className='andamento-sel '+(this.value==='concluida'?'and-concluida':this.value==='andamento'?'and-andamento':'and-pendente')">'+
-      AND_OPTS.map(a=>'<option value="'+a[0]+'" '+(t.andamento===a[0]?'selected':'')+'>'+a[1]+'</option>').join('')+'</select>'+
-      '<input class="kz-input" value="'+esc(t.texto||'')+'" placeholder="Tarefa..." style="flex:1" onblur="updateKzTarefaF('+t.id+','texto',this.value)" onkeydown="if(event.key==='Enter')this.blur()">'+
-      '<select class="andamento-sel '+prioCls+'" onchange="updateKzTarefaF('+t.id+','prioridade',this.value);this.className='andamento-sel prio-'+this.value+'-tag'">'+
-      PRIO_OPTS.map(p=>'<option value="'+p+'" '+((t.prioridade||'media')===p?'selected':'')+'>'+(p.charAt(0).toUpperCase()+p.slice(1))+'</option>').join('')+'</select>'+
-      '<button class="btn bd bsm" onclick="delKzTarefaF('+t.id+')"><i class="ti ti-x"></i></button></div>';
+    const andOpts=AND_OPTS.map(a=>{const sel=t.andamento===a[0]?' selected':'';return'<option value="'+a[0]+'"'+sel+'>'+a[1]+'</option>';}).join('');
+    const curPrio=t.prioridade||'media';
+    const prioOpts=PRIO_OPTS.map(p=>{const sel=curPrio===p?' selected':'';return'<option value="'+p+'"'+sel+'>'+p.charAt(0).toUpperCase()+p.slice(1)+'</option>';}).join('');
+    const row=document.createElement('div');
+    row.className='kz-row';row.style.gap='8px';
+    row.innerHTML=
+      '<select class="andamento-sel '+andCls+'" data-kzf-id="'+t.id+'" data-kzf-field="andamento" data-kzf-cls="and">'+andOpts+'</select>'+
+      '<input class="kz-input" value="'+esc(t.texto||'')+'" placeholder="Tarefa..." style="flex:1" data-kzf-id="'+t.id+'" data-kzf-field="texto">'+
+      '<select class="andamento-sel '+prioCls+'" data-kzf-id="'+t.id+'" data-kzf-field="prioridade" data-kzf-cls="prio">'+prioOpts+'</select>'+
+      '<button class="btn bd bsm" data-kzf-del="'+t.id+'"><i class="ti ti-x"></i></button>';
+    return row.outerHTML;
   }).join('');
 
   const despHtml=KzDesempenhoF.map(d=>{
-    const stars=[1,2,3,4,5].map(n=>'<span class="nota-star" onclick="updateKzDespF('+d.id+','nota','+n+');this.parentElement.querySelectorAll('.nota-star').forEach((s,i)=>s.textContent=i<'+n+'?'⭐':'☆')" title="'+n+'">'+(((d.nota||0)>=n)?'⭐':'☆')+'</span>').join('');
-    return '<div class="kz-row" style="gap:8px">'+
-      '<input class="kz-input" value="'+esc(d.tarefa||'')+'" placeholder="Tarefa-chave..." style="flex:1" onblur="updateKzDespF('+d.id+','tarefa',this.value)" onkeydown="if(event.key==='Enter')this.blur()">'+
-      '<input class="kz-input" value="'+esc(d.inicio||'')+'" placeholder="Início" style="width:70px" onblur="updateKzDespF('+d.id+','inicio',this.value)">'+
-      '<input class="kz-input" value="'+esc(d.fim||'')+'" placeholder="Fim" style="width:70px" onblur="updateKzDespF('+d.id+','fim',this.value)">'+
-      '<div style="display:flex;gap:2px">'+stars+'</div>'+
-      '<button class="btn bd bsm" onclick="delKzDespF('+d.id+')"><i class="ti ti-x"></i></button></div>';
+    const starHtml=[1,2,3,4,5].map(n=>'<span class="nota-star" data-kzfd-id="'+d.id+'" data-kzfd-nota="'+n+'">'+(((d.nota||0)>=n)?'⭐':'☆')+'</span>').join('');
+    const row=document.createElement('div');
+    row.className='kz-row';row.style.gap='8px';
+    row.innerHTML=
+      '<input class="kz-input" value="'+esc(d.tarefa||'')+'" placeholder="Tarefa-chave..." style="flex:1" data-kzfd-id="'+d.id+'" data-kzfd-field="tarefa">'+
+      '<input class="kz-input" value="'+esc(d.inicio||'')+'" placeholder="Início" style="width:70px" data-kzfd-id="'+d.id+'" data-kzfd-field="inicio">'+
+      '<input class="kz-input" value="'+esc(d.fim||'')+'" placeholder="Fim" style="width:70px" data-kzfd-id="'+d.id+'" data-kzfd-field="fim">'+
+      '<div style="display:flex;gap:2px">'+starHtml+'</div>'+
+      '<button class="btn bd bsm" data-kzfd-del="'+d.id+'"><i class="ti ti-x"></i></button>';
+    return row.outerHTML;
   }).join('');
 
   const coisasLinhas=(KzDiarioF.coisas_boas||'').split('\n');
@@ -2327,6 +2334,19 @@ document.addEventListener('click',(e)=>{
   // Favorito
   const fav=e.target.closest('[data-fav]');
   if(fav){e.stopPropagation();toggleFav(Number(fav.dataset.fav),fav.dataset.val==='true');return;}
+  // Kaizen Filipe del
+  const kzfDel=e.target.closest('[data-kzf-del]');
+  if(kzfDel){delKzTarefaF(Number(kzfDel.dataset.kzfDel));return;}
+  const kzfdDel=e.target.closest('[data-kzfd-del]');
+  if(kzfdDel){delKzDespF(Number(kzfdDel.dataset.kzfdDel));return;}
+  // Kaizen Filipe nota estrela
+  const kzfdNota=e.target.closest('[data-kzfd-nota]');
+  if(kzfdNota){
+    const id=Number(kzfdNota.dataset.kzfdId),nota=Number(kzfdNota.dataset.kzfdNota);
+    updateKzDespF(id,'nota',nota);
+    kzfdNota.closest('div').querySelectorAll('[data-kzfd-nota]').forEach((s,i)=>s.textContent=i<nota?'⭐':'☆');
+    return;
+  }
   // Fechar dropdowns de filtro
   if(!e.target.closest('.flt-wrap')){
     document.querySelectorAll('.flt-drop').forEach(d=>d.classList.remove('open'));
@@ -2343,6 +2363,15 @@ document.addEventListener('change',(e)=>{
     else saveKzFocus(key,focusChk.checked);
     return;
   }
+  // Kaizen Filipe tarefas
+  const kzfEl=e.target.closest('[data-kzf-id]');
+  if(kzfEl&&kzfEl.tagName==='SELECT'){
+    const id=Number(kzfEl.dataset.kzfId),field=kzfEl.dataset.kzfField;
+    updateKzTarefaF(id,field,kzfEl.value);
+    if(kzfEl.dataset.kzfCls==='and')kzfEl.className='andamento-sel '+(kzfEl.value==='concluida'?'and-concluida':kzfEl.value==='andamento'?'and-andamento':'and-pendente');
+    if(kzfEl.dataset.kzfCls==='prio')kzfEl.className='andamento-sel prio-'+kzfEl.value+'-tag';
+    return;
+  }
   const qtdEl=e.target.closest('[data-qtd-cid]');
   if(qtdEl){
     const cid=Number(qtdEl.dataset.qtdCid),d=qtdEl.dataset.qtdD,p=qtdEl.dataset.qtdP;
@@ -2350,6 +2379,12 @@ document.addEventListener('change',(e)=>{
     else saveQtdFB(cid,d,qtdEl.value);
   }
 });
+document.addEventListener('blur',(e)=>{
+  const kzfInp=e.target.closest('input[data-kzf-id]');
+  if(kzfInp){updateKzTarefaF(Number(kzfInp.dataset.kzfId),kzfInp.dataset.kzfField,kzfInp.value);return;}
+  const kzfdInp=e.target.closest('input[data-kzfd-id]');
+  if(kzfdInp){updateKzDespF(Number(kzfdInp.dataset.kzfdId),kzfdInp.dataset.kzfdField,kzfdInp.value);return;}
+},true);
 document.addEventListener('keydown',(e)=>{
   if(e.key==='Escape'){
     // Fechar foto modal
