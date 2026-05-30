@@ -971,7 +971,16 @@ function renderKaizenFilipe(){
     {key:'cronometro',label:'Cronômetro ativado (Pomodoro)'},
     {key:'agua',label:'Garrafa ou copo de água'},
   ];
-  const focusHtml=focusItems.map(item=>'<div class="kz-row"><input type="checkbox" class="kz-check" id="kzff-'+item.key+'" '+(KzFocusF[item.key]?'checked':'')+' onchange="saveKzFocusF(''+item.key+'',this.checked)"><label class="kz-label" for="kzff-'+item.key+'">'+item.label+'</label></div>').join('');
+  const focusHtml=focusItems.map(item=>{
+    const chk=document.createElement('input');
+    chk.type='checkbox';chk.className='kz-check';chk.id='kzff-'+item.key;
+    if(KzFocusF[item.key])chk.checked=true;
+    chk.dataset.focusKey=item.key;chk.dataset.focusPessoa='filipe';
+    const lbl=document.createElement('label');lbl.className='kz-label';lbl.htmlFor='kzff-'+item.key;lbl.textContent=item.label;
+    const div=document.createElement('div');div.className='kz-row';
+    div.appendChild(chk);div.appendChild(lbl);
+    return div.outerHTML;
+  }).join('');
 
   const AND_OPTS=[['pendente','Pendente','and-pendente'],['andamento','Em andamento','and-andamento'],['concluida','Concluída','and-concluida']];
   const PRIO_OPTS=['alta','media','baixa'];
@@ -2325,6 +2334,15 @@ document.addEventListener('click',(e)=>{
 });
 
 document.addEventListener('change',(e)=>{
+  // Kaizen Focus
+  const focusChk=e.target.closest('[data-focus-key]');
+  if(focusChk){
+    const key=focusChk.dataset.focusKey;
+    const pessoa=focusChk.dataset.focusPessoa;
+    if(pessoa==='filipe')saveKzFocusF(key,focusChk.checked);
+    else saveKzFocus(key,focusChk.checked);
+    return;
+  }
   const qtdEl=e.target.closest('[data-qtd-cid]');
   if(qtdEl){
     const cid=Number(qtdEl.dataset.qtdCid),d=qtdEl.dataset.qtdD,p=qtdEl.dataset.qtdP;
