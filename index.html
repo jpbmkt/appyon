@@ -3353,16 +3353,8 @@ function updateClusterStatsLabel(elId, cluster){
   const el=document.getElementById(elId);
   if(!el)return;
   if(!cluster){el.textContent='';return;}
-  const base=Contas.filter(c=>c.cluster===cluster);
-  const total=base.length;
-  const sit={
-    'Config': base.filter(c=>c.situacao==='Configuração Inicial').length,
-    'Aquec': base.filter(c=>c.situacao==='Aquecimento').length,
-    'Cresc': base.filter(c=>c.situacao==='Crescimento').length,
-    'Venda': base.filter(c=>c.situacao==='Venda').length,
-  };
-  el.innerHTML=total+' contas &nbsp;·&nbsp; '+
-    Object.entries(sit).map(([k,v])=>'<span style="color:#555">'+k+':</span> <b style="color:#aaa">'+v+'</b>').join(' &nbsp;');
+  const total=Contas.filter(c=>c.cluster===cluster).length;
+  el.innerHTML='<span style="color:#555;font-size:11px">'+total+' contas no cluster <b style="color:#aaa">'+esc(cluster)+'</b></span>';
 }
 function renderPostStats(){
   const el=document.getElementById('stats-post');
@@ -3376,10 +3368,11 @@ function renderPostStats(){
   ];
   const grid=document.createElement('div');
   grid.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px';
+  const basePost=postCluster?Contas.filter(c=>c.cluster===postCluster):Contas;
   SECS.forEach(s=>{
     const count=s.sit===''
-      ?Contas.filter(c=>['Configuração Inicial','Aquecimento','Crescimento','Venda'].includes(c.situacao)).length
-      :Contas.filter(c=>c.situacao===s.sit).length;
+      ?basePost.filter(c=>['Configuração Inicial','Aquecimento','Crescimento','Venda'].includes(c.situacao)).length
+      :basePost.filter(c=>c.situacao===s.sit).length;
     const active=postSit===s.sit;
     const card=document.createElement('div');
     card.className='stat post-sit-card'+(active?' psc-active':'');
