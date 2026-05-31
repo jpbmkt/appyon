@@ -1835,12 +1835,13 @@ function statsContas(){
     {label:'Banidas',     color:'#f87171',key:'__banidas__'},
   ];
   const el=document.getElementById('stats-contas');
+  const base=cCluster?Contas.filter(c=>(c.cluster||'')===(cCluster||'')):Contas;
   el.innerHTML=groups.map((g,i)=>{
     const count=g.key===''
-      ? Contas.length
+      ? base.length
       : g.key==='__banidas__'
-        ? Contas.filter(x=>['Banida','Bugada'].includes(x.situacao)).length
-        : Contas.filter(x=>x.situacao===g.key).length;
+        ? base.filter(x=>['Banida','Bugada'].includes(x.situacao)).length
+        : base.filter(x=>x.situacao===g.key).length;
     const isActive=cSit===g.key;
     return`<div class="stat stat-clickable" data-key="${g.key}" style="cursor:pointer;border-color:${isActive?g.color:'#2a2a2a'};box-shadow:${isActive?'0 0 0 1px '+g.color:'none'}">
       <div class="sl" style="color:${g.color}">${g.label}</div>
