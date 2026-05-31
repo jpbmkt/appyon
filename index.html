@@ -495,6 +495,13 @@ td.iec select{cursor:pointer}
 
 <!-- ===== CONTAS ===== -->
 <div class="tab" id="tab-contas">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+    <span style="font-size:11px;color:#555;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Cluster</span>
+    <select id="cluster-select-contas" onchange="setClusterSelectContas(this.value)" style="font-size:12px;padding:5px 10px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none">
+      <option value="">Todos os clusters</option>
+    </select>
+    <span id="cluster-stats-label" style="font-size:11px;color:#444"></span>
+  </div>
   <div class="stats" id="stats-contas"></div>
   <div class="toolbar" style="margin-top:-6px;margin-bottom:10px">
     <button class="btn bsm" id="btn-fav-filter" onclick="toggleFavFilter()" style="color:#555"><i class="ti ti-star"></i> Favoritos</button>
@@ -559,6 +566,13 @@ td.iec select{cursor:pointer}
 
 <!-- ===== POSTAGENS ===== -->
 <div class="tab" id="tab-postagens">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+    <span style="font-size:11px;color:#555;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Cluster</span>
+    <select id="cluster-select-post" onchange="setClusterSelectPost(this.value)" style="font-size:12px;padding:5px 10px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none">
+      <option value="">Todos os clusters</option>
+    </select>
+    <span id="cluster-stats-label-post" style="font-size:11px;color:#444"></span>
+  </div>
   <div class="stats" id="stats-post" style="margin-bottom:14px"></div>
   <div class="toolbar" style="margin-bottom:10px">
     <button class="btn bsm" id="btn-fav-filter-post" onclick="toggleFavFilterPost()" style="color:#555"><i class="ti ti-star"></i> Favoritos</button>
@@ -1499,10 +1513,9 @@ async function loadAll(){
     document.getElementById('cdot').className='dot';
     renderEmails();renderProxies();renderAvatares();renderContas();
     fillSelects();
-    // Restaurar aba salva
-    const savedTab=sessionStorage.getItem('igm_tab')||'hoje';
-    const savedBtn=document.querySelector(`.nb[onclick*="${savedTab}"]`);
-    if(savedBtn)showTab(savedTab,savedBtn);
+    // Sempre abrir na aba Hoje
+    const hojeBtn=document.querySelector('.nb[onclick*="hoje"]');
+    if(hojeBtn)showTab('hoje',hojeBtn);
     else renderHoje();
   }catch(e){document.getElementById('cdot').className='dot err';console.error(e);}
 }
@@ -1515,7 +1528,7 @@ function showTab(t,btn){
   tabEl.classList.add('active');
   if(btn)btn.classList.add('active');
   sessionStorage.setItem('igm_tab',t);
-  if(t==='postagens')renderPostagens();
+  if(t==='postagens'){populateClusterSelects();renderPostagens();}
   if(t==='hoje'){renderHoje();}
   if(t==='contas')statsContas();
   if(t==='kaizen-jessica')initKaizen('jessica');
@@ -3304,6 +3317,51 @@ function toggleFavFilter(){
 }
 function setPrioFilter(v){cPrio=v;renderContas();}
 function setClusterFilter(v){cCluster=v;renderContas();}
+
+function populateClusterSelects(){
+  // Pegar clusters únicos
+  const clusters=[...new Set(Contas.map(c=>c.cluster||'').filter(Boolean))].sort();
+  ['cluster-select-contas','cluster-select-post'].forEach(id=>{
+    const sel=document.getElementById(id);
+    if(!sel)return;
+    const val=sel.value;
+    sel.innerHTML='<option value="">Todos os clusters</option>'+
+      clusters.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');
+    sel.value=val; // restaurar seleção
+  });
+}
+
+function setClusterSelectContas(v){
+  cCluster=v;
+  // Atualizar input de texto também
+  const inp=document.getElementById('cluster-filter-input');
+  if(inp)inp.value=v;
+  updateClusterStatsLabel('cluster-stats-label', v);
+  renderContas();
+  statsContas();
+}
+
+function setClusterSelectPost(v){
+  postCluster=v;
+  updateClusterStatsLabel('cluster-stats-label-post', v);
+  renderPostagens();
+}
+
+function updateClusterStatsLabel(elId, cluster){
+  const el=document.getElementById(elId);
+  if(!el)return;
+  if(!cluster){el.textContent='';return;}
+  const base=Contas.filter(c=>c.cluster===cluster);
+  const total=base.length;
+  const sit={
+    'Config': base.filter(c=>c.situacao==='Configuração Inicial').length,
+    'Aquec': base.filter(c=>c.situacao==='Aquecimento').length,
+    'Cresc': base.filter(c=>c.situacao==='Crescimento').length,
+    'Venda': base.filter(c=>c.situacao==='Venda').length,
+  };
+  el.innerHTML=total+' contas &nbsp;·&nbsp; '+
+    Object.entries(sit).map(([k,v])=>'<span style="color:#555">'+k+':</span> <b style="color:#aaa">'+v+'</b>').join(' &nbsp;');
+}
 function renderPostStats(){
   const el=document.getElementById('stats-post');
   if(!el)return;
