@@ -397,6 +397,204 @@ td.iec select{cursor:pointer}
   </div>
 </div>
 
+<!-- ===== KAIZEN JESSICA ===== -->
+<div class="tab" id="tab-kaizen-jessica">
+  <div class="kz-day-selector">
+    <button class="btn bsm" onclick="kzChangeDay(-1)"><i class="ti ti-chevron-left"></i></button>
+    <input type="date" id="kz-date" onchange="loadKaizen()">
+    <button class="btn bsm" onclick="kzChangeDay(1)"><i class="ti ti-chevron-right"></i></button>
+    <button class="btn bsm" onclick="kzToday()">Hoje</button>
+    <span id="kz-day-label" style="font-size:12px;color:#555;margin-left:4px"></span>
+  </div>
+  <div id="kz-content"></div>
+</div>
+
+<!-- ===== EMAILS ===== -->
+<div class="tab" id="tab-emails">
+  <div class="stats" id="stats-emails"></div>
+  <div class="toolbar">
+    <input type="text" placeholder="Buscar..." oninput="filterEmails(this.value)">
+    <button class="btn bp" onclick="tog('padd-email')"><i class="ti ti-plus"></i> Adicionar</button>
+    <button class="btn bg bsm" onclick="tog('padd-email-bulk')"><i class="ti ti-file-upload"></i> Importar</button>
+  </div>
+  <div class="panel" id="padd-email" style="display:none">
+    <div class="fg">
+      <div class="f"><label>E-mail</label><input id="em-e" placeholder="conta@gmail.com"></div>
+      <div class="f"><label>Senha</label><input id="em-s" placeholder="senha123"></div>
+      <div class="f"><label>Status</label><select id="em-st"><option>Disponível</option><option>Em uso</option><option>Banido</option></select></div>
+    </div>
+    <button class="btn bp bsm" onclick="addEmail()">Salvar</button>
+    <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-email')">Cancelar</button>
+  </div>
+  <div class="panel" id="padd-email-bulk" style="display:none">
+    <textarea id="em-bulk" placeholder="email:senha&#10;email2:senha2" style="width:100%;height:100px;background:#111;border:1px solid #252525;color:#ccc;border-radius:7px;padding:8px;font-size:12px;outline:none"></textarea>
+    <button class="btn bp bsm" style="margin-top:8px" onclick="importEmails()">Importar</button>
+    <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-email-bulk')">Cancelar</button>
+  </div>
+  <div class="tw"><table id="tbl-emails"><thead><tr><th>E-mail</th><th>Senha</th><th>Status</th><th style="width:40px"></th></tr></thead><tbody id="tb-emails"><tr><td colspan="4" class="loading">Carregando...</td></tr></tbody></table></div>
+</div>
+
+<!-- ===== PROXIES ===== -->
+<div class="tab" id="tab-proxies">
+  <div class="stats" id="stats-proxies"></div>
+  <div class="toolbar">
+    <input type="text" placeholder="Buscar..." oninput="filterProxies(this.value)">
+    <button class="btn bp" onclick="tog('padd-proxy')"><i class="ti ti-plus"></i> Adicionar</button>
+    <button class="btn bg bsm" onclick="tog('padd-proxy-bulk')"><i class="ti ti-file-upload"></i> Importar</button>
+  </div>
+  <div class="panel" id="padd-proxy" style="display:none">
+    <div class="fg">
+      <div class="f"><label>Proxy</label><input id="px-p" placeholder="host:porta:user:senha"></div>
+      <div class="f"><label>Nº Pedido</label><input id="px-np" placeholder="12345"></div>
+      <div class="f"><label>Status</label><select id="px-st"><option>Disponível</option><option>Em uso</option><option>Inativo</option></select></div>
+    </div>
+    <button class="btn bp bsm" onclick="addProxy()">Salvar</button>
+    <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-proxy')">Cancelar</button>
+  </div>
+  <div class="panel" id="padd-proxy-bulk" style="display:none">
+    <textarea id="px-bulk" placeholder="host:porta:user:senha&#10;host2:porta2:user2:senha2" style="width:100%;height:100px;background:#111;border:1px solid #252525;color:#ccc;border-radius:7px;padding:8px;font-size:12px;outline:none"></textarea>
+    <button class="btn bp bsm" style="margin-top:8px" onclick="importProxies()">Importar</button>
+    <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-proxy-bulk')">Cancelar</button>
+  </div>
+  <div class="tw"><table id="tbl-proxies"><thead><tr><th>Proxy</th><th>Nº Pedido</th><th>Status</th><th style="width:40px"></th></tr></thead><tbody id="tb-proxies"><tr><td colspan="4" class="loading">Carregando...</td></tr></tbody></table></div>
+</div>
+
+<!-- ===== AVATARES ===== -->
+<div class="tab" id="tab-avatares">
+  <div class="toolbar">
+    <button class="btn bp" onclick="tog('padd-av')"><i class="ti ti-plus"></i> Novo avatar</button>
+  </div>
+  <div class="panel" id="padd-av" style="display:none">
+    <div class="fg">
+      <div class="f"><label>Nome / código</label><input id="av-n" placeholder="Maria Silva / AV-01"></div>
+      <div class="f"><label>Características</label><input id="av-c" placeholder="28 anos, morena, lifestyle..."></div>
+      <div class="f"><label>Foto do avatar</label><input type="file" id="av-foto" accept="image/*" style="font-size:12px;color:#888;padding:4px 0"></div>
+    </div>
+    <div class="f" style="margin-bottom:12px"><label>Prompt</label><textarea id="av-p" placeholder="Você é Maria, uma jovem de 28 anos..."></textarea></div>
+    <button class="btn bp bsm" onclick="addAvatar()">Salvar</button>
+    <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-av')">Cancelar</button>
+  </div>
+  <div class="tw"><table id="tbl-av"><thead><tr><th style="width:70px">Foto</th><th style="min-width:160px">Nome / código</th><th style="min-width:180px">Características</th><th style="min-width:200px">Prompt</th><th style="min-width:160px">Status de uso</th><th style="width:50px;text-align:center">Qtd</th><th style="width:40px"></th></tr></thead><tbody id="tb-av"><tr><td colspan="7" class="loading">Carregando...</td></tr></tbody></table></div>
+</div>
+
+<!-- ===== CONTAS ===== -->
+<div class="tab" id="tab-contas">
+  <div class="stats" id="stats-contas"></div>
+  <div class="toolbar" style="margin-top:-6px;margin-bottom:10px">
+    <button class="btn bsm" id="btn-fav-filter" onclick="toggleFavFilter()" style="color:#555"><i class="ti ti-star"></i> Favoritos</button>
+    <select onchange="setPrioFilter(this.value)" id="sel-prio-filter" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none">
+      <option value="">Todas as prioridades</option>
+      <option value="alta">🔴 Alta</option>
+      <option value="media">🟡 Média</option>
+      <option value="baixa">🟢 Baixa</option>
+    </select>
+    <input type="text" id="cluster-filter-input" placeholder="Filtrar cluster..." oninput="setClusterFilter(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none;width:140px">
+    <input type="text" placeholder="Buscar..." oninput="searchContas(this.value)">
+    <button class="btn bp" onclick="tog('padd-ct')"><i class="ti ti-plus"></i> Adicionar</button>
+    <button class="btn bg bsm" id="btn-sync-drive-ct" onclick="syncDrive()"><i class="ti ti-brand-google-drive"></i> Sincronizar estoque via Drive</button>
+    <button class="btn bsm" id="btn-planilha" onclick="togglePlanilha()" style="border-color:#a78bfa;color:#a78bfa"><i class="ti ti-table"></i> Planilha</button>
+    <button class="btn bsm" onclick="exportarContas()" style="border-color:#4ade80;color:#4ade80"><i class="ti ti-download"></i> Exportar CSV</button>
+  </div>
+  <div id="planilha-wrap" style="display:none;margin-bottom:16px;overflow-x:auto;border-radius:9px;border:1px solid #2a2a2a"><div id="planilha-inner"></div></div>
+  <div class="panel" id="padd-ct" style="display:none">
+    <div class="fg">
+      <div class="f"><label>Perfil</label><input id="ct-fbpr" placeholder="Nome do perfil"></div>
+      <div class="f"><label>User IG</label><input id="ct-u" placeholder="@username"></div>
+      <div class="f"><label>Senha IG</label><input id="ct-si" placeholder="senha123"></div>
+      <div class="f"><label>E-mail</label><input id="ct-e" placeholder="conta@gmail.com"></div>
+      <div class="f"><label>Senha e-mail</label><input id="ct-se" placeholder="senha123"></div>
+      <div class="f"><label>Dispositivo</label><input id="ct-d" placeholder="iPhone 14 / PC"></div>
+      <div class="f"><label>Situação</label><select id="ct-sit"><option>Criar Perfil</option><option>Configuração Inicial</option><option>Aquecimento</option><option>Crescimento</option><option>Venda</option><option>SMS e Análise Selfie</option><option>Banida</option><option>Bugada</option></select></div>
+      <div class="f"><label>Cluster</label><input id="ct-cluster" placeholder="ex: Cluster A, B..."></div>
+      <div class="f"><label>Grupo do avatar</label><input id="ct-grupo" placeholder="ex: asiática mulher, negro jovem..."></div>
+      <div class="f"><label>Voz</label><input id="ct-vz" placeholder="Voz jovem feminina..."></div>
+      <div class="f"><label>Avatar</label><select id="ct-av"><option value="">— sem avatar —</option></select></div>
+      <div class="f"><label>FB Page</label><select id="ct-fp"><option value="">— Vazio</option><option value="alerta">⚠ Alerta</option><option value="ok">✓ OK</option></select></div>
+      <div class="f"><label>MB Suite</label><select id="ct-mb"><option value="">— Vazio</option><option value="alerta">⚠ Alerta</option><option value="ok">✓ OK</option></select></div>
+      <div class="f"><label>Automação</label><select id="ct-au"><option value="">— Vazio</option><option value="alerta">⚠ Alerta</option><option value="ok">✓ OK</option></select></div>
+      <div class="f"><label>Página Facebook</label><input id="ct-fbpg" placeholder="URL da página"></div>
+      <div class="f"><label>Conta Facebook</label><input id="ct-fbconta" placeholder="URL ou nome da conta FB"></div>
+      <div class="f"><label>Link venda IG</label><input id="ct-lig" placeholder="link..."></div>
+      <div class="f"><label>Link venda FB</label><input id="ct-lfb" placeholder="link..."></div>
+      <div class="f"><label>ID pasta Drive</label><input id="ct-drv" placeholder="ID da pasta Google Drive"></div>
+    </div>
+    <button class="btn bp bsm" onclick="addConta()">Salvar</button>
+    <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-ct')">Cancelar</button>
+  </div>
+  <div class="tw"><table id="tbl-ct">
+    <thead><tr>
+      <th style="width:80px" title="Prioridade / Favorito">Prioridade</th>
+      <th style="min-width:160px"><div class="th-inner">Perfil<div class="flt-wrap"><button class="flt-btn" id="fbt-user" onclick="toggleFlt('user',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-user"></div></div><button class="sort-btn" onclick="sortContas('fb_perfil',event)" id="srt-fb_perfil2" title="Ordenar">↕</button></div></th>
+      <th style="min-width:100px"><div class="th-inner">Cluster<div class="flt-wrap"><button class="flt-btn" id="fbt-cluster" onclick="toggleFlt('cluster',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-cluster"></div></div><button class="sort-btn" onclick="sortContas('cluster',event)" id="srt-cluster" title="Ordenar">↕</button></div></th>
+      <th style="min-width:120px"><div class="th-inner">Grupo Avatar<div class="flt-wrap"><button class="flt-btn" id="fbt-grupo" onclick="toggleFlt('grupo',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-grupo"></div></div><button class="sort-btn" onclick="sortContas('grupo_avatar',event)" id="srt-grupo_avatar" title="Ordenar">↕</button></div></th>
+      <th style="min-width:110px"><div class="th-inner">Dispositivo<div class="flt-wrap"><button class="flt-btn" id="fbt-disp" onclick="toggleFlt('disp',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-disp"></div></div><button class="sort-btn" onclick="sortContas('dispositivo',event)" id="srt-dispositivo" title="Ordenar">↕</button></div></th>
+      <th style="min-width:110px"><div class="th-inner">Situação<div class="flt-wrap"><button class="flt-btn" id="fbt-sit" onclick="toggleFlt('sit',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-sit"></div></div><button class="sort-btn" onclick="sortContas('situacao',event)" id="srt-situacao" title="Ordenar">↕</button></div></th>
+      <th style="min-width:120px"><div class="th-inner">Conta Facebook<div class="flt-wrap"><button class="flt-btn" id="fbt-fbp" onclick="toggleFlt('fbp',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-fbp"></div></div></div></th>
+      <th style="width:60px">FB Page</th>
+      <th style="width:60px">MB Suite</th>
+      <th style="width:80px">Automação</th>
+      <th style="min-width:80px"><div class="th-inner">Estoque<div class="flt-wrap"><button class="flt-btn" id="fbt-est" onclick="toggleFlt('est',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-est"></div></div><button class="sort-btn" onclick="sortContas('estoque_videos',event)" id="srt-estoque_videos" title="Ordenar">↕</button></div></th>
+      <th style="min-width:150px">Observações</th>
+      <th style="width:40px"></th>
+    </tr></thead>
+    <tbody id="tb-ct"><tr><td colspan="13" class="loading">Carregando...</td></tr></tbody>
+  </table></div>
+</div>
+
+<!-- ===== POSTAGENS ===== -->
+<div class="tab" id="tab-postagens">
+  <div class="stats" id="stats-post" style="margin-bottom:14px"></div>
+  <div class="toolbar" style="margin-bottom:10px">
+    <button class="btn bsm" id="btn-fav-filter-post" onclick="toggleFavFilterPost()" style="color:#555"><i class="ti ti-star"></i> Favoritos</button>
+    <select onchange="setPostPrioFilter(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none">
+      <option value="">Todas as prioridades</option>
+      <option value="alta">🔴 Alta</option>
+      <option value="media">🟡 Média</option>
+      <option value="baixa">🟢 Baixa</option>
+    </select>
+    <input type="text" placeholder="Filtrar cluster..." oninput="setPostClusterFilter(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none;width:130px">
+    <button class="btn bsm bg" id="btn-sync-drive" onclick="syncDrive()"><i class="ti ti-refresh"></i> Sincronizar</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:8px 12px;background:#161616;border:1px solid #222;border-radius:8px">
+    <i class="ti ti-brand-google-drive" style="color:#4ade80;font-size:18px;flex-shrink:0"></i>
+    <span style="font-size:11px;color:#555;flex:1">Sincronizar estoque via Google Drive</span>
+    <button class="btn bg bsm" id="btn-sync-drive" onclick="syncDrive()"><i class="ti ti-refresh"></i> Sincronizar</button>
+  </div>
+  <div id="post-sections"><div class="loading">Carregando...</div></div>
+</div>
+
+<!-- ===== FERRAMENTAS ===== -->
+<div class="tab" id="tab-ferramentas">
+  <div class="stats" id="stats-ferr"></div>
+  <div class="toolbar">
+    <input type="text" placeholder="Buscar ferramenta..." oninput="renderFerramentas(this.value)">
+    <select onchange="filterFerrTipo(this.value)">
+      <option value="">Todos os tipos</option>
+      <option value="mensal">Mensal</option>
+      <option value="anual">Anual</option>
+      <option value="unico">Pagamento único</option>
+    </select>
+    <button class="btn bp" onclick="tog('padd-ferr')"><i class="ti ti-plus"></i> Adicionar</button>
+  </div>
+  <div class="panel" id="padd-ferr" style="display:none">
+    <div class="fg">
+      <div class="f"><label>Nome da ferramenta</label><input id="ferr-nome" placeholder="Ex: MB Suite, ChatGPT..."></div>
+      <div class="f"><label>Perfil vinculado</label><select id="ferr-perfil"><option value="">— geral / sem perfil —</option></select></div>
+      <div class="f"><label>Login / usuário</label><input id="ferr-login" placeholder="email ou usuário"></div>
+      <div class="f"><label>Senha</label><input id="ferr-senha" placeholder="senha123"></div>
+      <div class="f"><label>Tipo de pagamento</label><select id="ferr-tipo"><option value="mensal">Mensal</option><option value="anual">Anual</option><option value="unico">Pagamento único</option></select></div>
+      <div class="f"><label>Forma de pagamento</label><input id="ferr-forma" placeholder="Cartão, PIX, Boleto..."></div>
+      <div class="f"><label>Valor (R$)</label><input id="ferr-valor" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div class="f"><label>Data de vencimento</label><input id="ferr-venc" type="date"></div>
+      <div class="f"><label>Status</label><select id="ferr-status"><option value="ativo">Ativo</option><option value="inativo">Inativo</option></select></div>
+      <div class="f" style="grid-column:span 2"><label>Observações</label><input id="ferr-obs" placeholder="Notas adicionais..."></div>
+    </div>
+    <button class="btn bp bsm" onclick="addFerramenta()">Salvar</button>
+    <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-ferr')">Cancelar</button>
+  </div>
+  <div id="ferr-list"></div>
+</div>
+
 <!-- ===== KAIZEN FILIPE ===== -->
 <div class="tab" id="tab-kaizen-filipe">
   <div class="kz-day-selector">
@@ -1293,10 +1491,12 @@ async function loadAll(){
 }
 
 function showTab(t,btn){
+  const tabEl=document.getElementById('tab-'+t);
+  if(!tabEl)return;
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.nb').forEach(x=>x.classList.remove('active'));
-  document.getElementById('tab-'+t).classList.add('active');
-  btn.classList.add('active');
+  tabEl.classList.add('active');
+  if(btn)btn.classList.add('active');
   sessionStorage.setItem('igm_tab',t);
   if(t==='postagens')renderPostagens();
   if(t==='hoje'){renderHoje();}
