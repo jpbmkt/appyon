@@ -1823,6 +1823,7 @@ async function updateEstoque(id,val){
   const ct=Contas.find(x=>x.id===id);if(ct)ct.estoque_videos=n;
 }
 function statsContas(){
+  populateClusterSelects();
   const groups=[
     {label:'Total',      color:'#aaa',    key:''},
     {label:'Criar Perfil',     color:'#fb923c', key:'Criar Perfil'},
@@ -2678,6 +2679,7 @@ async function saveQtdVideos(cid,data,val){
 
 
 function renderPostagens(){
+  populateClusterSelects();
   renderPostStats();
   const wk=weekDays();
   const dayNames=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
