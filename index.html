@@ -345,9 +345,9 @@ td.iec select{cursor:pointer}
 <div class="topbar">
   <div class="logo"><i class="ti ti-coin"></i> Gestão Appyon</div>
   <div class="nav">
-    <button class="nb active" onclick="showTab('kaizen-jessica',this)"><i class="ti ti-brain"></i> Kaizen Jessica</button>
+    <button class="nb" onclick="showTab('kaizen-jessica',this)"><i class="ti ti-brain"></i> Kaizen Jessica</button>
     <button class="nb" onclick="showTab('kaizen-filipe',this)"><i class="ti ti-brain"></i> Kaizen Filipe</button>
-    <button class="nb" onclick="showTab('hoje',this)"><i class="ti ti-layout-dashboard"></i> Hoje</button>
+    <button class="nb active" onclick="showTab('hoje',this)"><i class="ti ti-layout-dashboard"></i> Hoje</button>
     <button class="nb" onclick="showTab('contas',this)"><i class="ti ti-layout-dashboard"></i> Gestão de Contas</button>
     <button class="nb" onclick="showTab('postagens',this)"><i class="ti ti-calendar-check"></i> Postagens</button>
     <button class="nb" onclick="showTab('ferramentas',this)"><i class="ti ti-credit-card"></i> Ferramentas</button>
@@ -361,7 +361,7 @@ td.iec select{cursor:pointer}
 <div class="content">
 
 <!-- ===== HOJE ===== -->
-<div class="tab" id="tab-hoje">
+<div class="tab active" id="tab-hoje">
   <!-- Saudação + Frase motivacional -->
   <div id="hoje-header" style="margin-bottom:28px"></div>
 
@@ -1500,7 +1500,7 @@ async function loadAll(){
     renderEmails();renderProxies();renderAvatares();renderContas();
     fillSelects();
     // Restaurar aba salva
-    const savedTab=sessionStorage.getItem('igm_tab')||'kaizen-jessica';
+    const savedTab=sessionStorage.getItem('igm_tab')||'hoje';
     const savedBtn=document.querySelector(`.nb[onclick*="${savedTab}"]`);
     if(savedBtn)showTab(savedTab,savedBtn);
     else renderHoje();
@@ -2046,6 +2046,16 @@ document.addEventListener('change',(e)=>{
   }
 });
 document.addEventListener('blur',(e)=>{
+  // Lembretes — editar texto
+  const lemEdit=e.target.closest('[data-lem-edit]');
+  if(lemEdit){
+    const idx=Number(lemEdit.dataset.lemEdit);
+    if(Lembretes[idx]!==undefined){
+      Lembretes[idx].texto=lemEdit.value;
+      saveLembretes();
+    }
+    return;
+  }
   // Prioridades — editar texto
   const prioEdit=e.target.closest('[data-prio-edit]');
   if(prioEdit){
@@ -2891,7 +2901,7 @@ function renderLembretes(){
     return '<div class="lembrete-item drag-item'+(done?' done':'')+'" draggable="true" data-drag-list="lem" data-drag-idx="'+i+'" id="lem-'+i+'">'+
       '<span class="drag-handle" style="color:#252525;cursor:grab;font-size:14px;flex-shrink:0;user-select:none;line-height:1">⠿</span>'+
       chkHtml+
-      '<div class="lembrete-texto">'+esc(l.texto||'')+'</div>'+
+      '<input class="lembrete-texto" value="'+esc(l.texto||'')+'" placeholder="Lembrete..." data-lem-edit="'+i+'" style="flex:1;background:transparent;border:none;color:'+(done?'#444':'#ccc')+';font-size:13px;outline:none;padding:0;width:0;min-width:0;'+(done?'text-decoration:line-through':'')+'">'+
       '<button class="lembrete-del" data-lem-del="'+i+'" title="Remover"><i class="ti ti-x"></i></button>'+
     '</div>';
   }).join('');
@@ -2899,11 +2909,13 @@ function renderLembretes(){
 }
 
 async function addLembrete(){
-  const texto=prompt('Lembrete:','');
-  if(!texto||!texto.trim())return;
-  Lembretes.push({texto:texto.trim(),done:false,created:new Date().toISOString()});
+  Lembretes.push({texto:'',done:false,created:new Date().toISOString()});
   await saveLembretes();
   renderLembretes();
+  setTimeout(()=>{
+    const inputs=document.querySelectorAll('[data-lem-edit]');
+    if(inputs.length)inputs[inputs.length-1].focus();
+  },50);
 }
 
 async function toggleLembrete(i){
