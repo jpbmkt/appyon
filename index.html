@@ -2963,8 +2963,11 @@ let PrioridadesSemana=[];
 async function loadPrioridades(){
   try{
     const r=await api('hoje_config','GET',null,'?pessoa=eq.prioridades-semana');
-    const raw=r[0]?.visionboard_items||[];
-    PrioridadesSemana=typeof raw==='string'?JSON.parse(raw):(Array.isArray(raw)?raw:[]);
+    let raw=r[0]?.visionboard_items||[];
+    if(typeof raw==='string'){try{raw=JSON.parse(raw);}catch(e){raw=[];}}
+    // Se vier como objeto (formato antigo), converter para array
+    if(!Array.isArray(raw))raw=[];
+    PrioridadesSemana=raw;
     renderPrioridades();
   }catch(e){console.error('loadPrioridades',e);}
 }
@@ -3002,6 +3005,7 @@ function renderPrioridades(){
 }
 
 async function addPrioridade(){
+  if(!Array.isArray(PrioridadesSemana))PrioridadesSemana=[];
   PrioridadesSemana.push({texto:'',done:false,pessoa:''});
   await savePrioridades();
   renderPrioridades();
