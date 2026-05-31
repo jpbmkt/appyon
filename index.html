@@ -303,6 +303,22 @@ td.iec select{cursor:pointer}
 .fb-connect-btn:hover{background:#1464d8}
 .fb-connect-btn i{font-size:16px}
 .fb-sync-status{font-size:11px;color:#555;margin-top:6px}
+.vision-card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:16px;margin-bottom:10px;position:relative;overflow:hidden;transition:border-color .15s}
+.vision-card:hover{border-color:#3a3a3a}
+.vision-card-quote{font-size:15px;font-weight:500;color:#e8e8e8;line-height:1.5;margin-bottom:6px}
+.vision-card-sub{font-size:11px;color:#555;font-style:italic}
+.vision-card-del{position:absolute;top:8px;right:8px;background:transparent;border:none;color:#2a2a2a;cursor:pointer;font-size:13px;opacity:0;transition:opacity .15s}
+.vision-card:hover .vision-card-del{opacity:1;color:#555}
+.meta-card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:18px;margin-bottom:10px}
+.meta-card-label{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.meta-card-value{font-size:28px;font-weight:700;color:#fff;margin-bottom:10px;line-height:1}
+.meta-card-sub{font-size:11px;color:#444;margin-top:4px}
+.meta-progress{height:6px;background:#222;border-radius:999px;overflow:hidden;margin-top:10px}
+.meta-progress-fill{height:100%;border-radius:999px;transition:width .5s}
+.hoje-header-date{font-size:13px;color:#555;margin-bottom:4px}
+.hoje-header-greeting{font-size:22px;font-weight:700;color:#fff;margin-bottom:8px}
+.hoje-header-frase{font-size:13px;color:#777;font-style:italic;border-left:2px solid #2a2a2a;padding-left:12px;margin-top:8px}
+.hoje-pessoa-btn.active{background:#1a0f1a !important;color:#f472b6 !important;border-color:#f472b6 !important}
 /* DRIVE PANEL */
 .drive-panel{background:#111;border:1px solid #1e3a1e;border-radius:9px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .drive-panel i{color:#4ade80;font-size:18px}
@@ -333,303 +349,38 @@ td.iec select{cursor:pointer}
 
 <!-- ===== HOJE ===== -->
 <div class="tab" id="tab-hoje">
-  <!-- Resumo rápido -->
-  <div id="hoje-resumo" style="margin-bottom:20px"></div>
+  <!-- Cabeçalho do dia -->
+  <div id="hoje-header" style="margin-bottom:24px"></div>
+
+  <!-- Pessoa selector -->
+  <div style="display:flex;gap:8px;margin-bottom:20px;align-items:center">
+    <span style="font-size:12px;color:#555">Visualizando como:</span>
+    <button class="btn bsm" id="hoje-pessoa-jessica" onclick="setHojePessoa('jessica')" style="border-color:#f472b6;color:#f472b6;background:#1a0f1a">Jessica</button>
+    <button class="btn bsm" id="hoje-pessoa-filipe" onclick="setHojePessoa('filipe')" style="color:#555">Filipe</button>
+  </div>
+
   <!-- Grid principal -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-    <!-- Fila de ação -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px">
+    <!-- Visionboard pessoal -->
     <div>
-      <div style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-list-check" style="color:#60a5fa"></i> Fila de ação do dia</div>
-      <div id="hoje-fila"></div>
-    </div>
-    <!-- Agenda Google -->
-    <div>
-      <div style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-calendar" style="color:#a78bfa"></i> Agenda Google</div>
-      <div id="hoje-agenda"></div>
-    </div>
-  </div>
-  <!-- To-do lists + Notas -->
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
-    <!-- To-do Jessica -->
-    <div>
-      <div style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-checkbox" style="color:#f472b6"></i> To-do · Jessica</div>
-      <div id="todo-jessica"></div>
-    </div>
-    <!-- To-do Filipe -->
-    <div>
-      <div style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-checkbox" style="color:#34d399"></i> To-do · Filipe</div>
-      <div id="todo-filipe"></div>
-    </div>
-    <!-- Notas do dia -->
-    <div>
-      <div style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-note" style="color:#fbbf24"></i> Notas do dia</div>
-      <div id="hoje-notas"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ===== EMAILS ===== -->
-<div class="tab" id="tab-emails">
-  <div class="stats" id="stats-em"></div>
-  <div class="toolbar">
-    <input type="text" placeholder="Buscar e-mail..." oninput="renderEmails(this.value)">
-    <button class="btn bp" onclick="tog('padd-em')"><i class="ti ti-plus"></i> Adicionar</button>
-    <button class="btn" onclick="tog('pbulk-em')"><i class="ti ti-list"></i> Em massa</button>
-  </div>
-  <div class="panel" id="padd-em" style="display:none">
-    <div class="fg">
-      <div class="f"><label>E-mail</label><input id="em-e" type="email" placeholder="conta@gmail.com"></div>
-      <div class="f"><label>Senha</label><input id="em-s" placeholder="senha123"></div>
-      <div class="f"><label>Status</label><select id="em-st"><option>Disponível</option><option>Em uso</option><option>Bloqueado</option></select></div>
-      <div class="f"><label>Recovery</label><input id="em-r" placeholder="recovery@gmail.com"></div>
-      <div class="f"><label>Telefone</label><input id="em-t" placeholder="+55 11 9..."></div>
-      <div class="f"><label>Observações</label><input id="em-o" placeholder="..."></div>
-    </div>
-    <button class="btn bp bsm" onclick="addEmail()">Salvar</button>
-    <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-em')">Cancelar</button>
-  </div>
-  <div class="panel" id="pbulk-em" style="display:none">
-    <p class="tip">Uma por linha: <span class="mono">email:senha</span> ou <span class="mono">email:senha:recovery:telefone</span></p>
-    <textarea class="bulk-area" id="bulk-em" placeholder="email1@gmail.com:senha1&#10;email2@gmail.com:senha2:rec@gmail.com"></textarea>
-    <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
-      <label style="font-size:12px;color:#555">Status:</label>
-      <select id="bulk-em-st" style="font-size:12px;padding:5px 8px;border-radius:6px;border:1px solid #2a2a2a;background:#1a1a1a;color:#e8e8e8">
-        <option>Disponível</option><option>Em uso</option><option>Bloqueado</option>
-      </select>
-      <button class="btn bp bsm" onclick="bulkEmails()"><i class="ti ti-upload"></i> Importar</button>
-      <button class="btn bsm" onclick="tog('pbulk-em')">Cancelar</button>
-    </div>
-  </div>
-  <div class="tw"><table>
-    <thead><tr><th style="min-width:180px">E-mail</th><th style="min-width:100px">Senha</th><th style="min-width:90px">Status</th><th style="min-width:160px">Recovery</th><th style="min-width:120px">Telefone</th><th style="min-width:140px">Obs</th><th style="width:40px"></th></tr></thead>
-    <tbody id="tb-em"><tr><td colspan="7" class="loading">Carregando...</td></tr></tbody>
-  </table></div>
-</div>
-
-<!-- ===== PROXIES ===== -->
-<div class="tab" id="tab-proxies">
-  <div class="stats" id="stats-px"></div>
-  <div class="toolbar">
-    <input type="text" placeholder="Buscar proxy / pedido / conta..." oninput="renderProxies(this.value)">
-    <button class="btn bp" onclick="tog('padd-px')"><i class="ti ti-plus"></i> Adicionar</button>
-    <button class="btn" onclick="tog('pbulk-px')"><i class="ti ti-list"></i> Em massa</button>
-  </div>
-  <div class="panel" id="padd-px" style="display:none">
-    <div class="fg">
-      <div class="f"><label>Nº Pedido</label><input id="px-ped" placeholder="PED-001"></div>
-      <div class="f"><label>IP:Porta</label><input id="px-ip" placeholder="192.168.1.1:8080"></div>
-      <div class="f"><label>Usuário</label><input id="px-u" placeholder="user123"></div>
-      <div class="f"><label>Senha</label><input id="px-s" placeholder="senha123"></div>
-      <div class="f"><label>Tipo</label><select id="px-t"><option>HTTP</option><option>HTTPS</option><option>SOCKS5</option><option>Residencial</option><option>Datacenter</option></select></div>
-      <div class="f"><label>País</label><input id="px-p" placeholder="BR" style="max-width:80px"></div>
-      <div class="f"><label>Status</label><select id="px-st"><option>Disponível</option><option>Em uso</option><option>Inativo</option></select></div>
-      <div class="f"><label>Validade</label><input id="px-v" type="date"></div>
-    </div>
-    <button class="btn bp bsm" onclick="addProxy()">Salvar</button>
-    <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-px')">Cancelar</button>
-  </div>
-  <div class="panel" id="pbulk-px" style="display:none">
-    <p class="tip">Uma por linha: <span class="mono">ip:porta:usuario:senha</span> ou <span class="mono">pedido:ip:porta:usuario:senha</span></p>
-    <textarea class="bulk-area" id="bulk-px" placeholder="192.168.1.1:8080:user1:pass1&#10;PED001:10.0.0.2:3128:user2:pass2"></textarea>
-    <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
-      <label style="font-size:12px;color:#555">Tipo:</label>
-      <select id="bulk-px-t" style="font-size:12px;padding:5px 8px;border-radius:6px;border:1px solid #2a2a2a;background:#1a1a1a;color:#e8e8e8">
-        <option>HTTP</option><option>HTTPS</option><option>SOCKS5</option><option>Residencial</option><option>Datacenter</option>
-      </select>
-      <button class="btn bp bsm" onclick="bulkProxies()"><i class="ti ti-upload"></i> Importar</button>
-      <button class="btn bsm" onclick="tog('pbulk-px')">Cancelar</button>
-    </div>
-  </div>
-  <div class="tw"><table>
-    <thead><tr><th style="min-width:90px">Nº Pedido</th><th style="min-width:150px">IP:Porta</th><th style="min-width:90px">Usuário</th><th style="min-width:90px">Tipo</th><th style="width:50px">País</th><th style="min-width:90px">Status</th><th style="min-width:120px">Conta IG</th><th style="min-width:100px">Validade</th><th style="width:40px"></th></tr></thead>
-    <tbody id="tb-px"><tr><td colspan="9" class="loading">Carregando...</td></tr></tbody>
-  </table></div>
-</div>
-
-<!-- ===== AVATARES ===== -->
-<div class="tab" id="tab-avatares">
-  <div class="toolbar">
-    <button class="btn bp" onclick="tog('padd-av')"><i class="ti ti-plus"></i> Novo avatar</button>
-  </div>
-  <div class="panel" id="padd-av" style="display:none">
-    <div class="fg">
-      <div class="f"><label>Nome / código</label><input id="av-n" placeholder="Maria Silva / AV-01"></div>
-      <div class="f"><label>Características</label><input id="av-c" placeholder="28 anos, morena, lifestyle..."></div>
-      <div class="f"><label>Foto do avatar</label><input type="file" id="av-foto" accept="image/*" style="font-size:12px;color:#888;padding:4px 0"></div>
-    </div>
-    <div class="f" style="margin-bottom:12px"><label>Prompt</label><textarea id="av-p" placeholder="Você é Maria, uma jovem de 28 anos..."></textarea></div>
-    <button class="btn bp bsm" onclick="addAvatar()">Salvar</button>
-    <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-av')">Cancelar</button>
-  </div>
-  <div class="tw"><table>
-    <thead><tr><th style="width:70px">Foto</th><th style="min-width:160px">Nome / código</th><th style="min-width:180px">Características</th><th style="min-width:200px">Prompt</th><th style="min-width:160px">Status de uso</th><th style="width:50px;text-align:center">Qtd</th><th style="width:40px"></th></tr></thead>
-    <tbody id="tb-av"><tr><td colspan="3" class="loading">Carregando...</td></tr></tbody>
-  </table></div>
-</div>
-
-<!-- ===== CONTAS IG ===== -->
-<div class="tab" id="tab-contas">
-  <div class="stats" id="stats-ct"></div>
-  <div class="toolbar">
-    <input type="text" placeholder="Buscar conta..." oninput="filterContas('q',this.value)">
-    <select onchange="filterContas('sit',this.value)">
-      <option value="">Todas as situações</option>
-      <option>Criar Perfil</option><option>Configuração Inicial</option><option>Aquecimento</option><option>Crescimento</option><option>Venda</option><option>SMS e Análise Selfie</option><option>Banida</option><option>Bugada</option>
-    </select>
-    <button class="btn bp" onclick="tog('padd-ct')"><i class="ti ti-plus"></i> Adicionar</button>
-  </div>
-  <div class="panel" id="padd-ct" style="display:none">
-    <div class="fg">
-      <div class="f"><label>Perfil</label><input id="ct-fbpr" placeholder="Nome do perfil"></div>
-      <div class="f"><label>User IG</label><input id="ct-u" placeholder="@username"></div>
-      <div class="f"><label>Senha IG</label><input id="ct-si" placeholder="senha123"></div>
-      <div class="f"><label>E-mail</label><input id="ct-e" placeholder="conta@gmail.com"></div>
-      <div class="f"><label>Senha e-mail</label><input id="ct-se" placeholder="senha123"></div>
-      <div class="f"><label>Dispositivo</label><input id="ct-d" placeholder="iPhone 14 / PC"></div>
-      <div class="f"><label>Situação</label><select id="ct-sit"><option>Criar Perfil</option><option>Configuração Inicial</option><option>Aquecimento</option><option>Crescimento</option><option>Venda</option><option>SMS e Análise Selfie</option><option>Banida</option><option>Bugada</option></select></div>
-      <div class="f"><label>Proxy</label><select id="ct-px"><option value="">— sem proxy —</option></select></div>
-      <div class="f"><label>Avatar</label><select id="ct-av"><option value="">— sem avatar —</option></select></div>
-      <div class="f"><label>Cluster</label><input id="ct-cluster" placeholder="ex: Cluster A, B..."></div>
-      <div class="f"><label>Grupo do avatar</label><input id="ct-grupo" placeholder="ex: asiática mulher, negro jovem..."></div>
-      <div class="f"><label>Voz</label><input id="ct-vz" placeholder="Voz jovem feminina..."></div>
-      <div class="f"><label>MB Suite</label><select id="ct-mb"><option value="">— Vazio</option><option value="alerta">⚠ Alerta</option><option value="ok">✓ OK</option></select></div>
-      <div class="f"><label>Automação</label><select id="ct-au"><option value="">— Vazio</option><option value="alerta">⚠ Alerta</option><option value="ok">✓ OK</option></select></div>
-      <div class="f"><label>FB Page criada</label><select id="ct-fp"><option value="">— Vazio</option><option value="alerta">⚠ Alerta</option><option value="ok">✓ OK</option></select></div>
-      <div class="f"><label>Página Facebook</label><input id="ct-fbpg" placeholder="URL da página"></div>
-      <div class="f"><label>Conta Facebook</label><input id="ct-fbconta" placeholder="URL ou nome da conta FB"></div>
-      
-      <div class="f"><label>Link venda IG</label><input id="ct-lig" placeholder="https://..."></div>
-      <div class="f"><label>Link venda FB</label><input id="ct-lfb" placeholder="https://..."></div>
-      <div class="f"><label>ID pasta Drive</label><input id="ct-drv" placeholder="1aBcDeFgHiJkLmN..."></div>
-    </div>
-    <button class="btn bp bsm" onclick="addConta()">Salvar</button>
-    <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-ct')">Cancelar</button>
-  </div>
-  <div class="toolbar" style="margin-top:-6px;margin-bottom:10px">
-    <button class="btn bsm" id="btn-fav-filter" onclick="toggleFavFilter()" style="color:#555"><i class="ti ti-star"></i> Favoritos</button>
-    <input type="text" id="cluster-filter-input" placeholder="Filtrar cluster..." oninput="setClusterFilter(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none;width:140px">
-    <select onchange="setPrioFilter(this.value)" id="sel-prio-filter" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none">
-      <option value="">Todas as prioridades</option>
-      <option value="alta">🔴 Alta</option>
-      <option value="media">🟡 Média</option>
-      <option value="baixa">🟢 Baixa</option>
-    </select>
-    <button class="btn bg bsm" id="btn-sync-drive-ct" onclick="syncDrive()"><i class="ti ti-brand-google-drive"></i> Sincronizar estoque via Drive</button>
-    <button class="btn bsm" id="btn-planilha" onclick="togglePlanilha()" style="border-color:#a78bfa;color:#a78bfa"><i class="ti ti-table"></i> Planilha</button>
-    <button class="btn bsm" onclick="exportarContas()" style="border-color:#4ade80;color:#4ade80"><i class="ti ti-download"></i> Exportar CSV</button>
-  </div>
-  <!-- PLANILHA -->
-  <div id="planilha-wrap" style="display:none;margin-bottom:16px;overflow-x:auto;border-radius:9px;border:1px solid #2a2a2a">
-    <div id="planilha-inner"></div>
-  </div>
-  <div class="tw"><table id="tbl-ct">
-    <thead><tr>
-      <th style="width:80px" title="Prioridade / Favorito">Prioridade</th>
-      <th style="min-width:160px"><div class="th-inner">Perfil<div class="flt-wrap"><button class="flt-btn" id="fbt-user" onclick="toggleFlt('user',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-user"></div></div><button class="sort-btn" onclick="sortContas('fb_perfil',event)" id="srt-fb_perfil2" title="Ordenar">↕</button></div></th>
-      <th style="min-width:100px"><div class="th-inner">Cluster<div class="flt-wrap"><button class="flt-btn" id="fbt-cluster" onclick="toggleFlt('cluster',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-cluster"></div></div><button class="sort-btn" onclick="sortContas('cluster',event)" id="srt-cluster" title="Ordenar">&#8597;</button></div></th>
-      <th style="min-width:120px"><div class="th-inner">Grupo Avatar<div class="flt-wrap"><button class="flt-btn" id="fbt-grupo" onclick="toggleFlt('grupo',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-grupo"></div></div><button class="sort-btn" onclick="sortContas('grupo_avatar',event)" id="srt-grupo_avatar" title="Ordenar">↕</button></div></th>
-      <th style="min-width:110px"><div class="th-inner">Dispositivo<div class="flt-wrap"><button class="flt-btn" id="fbt-disp" onclick="toggleFlt('disp',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-disp"></div></div><button class="sort-btn" onclick="sortContas('dispositivo',event)" id="srt-dispositivo" title="Ordenar">↕</button></div></th>
-      <th style="min-width:110px"><div class="th-inner">Situação<div class="flt-wrap"><button class="flt-btn" id="fbt-sit" onclick="toggleFlt('sit',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-sit"></div></div><button class="sort-btn" onclick="sortContas('situacao',event)" id="srt-situacao" title="Ordenar">↕</button></div></th>
-      <th style="min-width:140px"><div class="th-inner">Conta Facebook<div class="flt-wrap"><button class="flt-btn" id="fbt-fbp" onclick="toggleFlt('fbp',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-fbp"></div></div><button class="sort-btn" onclick="sortContas('fb_perfil',event)" id="srt-fb_perfil" title="Ordenar">↕</button></div></th>
-      <th style="width:70px"><div class="th-inner">FB Page<div class="flt-wrap"><button class="flt-btn" id="fbt-fb" onclick="toggleFlt('fb',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-fb"></div></div></div></th>
-      <th style="width:70px"><div class="th-inner">MB Suite<div class="flt-wrap"><button class="flt-btn" id="fbt-mb" onclick="toggleFlt('mb',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-mb"></div></div></div></th>
-      <th style="width:70px"><div class="th-inner">Automação<div class="flt-wrap"><button class="flt-btn" id="fbt-auto" onclick="toggleFlt('auto',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-auto"></div></div></div></th>
-      <th style="min-width:90px"><div class="th-inner">Estoque<div class="flt-wrap"><button class="flt-btn" id="fbt-est" onclick="toggleFlt('est',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-est"></div></div><button class="sort-btn" onclick="sortContas('estoque_videos',event)" id="srt-estoque_videos" title="Ordenar">↕</button></div></th>
-      <th style="min-width:150px">Observações</th>
-      <th style="width:40px"></th>
-    </tr></thead>
-    <tbody id="tb-ct"><tr><td colspan="9" class="loading">Carregando...</td></tr></tbody>
-  </table></div>
-</div>
-
-<!-- ===== POSTAGENS ===== -->
-<div class="tab" id="tab-postagens">
-  <div class="stats" id="stats-post" style="margin-bottom:14px"></div>
-  <div class="toolbar" style="margin-bottom:10px">
-    <button class="btn bsm" id="btn-fav-filter-post" onclick="toggleFavFilterPost()" style="color:#555"><i class="ti ti-star"></i> Favoritos</button>
-    <select onchange="setPostPrioFilter(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none">
-      <option value="">Todas as prioridades</option>
-      <option value="alta">🔴 Alta</option>
-      <option value="media">🟡 Média</option>
-      <option value="baixa">🟢 Baixa</option>
-    </select>
-    <input type="text" placeholder="Filtrar cluster..." oninput="setPostClusterFilter(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none;width:130px">
-
-  </div>
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:8px 12px;background:#161616;border:1px solid #222;border-radius:8px">
-    <i class="ti ti-brand-google-drive" style="color:#4ade80;font-size:18px;flex-shrink:0"></i>
-    <span style="font-size:11px;color:#555;flex:1">Sincronizar estoque via Google Drive</span>
-    <button class="btn bg bsm" id="btn-sync-drive" onclick="syncDrive()"><i class="ti ti-refresh"></i> Sincronizar</button>
-  </div>
-  <div id="post-sections"><div class="loading">Carregando...</div></div>
-</div>
-
-<!-- ===== KAIZEN ===== -->
-<div class="tab active" id="tab-kaizen-jessica">
-  <div class="kz-day-selector">
-    <button class="btn bsm" onclick="kzChangeDay(-1)"><i class="ti ti-chevron-left"></i></button>
-    <input type="date" id="kz-date" onchange="loadKaizen()">
-    <button class="btn bsm" onclick="kzChangeDay(1)"><i class="ti ti-chevron-right"></i></button>
-    <button class="btn bsm" onclick="kzToday()">Hoje</button>
-    <span id="kz-day-label" style="font-size:12px;color:#555;margin-left:4px"></span>
-  </div>
-  <div id="kz-content"></div>
-</div>
-
-<!-- ===== FERRAMENTAS ===== -->
-<div class="tab" id="tab-ferramentas">
-  <div class="stats" id="stats-ferr"></div>
-  <div class="toolbar">
-    <input type="text" placeholder="Buscar ferramenta..." oninput="renderFerramentas(this.value)">
-    <select onchange="filterFerrTipo(this.value)">
-      <option value="">Todos os tipos</option>
-      <option value="mensal">Mensal</option>
-      <option value="anual">Anual</option>
-      <option value="unico">Pagamento único</option>
-    </select>
-    <button class="btn bp" onclick="tog('padd-ferr')"><i class="ti ti-plus"></i> Adicionar</button>
-  </div>
-  <div class="panel" id="padd-ferr" style="display:none">
-    <div class="fg">
-      <div class="f"><label>Nome da ferramenta</label><input id="ferr-nome" placeholder="Ex: MB Suite, ChatGPT..."></div>
-      <div class="f"><label>Perfil vinculado</label><select id="ferr-perfil"><option value="">— geral / sem perfil —</option></select></div>
-      <div class="f"><label>Login / usuário</label><input id="ferr-login" placeholder="email ou usuário"></div>
-      <div class="f"><label>Senha</label><input id="ferr-senha" placeholder="senha123"></div>
-      <div class="f"><label>Tipo de pagamento</label>
-        <select id="ferr-tipo"><option value="mensal">Mensal</option><option value="anual">Anual</option><option value="unico">Pagamento único</option></select>
+      <div style="font-size:11px;font-weight:600;color:#555;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;justify-content:space-between">
+        <span>✨ Visionboard</span>
+        <button class="btn bsm" onclick="addVisionItem()" style="font-size:10px;color:#a78bfa;border-color:#a78bfa">+ Adicionar</button>
       </div>
-      <div class="f"><label>Forma de pagamento</label><input id="ferr-forma" placeholder="Cartão, PIX, Boleto..."></div>
-      <div class="f"><label>Valor (R$)</label><input id="ferr-valor" type="number" min="0" step="0.01" placeholder="0,00"></div>
-      <div class="f"><label>Data de vencimento</label><input id="ferr-venc" type="date"></div>
-      <div class="f"><label>Status</label>
-        <select id="ferr-status"><option value="ativo">Ativo</option><option value="inativo">Inativo</option></select>
-      </div>
-      <div class="f" style="grid-column:span 2"><label>Observações</label><input id="ferr-obs" placeholder="Notas adicionais..."></div>
+      <div id="hoje-visionboard"></div>
     </div>
-    <button class="btn bp bsm" onclick="addFerramenta()">Salvar</button>
-    <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-ferr')">Cancelar</button>
+    <!-- Metas da empresa -->
+    <div>
+      <div style="font-size:11px;font-weight:600;color:#555;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px">🎯 Metas da empresa</div>
+      <div id="hoje-metas"></div>
+    </div>
   </div>
-  <div id="ferr-list"></div>
-</div>
 
-<!-- ===== FACEBOOK ===== -->
-<div class="tab" id="tab-facebook">
-  <div class="stats" id="stats-fb"></div>
-  <div class="toolbar">
-    <input type="text" placeholder="Buscar página..." oninput="renderFbPages(this.value)">
-    <button class="btn bp" onclick="tog('padd-fbpage')"><i class="ti ti-plus"></i> Adicionar página</button>
+  <!-- Notas do dia -->
+  <div>
+    <div style="font-size:11px;font-weight:600;color:#555;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px"><i class="ti ti-note" style="color:#fbbf24"></i> Notas do dia</div>
+    <div id="hoje-notas"></div>
   </div>
-  <div class="panel" id="padd-fbpage" style="display:none">
-    <div class="fg">
-      <div class="f"><label>Nome da página</label><input id="fbp-nome" placeholder="Ex: James Guidance"></div>
-      <div class="f"><label>Perfil vinculado</label><select id="fbp-perfil"><option value="">— selecionar conta IG —</option></select></div>
-      <div class="f"><label>URL da página</label><input id="fbp-url" placeholder="https://facebook.com/..."></div>
-      <div class="f"><label>Observações</label><input id="fbp-obs" placeholder="..."></div>
-    </div>
-    <button class="btn bp bsm" onclick="addFbPage()">Salvar</button>
-    <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-fbpage')">Cancelar</button>
-  </div>
-  <div id="fb-pages-list"></div>
 </div>
 
 <!-- ===== KAIZEN FILIPE ===== -->
@@ -683,6 +434,18 @@ async function api(tbl,method='GET',body=null,qs=''){
 }
 
 let Emails=[],Proxies=[],Avatares=[],Contas=[],Checks=[],ConfigsIniciais=[],NotasDia=[],gCalendarEvents=[],TodosJessica=[],TodosFilipe=[];
+let HojePessoa='jessica',VisionItems=[],MetasEmpresa={},HojeFrases=[
+  'A consistência é a mãe do sucesso.',
+  'Cada vídeo postado é um passo mais perto da meta.',
+  'O sucesso não é um evento, é um hábito diário.',
+  'Pequenas ações todos os dias criam grandes resultados.',
+  'Foco, execução e consistência — essa é a fórmula.',
+  'O que você faz hoje define onde estará amanhã.',
+  'Disciplina é liberdade.',
+  'Cada conta no ar é uma semente plantada.',
+  'A diferença está no que você faz quando ninguém está vendo.',
+  'Progresso, não perfeição.',
+];
 let KzDiario={},KzTarefas=[],KzDesempenho=[],KzFocus={},Ideias=[],DiarioEntries=[],Ferramentas=[];
 let ferrTipoFilter='';
 let FbProfiles=[],FbPages=[];
@@ -2822,16 +2585,135 @@ async function syncDrive(){
 // ══════════════════════════════════════
 
 function renderHoje(){
-  // Garantir que dados estão carregados
-  if(!Contas||Contas.length===0&&!document.getElementById('cdot').classList.contains('dot')){
-    setTimeout(renderHoje,300);return;
-  }
-  renderResumo();
-  renderFila();
-  renderAgenda();
-  renderTodos('Jessica');
-  renderTodos('Filipe');
+  renderHojeHeader();
+  loadHojeData();
   renderNotas();
+}
+
+function renderHojeHeader(){
+  const el=document.getElementById('hoje-header');
+  if(!el)return;
+  const now=new Date();
+  const dias=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  const meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const dateStr=dias[now.getDay()]+', '+now.getDate()+' de '+meses[now.getMonth()]+' de '+now.getFullYear();
+  const hora=now.getHours();
+  const saudacao=hora<12?'Bom dia':hora<18?'Boa tarde':'Boa noite';
+  const frase=HojeFrases[now.getDate()%HojeFrases.length];
+  el.innerHTML=
+    '<div class="hoje-header-date">'+dateStr+'</div>'+
+    '<div class="hoje-header-greeting">'+saudacao+', Jessica & Filipe! 👋</div>'+
+    '<div class="hoje-header-frase">"'+frase+'"</div>';
+}
+
+let hojePessoa='jessica';
+
+function setHojePessoa(p){
+  hojePessoa=p;
+  document.getElementById('hoje-pessoa-jessica').className='btn bsm hoje-pessoa-btn'+(p==='jessica'?' active':'');
+  document.getElementById('hoje-pessoa-filipe').className='btn bsm hoje-pessoa-btn'+(p==='filipe'?' active':'');
+  renderVisionboard();
+}
+
+async function loadHojeData(){
+  try{
+    const [vision,metas]=await Promise.all([
+      api('hoje_config','GET',null,'?pessoa=eq.'+hojePessoa),
+      api('metas_empresa','GET',null,'?order=id.desc&limit=1'),
+    ]);
+    VisionItems=(vision[0]?.visionboard_items)||[];
+    MetasEmpresa=metas[0]||{receita_meta:0,receita_atual:0,recorde_vendas_dia:0};
+    renderVisionboard();
+    renderMetas();
+  }catch(e){console.error('loadHojeData',e);}
+}
+
+function renderVisionboard(){
+  const el=document.getElementById('hoje-visionboard');
+  if(!el)return;
+  if(!VisionItems.length){
+    el.innerHTML='<div style="text-align:center;padding:32px;color:#333;font-size:12px;border:1px dashed #2a2a2a;border-radius:12px">✨ Clique em "+ Adicionar" para criar seu visionboard</div>';
+    return;
+  }
+  el.innerHTML=VisionItems.map((item,i)=>`
+    <div class="vision-card">
+      <button class="vision-card-del" onclick="delVisionItem(${i})" title="Remover"><i class="ti ti-x"></i></button>
+      <div class="vision-card-quote" contenteditable="true" onblur="editVisionItem(${i},'quote',this.textContent)">${esc(item.quote||'')}</div>
+      ${item.sub?`<div class="vision-card-sub">${esc(item.sub)}</div>`:''}
+    </div>`).join('');
+}
+
+async function addVisionItem(){
+  VisionItems.push({quote:'Meu objetivo: ',sub:''});
+  await saveVision();
+  renderVisionboard();
+  // Focar no novo item
+  setTimeout(()=>{
+    const cards=document.querySelectorAll('.vision-card-quote');
+    if(cards.length){const c=cards[cards.length-1];c.focus();const r=document.createRange();r.selectNodeContents(c);r.collapse(false);window.getSelection().removeAllRanges();window.getSelection().addRange(r);}
+  },50);
+}
+
+async function editVisionItem(i,field,val){
+  if(VisionItems[i])VisionItems[i][field]=val;
+  await saveVision();
+}
+
+async function delVisionItem(i){
+  VisionItems.splice(i,1);
+  await saveVision();
+  renderVisionboard();
+}
+
+async function saveVision(){
+  try{
+    const existing=await api('hoje_config','GET',null,'?pessoa=eq.'+hojePessoa);
+    if(existing.length){
+      await api('hoje_config','PATCH',{visionboard_items:JSON.stringify(VisionItems)},'?pessoa=eq.'+hojePessoa);
+    } else {
+      await api('hoje_config','POST',{pessoa:hojePessoa,visionboard_items:JSON.stringify(VisionItems)});
+    }
+  }catch(e){console.error('saveVision',e);}
+}
+
+function renderMetas(){
+  const el=document.getElementById('hoje-metas');
+  if(!el)return;
+  const m=MetasEmpresa;
+  const receitaPct=m.receita_meta>0?Math.min(100,Math.round((m.receita_atual/m.receita_meta)*100)):0;
+  const contas_venda=Contas.filter(c=>c.situacao==='Venda').length;
+
+  el.innerHTML=`
+    <div class="meta-card">
+      <div class="meta-card-label">💰 Receita mensal</div>
+      <div class="meta-card-value" style="color:#4ade80">R$ ${Number(m.receita_atual||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+      <div class="meta-card-sub">Meta: R$ ${Number(m.receita_meta||0).toLocaleString('pt-BR',{minimumFractionDigits:2})} · ${receitaPct}% atingido</div>
+      <div class="meta-progress"><div class="meta-progress-fill" style="width:${receitaPct}%;background:#4ade80"></div></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input type="number" placeholder="Atual (R$)" value="${m.receita_atual||''}" style="flex:1;background:#111;border:1px solid #252525;border-radius:6px;color:#e8e8e8;font-size:12px;padding:5px 8px;outline:none" onblur="saveMeta('receita_atual',this.value)">
+        <input type="number" placeholder="Meta (R$)" value="${m.receita_meta||''}" style="flex:1;background:#111;border:1px solid #252525;border-radius:6px;color:#e8e8e8;font-size:12px;padding:5px 8px;outline:none" onblur="saveMeta('receita_meta',this.value)">
+      </div>
+    </div>
+    <div class="meta-card">
+      <div class="meta-card-label">🏆 Recorde de vendas/dia</div>
+      <div class="meta-card-value" style="color:#fbbf24">${m.recorde_vendas_dia||0}</div>
+      <div class="meta-card-sub">Contas em Venda agora: ${contas_venda}</div>
+      <input type="number" placeholder="Atualizar recorde" value="${m.recorde_vendas_dia||''}" style="margin-top:10px;width:100%;background:#111;border:1px solid #252525;border-radius:6px;color:#e8e8e8;font-size:12px;padding:5px 8px;outline:none;box-sizing:border-box" onblur="saveMeta('recorde_vendas_dia',this.value)">
+    </div>`;
+}
+
+async function saveMeta(field,value){
+  const val=Number(value)||0;
+  try{
+    if(MetasEmpresa.id){
+      await api('metas_empresa','PATCH',{[field]:val,'updated_at':new Date().toISOString()},'?id=eq.'+MetasEmpresa.id);
+    } else {
+      const r=await api('metas_empresa','POST',{[field]:val,mes_referencia:localDateStr(new Date()).slice(0,7)});
+      MetasEmpresa=r[0];
+    }
+    MetasEmpresa[field]=val;
+    renderMetas();
+  }catch(e){console.error('saveMeta',e);}
 }
 
 function renderResumo(){
