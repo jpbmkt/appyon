@@ -1311,7 +1311,8 @@ function renderFacebook(){
   const totalSeg=FbPages.reduce((a,p)=>a+Number(p.seguidores||0),0);
   const totalViews=FbPages.reduce((a,p)=>a+Number(p.visualizacoes_24h||0),0);
   const totalComents=FbPages.reduce((a,p)=>a+Number(p.comentarios_24h||0),0);
-  document.getElementById('stats-fb')&&document.getElementById('stats-fb').innerHTML=
+  const fbStatsEl=document.getElementById('stats-fb');
+  if(fbStatsEl)fbStatsEl.innerHTML=
     '<div class="stat"><div class="sl">Páginas conectadas</div><div class="sv">'+totalPages+'</div></div>'+
     '<div class="stat"><div class="sl" style="color:#1877f2">Total seguidores</div><div class="sv">'+totalSeg.toLocaleString('pt-BR')+'</div></div>'+
     '<div class="stat"><div class="sl" style="color:#4ade80">Views 24h</div><div class="sv">'+totalViews.toLocaleString('pt-BR')+'</div></div>'+
