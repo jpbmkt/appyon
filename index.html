@@ -1311,7 +1311,7 @@ function renderFacebook(){
   const totalSeg=FbPages.reduce((a,p)=>a+Number(p.seguidores||0),0);
   const totalViews=FbPages.reduce((a,p)=>a+Number(p.visualizacoes_24h||0),0);
   const totalComents=FbPages.reduce((a,p)=>a+Number(p.comentarios_24h||0),0);
-  document.getElementById('stats-fb').innerHTML=
+  document.getElementById('stats-fb')&&document.getElementById('stats-fb').innerHTML=
     '<div class="stat"><div class="sl">Páginas conectadas</div><div class="sv">'+totalPages+'</div></div>'+
     '<div class="stat"><div class="sl" style="color:#1877f2">Total seguidores</div><div class="sv">'+totalSeg.toLocaleString('pt-BR')+'</div></div>'+
     '<div class="stat"><div class="sl" style="color:#4ade80">Views 24h</div><div class="sv">'+totalViews.toLocaleString('pt-BR')+'</div></div>'+
@@ -1563,7 +1563,7 @@ async function delEmail(id){if(!confirm('Excluir?'))return;await api('emails','D
 function renderEmails(q=''){
   let f=Emails.filter(x=>!q||(x.email||'').toLowerCase().includes(q.toLowerCase()));
   if(eMailFilter)f=f.filter(x=>x.status===eMailFilter);
-  const tb=document.getElementById('tb-em');
+  const tb=document.getElementById('tb-emails');
   if(!f.length){tb.innerHTML=`<tr><td colspan="7" class="empty">Nenhum e-mail cadastrado</td></tr>`;return statsEmails();}
   tb.innerHTML=f.map(e=>`<tr>
     <td>${ieTxt(e.email,`patch('emails',${e.id},'email',val)`)}</td>
@@ -1584,7 +1584,7 @@ function statsEmails(){
     {label:'Em uso',     color:'#fb923c', key:'Em uso'},
     {label:'Bloqueados', color:'#f87171', key:'Bloqueado'},
   ];
-  const el=document.getElementById('stats-em');
+  const el=document.getElementById('stats-emails');
   el.innerHTML=groups.map(g=>{
     const count=g.key===''?Emails.length:Emails.filter(x=>x.status===g.key).length;
     const isActive=eMailFilter===g.key;
@@ -1626,7 +1626,7 @@ function renderProxies(q=''){
   let f=Proxies.filter(x=>!q||((x.ip||'')+(x.numero_pedido||'')).toLowerCase().includes(q.toLowerCase()));
   if(proxyFilter)f=f.filter(x=>x.status===proxyFilter);
   const contaUsing=ip=>{const c=Contas.find(x=>x.proxy===ip);return c?`<span style="color:#60a5fa">${esc(c.user_ig)}</span>`:`<span style="color:#333">—</span>`;};
-  const tb=document.getElementById('tb-px');
+  const tb=document.getElementById('tb-proxies');
   if(!f.length){tb.innerHTML=`<tr><td colspan="9" class="empty">Nenhuma proxy</td></tr>`;return statsProxies();}
   tb.innerHTML=f.map(p=>`<tr>
     <td>${ieTxt(p.numero_pedido,`patch('proxies',${p.id},'numero_pedido',val)`)}</td>
@@ -1649,7 +1649,7 @@ function statsProxies(){
     {label:'Em uso',     color:'#fb923c', key:'Em uso'},
     {label:'Inativas',   color:'#555',    key:'Inativo'},
   ];
-  const el=document.getElementById('stats-px');
+  const el=document.getElementById('stats-proxies');
   el.innerHTML=groups.map(g=>{
     const count=g.key===''?Proxies.length:Proxies.filter(x=>x.status===g.key).length;
     const isActive=proxyFilter===g.key;
@@ -1803,7 +1803,7 @@ function statsContas(){
     {label:'SMS/Selfie',  color:'#fbbf24',key:'SMS e Análise Selfie'},
     {label:'Banidas',     color:'#f87171',key:'__banidas__'},
   ];
-  const el=document.getElementById('stats-ct');
+  const el=document.getElementById('stats-contas');
   el.innerHTML=groups.map((g,i)=>{
     const count=g.key===''
       ? Contas.length
