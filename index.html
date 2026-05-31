@@ -153,6 +153,9 @@ td.iec select{cursor:pointer}
 .resumo-card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:12px 14px;cursor:pointer;transition:border-color .15s}
 .psc-active{background:#0f1a0f}
 .lembrete-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:#1a1a1a;border:1px solid #222;border-radius:9px;margin-bottom:8px;transition:opacity .2s}
+.drag-item.dragging{opacity:.4;background:#1a1a2a !important}
+.drag-item.drag-over{border-top:2px solid #a78bfa}
+.drag-handle:hover{color:#555 !important}
 .lembrete-item.done{opacity:.4}
 .lembrete-check{width:18px;height:18px;border-radius:4px;border:1.5px solid #333;background:transparent;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;margin-top:1px}
 .lembrete-check.done{background:#60a5fa;border-color:#60a5fa;color:#fff}
@@ -2885,12 +2888,14 @@ function renderLembretes(){
   el.innerHTML=Lembretes.map((l,i)=>{
     const done=l.done?true:false;
     const chkHtml='<div class="lembrete-check'+(done?' done':'')+'" data-lem-toggle="'+i+'">'+(done?'<i class="ti ti-check" style="font-size:10px"></i>':'')+'</div>';
-    return '<div class="lembrete-item'+(done?' done':'')+'" id="lem-'+i+'">'+
+    return '<div class="lembrete-item drag-item'+(done?' done':'')+'" draggable="true" data-drag-list="lem" data-drag-idx="'+i+'" id="lem-'+i+'">'+
+      '<span class="drag-handle" style="color:#252525;cursor:grab;font-size:14px;flex-shrink:0;user-select:none;line-height:1">⠿</span>'+
       chkHtml+
       '<div class="lembrete-texto">'+esc(l.texto||'')+'</div>'+
       '<button class="lembrete-del" data-lem-del="'+i+'" title="Remover"><i class="ti ti-x"></i></button>'+
     '</div>';
   }).join('');
+  initDragList('hoje-lembretes','lem');
 }
 
 async function addLembrete(){
@@ -2991,7 +2996,8 @@ function renderPrioridades(){
     const done=item.done?true:false;
     const chkColor=done?'#4ade80':'#2a2a2a';
     const chkBg=done?'#0d2016':'transparent';
-    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #141414">'+
+    return '<div class="drag-item" draggable="true" data-drag-list="prio" data-drag-idx="'+i+'" style="display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid #141414;cursor:default">'+
+      '<span class="drag-handle" style="color:#252525;cursor:grab;font-size:14px;flex-shrink:0;user-select:none">⠿</span>'+
       '<button data-prio-toggle="'+i+'" style="width:20px;height:20px;border-radius:5px;border:1.5px solid '+chkColor+';background:'+chkBg+';cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0;transition:all .15s">'+
         (done?'<i class="ti ti-check" style="font-size:11px;color:#4ade80"></i>':'')+
       '</button>'+
@@ -3002,7 +3008,9 @@ function renderPrioridades(){
       '<button data-prio-del="'+i+'" style="background:transparent;border:none;color:#1e1e1e;cursor:pointer;font-size:11px;flex-shrink:0;padding:0"><i class="ti ti-x"></i></button>'+
     '</div>';
   }).join('');
+  initDragList('hoje-prioridades','prio');
 }
+
 
 async function addPrioridade(){
   if(!Array.isArray(PrioridadesSemana))PrioridadesSemana=[];
@@ -3766,6 +3774,45 @@ function doGoogleAuth(cb,includeCalendar=false){
     }
   });
   client.requestAccessToken({prompt:''});
+}
+
+// ── DRAG & DROP ──────────────────────────────
+function initDragList(containerId,listType){
+  const container=document.getElementById(containerId);
+  if(!container)return;
+  let dragIdx=null;
+
+  container.querySelectorAll('.drag-item').forEach(item=>{
+    item.addEventListener('dragstart',e=>{
+      dragIdx=Number(item.dataset.dragIdx);
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed='move';
+    });
+    item.addEventListener('dragend',()=>{
+      item.classList.remove('dragging');
+      container.querySelectorAll('.drag-item').forEach(i=>i.classList.remove('drag-over'));
+    });
+    item.addEventListener('dragover',e=>{
+      e.preventDefault();
+      container.querySelectorAll('.drag-item').forEach(i=>i.classList.remove('drag-over'));
+      item.classList.add('drag-over');
+    });
+    item.addEventListener('drop',e=>{
+      e.preventDefault();
+      const dropIdx=Number(item.dataset.dragIdx);
+      if(dragIdx===null||dragIdx===dropIdx)return;
+      if(listType==='prio'){
+        const moved=PrioridadesSemana.splice(dragIdx,1)[0];
+        PrioridadesSemana.splice(dropIdx,0,moved);
+        savePrioridades();renderPrioridades();
+      } else if(listType==='lem'){
+        const moved=Lembretes.splice(dragIdx,1)[0];
+        Lembretes.splice(dropIdx,0,moved);
+        saveLembretes();renderLembretes();
+      }
+      dragIdx=null;
+    });
+  });
 }
 
 loadAll();
