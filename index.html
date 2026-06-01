@@ -2134,6 +2134,7 @@ function sortContas(field,e){
 }
 
 function filterContas(k,v){if(k==='q')cQ=v;else cSit=v;renderContas();}
+function searchContas(v){cQ=v;renderContas();}
 
 function applyCtFilters(f){
   const fns={user:c=>c.fb_perfil||c.user_ig||'',cluster:c=>c.cluster||'',grupo:c=>c.grupo_avatar||'',disp:c=>c.dispositivo||'',sit:c=>c.situacao||'',fbp:c=>c.conta_fb||'',fb:c=>c.fb_page_status||'Não',mb:c=>c.mb_suite||'Não',auto:c=>c.automacao||'Não',est:c=>String(Number(c.estoque_videos||0))};
