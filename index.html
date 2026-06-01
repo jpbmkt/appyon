@@ -2562,6 +2562,7 @@ async function toggleCheckFB(cid,data,btn){
     const r=await api('checks_postagem','POST',{conta_id:cid,data,on_ig:false,on_fb:true,qtd_ig:0,qtd_fb:0});
     chk=r[0];Checks.push(chk);
   }
+  await checkProgression(cid);
   renderPostagens();
 }
 
