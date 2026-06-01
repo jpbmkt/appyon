@@ -511,7 +511,7 @@ td.iec select{cursor:pointer}
       <option value="media">🟡 Média</option>
       <option value="baixa">🟢 Baixa</option>
     </select>
-    <input type="text" id="cluster-filter-input" placeholder="Filtrar cluster..." oninput="setClusterFilter(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none;width:140px">
+
     <input type="text" placeholder="Buscar..." oninput="searchContas(this.value)">
     <button class="btn bp" onclick="tog('padd-ct')"><i class="ti ti-plus"></i> Adicionar</button>
     <button class="btn bg bsm" id="btn-sync-drive-ct" onclick="syncDrive()"><i class="ti ti-brand-google-drive"></i> Sincronizar estoque via Drive</button>
@@ -582,7 +582,8 @@ td.iec select{cursor:pointer}
       <option value="media">🟡 Média</option>
       <option value="baixa">🟢 Baixa</option>
     </select>
-    <input type="text" placeholder="Filtrar cluster..." oninput="setPostClusterFilter(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none;width:130px">
+
+    <input type="text" placeholder="Buscar perfil..." oninput="searchPostagens(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none;width:140px">
     <button class="btn bsm bg" id="btn-sync-drive" onclick="syncDrive()"><i class="ti ti-refresh"></i> Sincronizar</button>
   </div>
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:8px 12px;background:#161616;border:1px solid #222;border-radius:8px">
@@ -693,7 +694,7 @@ let ferrTipoFilter='';
 let FbProfiles=[],FbPages=[];
 const FB_APP_ID='1499689168525266';
 let kzCurrentDate='',projCurrentTab='diario';
-let cQ='',cSit='',cPrio='',cFavOnly=false,cCluster='',postPrio='',postFavOnly=false,postCluster='',postSit='',eMailFilter='',proxyFilter='';
+let cQ='',cSit='',cPrio='',cFavOnly=false,cCluster='',postPrio='',postFavOnly=false,postCluster='',postSit='',postQ='',eMailFilter='',proxyFilter='';
 const today=localDateStr(new Date());
 
 // days of current week Mon-Sun
@@ -2152,7 +2153,7 @@ function applySort(f){
 
 function renderContas(){
   let f=Contas;
-  if(cQ)f=f.filter(x=>((x.user_ig||'')+(x.email||'')).toLowerCase().includes(cQ.toLowerCase()));
+  if(cQ)f=f.filter(x=>((x.fb_perfil||'')+(x.user_ig||'')+(x.email||'')).toLowerCase().includes(cQ.toLowerCase()));
   if(cSit==='__banidas__')f=f.filter(x=>['Banida','Bugada'].includes(x.situacao));
   else if(cSit)f=f.filter(x=>x.situacao===cSit);
   f=applyCtFilters(f);
@@ -2300,7 +2301,7 @@ function renderPlanilha(){
   const el=document.getElementById('planilha-inner');
   if(!el)return;
   let f=Contas;
-  if(cQ)f=f.filter(x=>((x.user_ig||'')+(x.email||'')).toLowerCase().includes(cQ.toLowerCase()));
+  if(cQ)f=f.filter(x=>((x.fb_perfil||'')+(x.user_ig||'')+(x.email||'')).toLowerCase().includes(cQ.toLowerCase()));
   if(cSit&&cSit!=='__banidas__')f=f.filter(x=>x.situacao===cSit);
   else if(cSit==='__banidas__')f=f.filter(x=>['Banida','Bugada'].includes(x.situacao));
   f=applyCtFilters(f);
@@ -2701,6 +2702,7 @@ function renderPostagens(){
     if(postPrio)contas=contas.filter(x=>x.prioridade_perfil===postPrio);
     if(postFavOnly)contas=contas.filter(x=>x.favorito);
     if(postCluster)contas=contas.filter(x=>(x.cluster||'').toLowerCase().includes(postCluster.toLowerCase()));
+    if(postQ)contas=contas.filter(x=>((x.fb_perfil||'')+(x.user_ig||'')).toLowerCase().includes(postQ.toLowerCase()));
     if(!contas.length)return'';
     const tableRows=contas.map(c=>{
       const checked=checkedDays(c.id);
@@ -3392,6 +3394,7 @@ function setPostSit(sit){
   renderPostagens();
 }
 function setPostClusterFilter(v){postCluster=v;renderPostagens();}
+function searchPostagens(v){postQ=v;renderPostagens();}
 function setPostPrioFilter(v){postPrio=v;renderPostagens();}
 function toggleFavFilterPost(){
   postFavOnly=!postFavOnly;
