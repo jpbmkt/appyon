@@ -803,7 +803,7 @@ async function carregarTarefasPendentesFilipe(dt){
       if(!jaExiste&&t.texto&&t.texto.trim()){
         const r=await api('kaizen_tarefas','POST',{
           data:dt,pessoa:'filipe',texto:t.texto,
-          prioridade:t.prioridade||'media',andamento:'pendente',ordem:KzTarefasF.length
+          prioridade:t.prioridade||'media',andamento:t.andamento||'pendente',ordem:KzTarefasF.length
         });
         KzTarefasF.push(r[0]);
         criou=true;
@@ -879,7 +879,7 @@ async function carregarTarefasPendentesJessica(dt){
       if(!jaExiste&&t.texto&&t.texto.trim()){
         const r=await api('kaizen_tarefas','POST',{
           data:dt,pessoa:'jessica',texto:t.texto,
-          prioridade:t.prioridade||'media',andamento:'pendente',ordem:KzTarefas.length
+          prioridade:t.prioridade||'media',andamento:t.andamento||'pendente',ordem:KzTarefas.length
         });
         KzTarefas.push(r[0]);
         criou=true;
@@ -936,7 +936,7 @@ function renderKaizen(){
   el.innerHTML=
     '<div class="kz-grid">'+
     '<div>'+
-      '<div class="kz-section"><div class="kz-header" style="color:#60a5fa"><i class="ti ti-list"></i> Tarefas / Compromissos</div><div class="kz-body">'+tarefasHtml+'<button class="btn bsm" style="margin-top:4px;color:#555" data-kzj-add-tarefa="1"><i class="ti ti-plus"></i> Adicionar tarefa</button></div></div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#60a5fa"><i class="ti ti-list"></i> Tarefas / Compromissos</div><div class="kz-body">'+tarefasHtml+'<div style="display:flex;gap:6px;margin-top:8px"><input id="kzj-nova-tarefa" class="kz-input" placeholder="Nova tarefa... (Enter para adicionar)" style="flex:1" onkeydown="if(event.key===\'Enter\'&&this.value.trim()){addKzTarefaTexto(\'jessica\',this.value.trim());this.value=\'\';}"><button class="btn bsm" style="color:#555" onclick="if(document.getElementById(\'kzj-nova-tarefa\')){const v=document.getElementById(\'kzj-nova-tarefa\').value.trim();if(v){addKzTarefaTexto(\'jessica\',v);document.getElementById(\'kzj-nova-tarefa\').value=\'\';}}" ><i class="ti ti-plus"></i></button></div></div></div>'+
       '<div class="kz-section"><div class="kz-header" style="color:#a78bfa"><i class="ti ti-focus"></i> Deep Focus</div><div class="kz-body">'+focusHtml+'</div></div>'+
       '<div class="kz-section"><div class="kz-header" style="color:#fb923c"><i class="ti ti-chart-line"></i> Desempenho</div><div class="kz-body">'+despHtml+'<button class="btn bsm" style="margin-top:4px;color:#555" data-kzj-add-desp="1"><i class="ti ti-plus"></i> Adicionar</button></div></div>'+
     '</div>'+
@@ -1095,7 +1095,7 @@ function renderKaizenFilipe(){
   el.innerHTML=
     '<div class="kz-grid">'+
     '<div>'+
-      '<div class="kz-section"><div class="kz-header" style="color:#60a5fa"><i class="ti ti-list"></i> Tarefas / Compromissos</div><div class="kz-body">'+tarefasHtml+'<button class="btn bsm" style="margin-top:4px;color:#555" data-kzf-add-tarefa="1"><i class="ti ti-plus"></i> Adicionar tarefa</button></div></div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#60a5fa"><i class="ti ti-list"></i> Tarefas / Compromissos</div><div class="kz-body">'+tarefasHtml+'<div style="display:flex;gap:6px;margin-top:8px"><input id="kzf-nova-tarefa" class="kz-input" placeholder="Nova tarefa... (Enter para adicionar)" style="flex:1" onkeydown="if(event.key===\'Enter\'&&this.value.trim()){addKzTarefaTexto(\'filipe\',this.value.trim());this.value=\'\';}"><button class="btn bsm" style="color:#555" onclick="if(document.getElementById(\'kzf-nova-tarefa\')){const v=document.getElementById(\'kzf-nova-tarefa\').value.trim();if(v){addKzTarefaTexto(\'filipe\',v);document.getElementById(\'kzf-nova-tarefa\').value=\'\';}}" ><i class="ti ti-plus"></i></button></div></div></div>'+
       '<div class="kz-section"><div class="kz-header" style="color:#a78bfa"><i class="ti ti-focus"></i> Deep Focus</div><div class="kz-body">'+focusHtml+'</div></div>'+
       '<div class="kz-section"><div class="kz-header" style="color:#fb923c"><i class="ti ti-chart-line"></i> Desempenho</div><div class="kz-body">'+despHtml+'<button class="btn bsm" style="margin-top:4px;color:#555" data-kzf-add-desp="1"><i class="ti ti-plus"></i> Adicionar</button></div></div>'+
     '</div>'+
@@ -1112,6 +1112,19 @@ async function addKzTarefa(){
   try{
     const r=await api('kaizen_tarefas','POST',{data:kzCurrentDate,pessoa:'jessica',texto:'',prioridade:'media',andamento:'pendente',ordem:KzTarefas.length});
     KzTarefas.push(r[0]);renderKaizen();
+    setTimeout(()=>{const inp=document.getElementById('kzj-nova-tarefa');if(inp)inp.focus();},50);
+  }catch(e){console.error(e);}
+}
+
+async function addKzTarefaTexto(pessoa,texto){
+  const isPessoa=p=>p==='jessica';
+  const dt=isPessoa(pessoa)?kzCurrentDate:kzCurrentDateF;
+  const lista=isPessoa(pessoa)?KzTarefas:KzTarefasF;
+  try{
+    const r=await api('kaizen_tarefas','POST',{data:dt,pessoa,texto,prioridade:'media',andamento:'pendente',ordem:lista.length});
+    lista.push(r[0]);
+    if(isPessoa(pessoa))renderKaizen();
+    else renderKaizenFilipe();
   }catch(e){console.error(e);}
 }
 async function updateKzTarefa(id,field,value){
@@ -2086,6 +2099,33 @@ document.addEventListener('click',(e)=>{
     document.querySelectorAll('.flt-drop').forEach(d=>d.classList.remove('open'));
   }
 });
+
+document.addEventListener('keydown',(e2)=>{
+  // Prioridades — Enter para criar nova
+  if(e2.key==='Enter'&&!e2.shiftKey){
+    const prioInp=e2.target.closest('[data-prio-edit]');
+    if(prioInp){
+      e2.preventDefault();
+      const idx=Number(prioInp.dataset.prioEdit);
+      if(PrioridadesSemana[idx]!==undefined){
+        PrioridadesSemana[idx].texto=prioInp.value;
+      }
+      savePrioridades();
+      addPrioridade();
+      return;
+    }
+    // Lembretes — Enter para criar novo
+    const lemInp=e2.target.closest('[data-lem-edit]');
+    if(lemInp){
+      e2.preventDefault();
+      const idx=Number(lemInp.dataset.lemEdit);
+      if(Lembretes[idx]!==undefined)Lembretes[idx].texto=lemInp.value;
+      saveLembretes();
+      addLembrete();
+      return;
+    }
+  }
+},true);
 
 document.addEventListener('change',(e)=>{
   // Prioridades — trocar pessoa
@@ -3181,25 +3221,39 @@ async function loadFrasesDestaque(){
 function renderFrasesDestaque(){
   const el=document.getElementById('hoje-frases-destaque');
   if(!el)return;
-  if(!FrasesDestaque.length){
-    el.innerHTML='<div style="padding:16px;color:#333;font-size:12px;border:1px dashed #2a2a2a;border-radius:10px;text-align:center">✨ Adicione conquistas e frases inspiradoras</div>';
-    return;
-  }
-  // Layout horizontal com scroll
-  el.innerHTML='<div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:4px">'+
-    FrasesDestaque.map((f,i)=>'<div style="background:linear-gradient(135deg,#1a0f2a,#0f1820);border:1px solid #3a2a5a;border-radius:12px;padding:16px 18px;min-width:240px;max-width:300px;flex-shrink:0;position:relative">'+
-      '<div style="font-size:16px;font-weight:700;color:#e8e8e8;line-height:1.5;margin-bottom:6px">'+esc(f.quote||'')+'</div>'+
-      (f.sub?'<div style="font-size:11px;color:#777;border-top:1px solid #2a2a2a;padding-top:6px;margin-top:4px">'+esc(f.sub)+'</div>':'')+
-      '<button onclick="delFraseDestaque('+i+')" style="position:absolute;top:8px;right:8px;background:transparent;border:none;color:#2a2a2a;cursor:pointer;font-size:11px"><i class="ti ti-x"></i></button>'+
-    '</div>').join('')+
+  const cards=FrasesDestaque.map((f,i)=>'<div style="background:linear-gradient(135deg,#1a0f2a,#0f1820);border:1px solid #3a2a5a;border-radius:12px;padding:16px 18px;min-width:240px;max-width:300px;flex-shrink:0;position:relative">'+
+    '<div style="font-size:16px;font-weight:700;color:#e8e8e8;line-height:1.5;margin-bottom:6px">'+esc(f.quote||'')+'</div>'+
+    (f.sub?'<div style="font-size:11px;color:#777;border-top:1px solid #2a2a2a;padding-top:6px;margin-top:4px">'+esc(f.sub)+'</div>':'')+
+    '<button onclick="delFraseDestaque('+i+')" style="position:absolute;top:8px;right:8px;background:transparent;border:none;color:#2a2a2a;cursor:pointer;font-size:11px"><i class="ti ti-x"></i></button>'+
+  '</div>').join('');
+  // Card de input inline
+  const inputCard='<div style="background:#161616;border:1px dashed #3a2a5a;border-radius:12px;padding:14px 16px;min-width:220px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;justify-content:center">'+
+    '<input id="frase-input-quote" class="kz-input" placeholder="Conquista ou frase..." style="font-size:13px;font-weight:600">'+
+    '<input id="frase-input-sub" class="kz-input" placeholder="Contexto (opcional)..." style="font-size:11px">'+
+    '<button class="btn bp bsm" onclick="addFraseDestaqueInline()" style="align-self:flex-start"><i class="ti ti-plus"></i> Adicionar</button>'+
   '</div>';
+  el.innerHTML='<div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:4px">'+cards+inputCard+'</div>';
+  // Enter no campo de quote → focar no sub; Enter no sub → salvar
+  const q=document.getElementById('frase-input-quote');
+  const s=document.getElementById('frase-input-sub');
+  if(q)q.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();if(s)s.focus();}});
+  if(s)s.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addFraseDestaqueInline();}});
 }
 
 async function addFraseDestaque(){
-  const quote=prompt('Frase ou conquista:','');
+  renderFrasesDestaque(); // abrir o card inline
+  setTimeout(()=>{const el=document.getElementById('frase-input-quote');if(el)el.focus();},50);
+}
+
+async function addFraseDestaqueInline(){
+  const q=document.getElementById('frase-input-quote');
+  const s=document.getElementById('frase-input-sub');
+  const quote=q?.value.trim();
   if(!quote)return;
-  const sub=prompt('Contexto (opcional, ex: "Semana 3 - 15 contas ativas"):','')||'';
+  const sub=s?.value.trim()||'';
   FrasesDestaque.unshift({quote,sub});
+  if(q)q.value='';
+  if(s)s.value='';
   await saveFrasesDestaque();
 }
 
