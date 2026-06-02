@@ -791,8 +791,7 @@ async function carregarTarefasPendentesFilipe(dt){
     const hoje=localDateStr(new Date());
     const hora=new Date().getHours();
     if(dt!==hoje||hora<5)return;
-    const flagKey='kz_rollover_filipe_'+hoje;
-    if(localStorage.getItem(flagKey))return;
+
     const d=new Date(dt+'T12:00:00');
     d.setDate(d.getDate()-1);
     const ontem=localDateStr(d);
@@ -810,8 +809,7 @@ async function carregarTarefasPendentesFilipe(dt){
         criou=true;
       }
     }
-    localStorage.setItem(flagKey,'1');
-    if(criou)console.log('Kaizen Filipe: tarefas pendentes de ontem carregadas para hoje');
+
   }catch(e){console.error('carregarTarefasPendentesFilipe',e);}
 }
 
@@ -865,9 +863,7 @@ async function carregarTarefasPendentesJessica(dt){
     const hora=new Date().getHours();
     // Só rodar se estiver visualizando o dia de hoje e após as 5h
     if(dt!==hoje||hora<5)return;
-    // Verificar se já rodou hoje (localStorage como flag)
-    const flagKey='kz_rollover_jessica_'+hoje;
-    if(localStorage.getItem(flagKey))return;
+
     // Calcular dia anterior
     const d=new Date(dt+'T12:00:00');
     d.setDate(d.getDate()-1);
@@ -889,9 +885,7 @@ async function carregarTarefasPendentesJessica(dt){
         criou=true;
       }
     }
-    // Marcar que já rodou hoje
-    localStorage.setItem(flagKey,'1');
-    if(criou)console.log('Kaizen Jessica: tarefas pendentes de ontem carregadas para hoje');
+
   }catch(e){console.error('carregarTarefasPendentesJessica',e);}
 }
 
