@@ -788,20 +788,30 @@ async function loadKaizenFilipe(){
 
 async function carregarTarefasPendentesFilipe(dt){
   try{
+    const hoje=localDateStr(new Date());
+    const hora=new Date().getHours();
+    if(dt!==hoje||hora<5)return;
+    const flagKey='kz_rollover_filipe_'+hoje;
+    if(localStorage.getItem(flagKey))return;
     const d=new Date(dt+'T12:00:00');
     d.setDate(d.getDate()-1);
     const ontem=localDateStr(d);
     const pendentes=await api('kaizen_tarefas','GET',null,'?data=eq.'+ontem+'&pessoa=eq.filipe&andamento=neq.concluida&order=ordem.asc');
+    if(!pendentes.length){localStorage.setItem(flagKey,'1');return;}
+    let criou=false;
     for(const t of pendentes){
-      const jaExiste=KzTarefasF.find(x=>x.texto===t.texto&&x.andamento!=='concluida');
+      const jaExiste=KzTarefasF.find(x=>x.texto===t.texto);
       if(!jaExiste&&t.texto&&t.texto.trim()){
         const r=await api('kaizen_tarefas','POST',{
           data:dt,pessoa:'filipe',texto:t.texto,
           prioridade:t.prioridade||'media',andamento:'pendente',ordem:KzTarefasF.length
         });
         KzTarefasF.push(r[0]);
+        criou=true;
       }
     }
+    localStorage.setItem(flagKey,'1');
+    if(criou)console.log('Kaizen Filipe: tarefas pendentes de ontem carregadas para hoje');
   }catch(e){console.error('carregarTarefasPendentesFilipe',e);}
 }
 
@@ -851,23 +861,37 @@ async function loadKaizen(){
 
 async function carregarTarefasPendentesJessica(dt){
   try{
+    const hoje=localDateStr(new Date());
+    const hora=new Date().getHours();
+    // Só rodar se estiver visualizando o dia de hoje e após as 5h
+    if(dt!==hoje||hora<5)return;
+    // Verificar se já rodou hoje (localStorage como flag)
+    const flagKey='kz_rollover_jessica_'+hoje;
+    if(localStorage.getItem(flagKey))return;
     // Calcular dia anterior
     const d=new Date(dt+'T12:00:00');
     d.setDate(d.getDate()-1);
     const ontem=localDateStr(d);
     // Buscar tarefas do dia anterior não concluídas
     const pendentes=await api('kaizen_tarefas','GET',null,'?data=eq.'+ontem+'&pessoa=eq.jessica&andamento=neq.concluida&order=ordem.asc');
-    // Para cada pendente, verificar se já existe hoje
+    if(!pendentes.length){localStorage.setItem(flagKey,'1');return;}
+    // Para cada pendente, criar hoje se ainda não existir (por ID de origem)
+    let criou=false;
     for(const t of pendentes){
-      const jaExiste=KzTarefas.find(x=>x.texto===t.texto&&x.andamento!=='concluida');
+      // Checar se já existe uma tarefa com mesmo texto hoje
+      const jaExiste=KzTarefas.find(x=>x.texto===t.texto);
       if(!jaExiste&&t.texto&&t.texto.trim()){
         const r=await api('kaizen_tarefas','POST',{
           data:dt,pessoa:'jessica',texto:t.texto,
           prioridade:t.prioridade||'media',andamento:'pendente',ordem:KzTarefas.length
         });
         KzTarefas.push(r[0]);
+        criou=true;
       }
     }
+    // Marcar que já rodou hoje
+    localStorage.setItem(flagKey,'1');
+    if(criou)console.log('Kaizen Jessica: tarefas pendentes de ontem carregadas para hoje');
   }catch(e){console.error('carregarTarefasPendentesJessica',e);}
 }
 
