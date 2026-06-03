@@ -2902,6 +2902,7 @@ function renderPostagens(){
           </div>
         </td>
         <td style="padding:2px 6px"><input value="${esc(c.conta_fb||'')}" placeholder="—" style="background:transparent;border:none;color:#666;font-size:11px;width:100%;outline:none;min-width:80px" onblur="ctPatch(${c.id},'conta_fb',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></td>
+        <td style="text-align:center;padding:4px 6px">${stateBtn(c.id,'mb_suite',c.mb_suite)}</td>
         <td style="color:#666;font-size:11px">${esc(c.dispositivo||'—')}</td>
         ${estoqueCell}
         <td>${progHtml}</td>
