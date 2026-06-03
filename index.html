@@ -1680,7 +1680,7 @@ function renderEmails(q=''){
     <td>${ieTxt(e.obs,`patch('emails',${e.id},'obs',val)`)}</td>
     <td><button class="btn bd bsm" onclick="delEmail(${e.id})"><i class="ti ti-trash"></i></button></td>
   </tr>`).join('');
-  bindTable('tb-em');
+  bindTable('tb-emails');
   statsEmails();
 }
 function statsEmails(){
@@ -1745,7 +1745,7 @@ function renderProxies(q=''){
     <td>${ieTxt(p.validade,`patch('proxies',${p.id},'validade',val)`)}</td>
     <td><button class="btn bd bsm" onclick="delProxy(${p.id})"><i class="ti ti-trash"></i></button></td>
   </tr>`).join('');
-  bindTable('tb-px');
+  bindTable('tb-proxies');
   statsProxies();
 }
 function statsProxies(){
