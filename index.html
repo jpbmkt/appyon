@@ -1064,13 +1064,18 @@ function renderKaizenFilipe(){
     const curPrio=t.prioridade||'media';
     const prioOpts=PRIO_OPTS.map(p=>{const sel=curPrio===p?' selected':'';return'<option value="'+p+'"'+sel+'>'+p.charAt(0).toUpperCase()+p.slice(1)+'</option>';}).join('');
     const row=document.createElement('div');
-    row.className='kz-row';row.style.gap='8px';
+    const fIdx=KzTarefasF.indexOf(t);
+    row.className='kz-row drag-item';row.setAttribute('draggable','true');row.dataset.dragList='kzf';row.dataset.dragIdx=String(fIdx);row.style.gap='8px';
+    const dragHF=document.createElement('span');dragHF.className='drag-handle';dragHF.style.cssText='color:#252525;cursor:grab;font-size:14px;flex-shrink:0;user-select:none';dragHF.textContent='⠿';
     row.innerHTML=
       '<select class="andamento-sel '+andCls+'" data-kzf-id="'+t.id+'" data-kzf-field="andamento" data-kzf-cls="and">'+andOpts+'</select>'+
       '<input class="kz-input" value="'+esc(t.texto||'')+'" placeholder="Tarefa..." style="flex:1" data-kzf-id="'+t.id+'" data-kzf-field="texto">'+
       '<select class="andamento-sel '+prioCls+'" data-kzf-id="'+t.id+'" data-kzf-field="prioridade" data-kzf-cls="prio">'+prioOpts+'</select>'+
       '<button class="btn bd bsm" data-kzf-del="'+t.id+'"><i class="ti ti-x"></i></button>';
-    return row.outerHTML;
+    // Inserir drag handle antes do conteúdo
+    const tmp=document.createElement('div');tmp.innerHTML=row.outerHTML;
+    const r2=tmp.firstChild;r2.insertBefore(dragHF,r2.firstChild);
+    return r2.outerHTML;
   }).join('');
 
   const despHtml=KzDesempenhoF.map(d=>{
@@ -1106,6 +1111,7 @@ function renderKaizenFilipe(){
       '<div class="kz-section"><div class="kz-header" style="color:#38bdf8"><i class="ti ti-confetti"></i> 4 Coisas Boas que Aconteceram Ontem</div><div class="kz-body">'+coisasHtmlF+'</div></div>'+
     '</div>'+
     '</div>';
+  initDragKz('kz-content-f','kzf',KzTarefasF);
 }
 
 async function addKzTarefa(){
@@ -3968,6 +3974,43 @@ function doGoogleAuth(cb,includeCalendar=false){
     }
   });
   client.requestAccessToken({prompt:''});
+}
+
+// ── DRAG KAIZEN ──────────────────────────────
+function initDragKz(containerId, listType, lista){
+  const container=document.getElementById(containerId);
+  if(!container)return;
+  let dragIdx=null;
+
+  container.querySelectorAll('.drag-item[data-drag-list="'+listType+'"]').forEach(item=>{
+    item.addEventListener('dragstart',e=>{
+      dragIdx=Number(item.dataset.dragIdx);
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed='move';
+      e.stopPropagation();
+    });
+    item.addEventListener('dragend',()=>{
+      item.classList.remove('dragging');
+      container.querySelectorAll('.drag-item').forEach(i=>i.classList.remove('drag-over'));
+    });
+    item.addEventListener('dragover',e=>{
+      e.preventDefault();e.stopPropagation();
+      container.querySelectorAll('.drag-item').forEach(i=>i.classList.remove('drag-over'));
+      item.classList.add('drag-over');
+    });
+    item.addEventListener('drop',e=>{
+      e.preventDefault();e.stopPropagation();
+      const dropIdx=Number(item.dataset.dragIdx);
+      if(dragIdx===null||dragIdx===dropIdx)return;
+      const moved=lista.splice(dragIdx,1)[0];
+      lista.splice(dropIdx,0,moved);
+      // Salvar nova ordem
+      Promise.all(lista.map((t,i)=>api('kaizen_tarefas','PATCH',{ordem:i},'?id=eq.'+t.id)));
+      if(listType==='kzj')renderKaizen();
+      else renderKaizenFilipe();
+      dragIdx=null;
+    });
+  });
 }
 
 // ── DRAG & DROP ──────────────────────────────
