@@ -1904,6 +1904,18 @@ async function updateEstoque(id,val){
   await patch('contas',id,'estoque_videos',n);
   const ct=Contas.find(x=>x.id===id);if(ct)ct.estoque_videos=n;
 }
+function populateClusterSelects(){
+  const clusters=[...new Set(Contas.map(c=>c.cluster||'').filter(Boolean))].sort();
+  ['cluster-select-contas','cluster-select-post'].forEach(id=>{
+    const sel=document.getElementById(id);
+    if(!sel)return;
+    const val=sel.value;
+    sel.innerHTML='<option value="">Todos os clusters</option>'+
+      clusters.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');
+    sel.value=val;
+  });
+}
+
 function statsContas(){
   populateClusterSelects();
   const groups=[
