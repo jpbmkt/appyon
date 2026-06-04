@@ -2227,6 +2227,9 @@ document.addEventListener('blur',(e)=>{
   if(kzfInp){updateKzTarefaF(Number(kzfInp.dataset.kzfId),kzfInp.dataset.kzfField,kzfInp.value);return;}
   const kzfdInp=e.target.closest('input[data-kzfd-id]');
   if(kzfdInp){updateKzDespF(Number(kzfdInp.dataset.kzfdId),kzfdInp.dataset.kzfdField,kzfdInp.value);return;}
+  // Estoque input
+  const stkInp=e.target.closest('[data-stk-id]');
+  if(stkInp){const id=Number(stkInp.dataset.stkId);const v=stkInp.value;updateEstoque(id,v);document.getElementById('stk-post-'+id).innerHTML=stockEl(v);return;}
   const kzjSave=e.target.closest('[data-kzj-save]');
   if(kzjSave){saveKzDiario(kzjSave.dataset.kzjSave,kzjSave.value);return;}
   const kzfSave=e.target.closest('[data-kzf-save]');
@@ -2920,7 +2923,7 @@ function renderPostagens(){
         return buildDayCell(c.id,d,onIG,onFB,qtdIG,qtdFB,clsIG,clsFB,todayCls,bg);
       }).join('');
 
-      const estoqueCell='<td style="padding:6px 8px"><div id="stk-post-'+c.id+'">'+stockEl(c.estoque_videos)+'</div><input type="number" min="0" value="'+Number(c.estoque_videos||0)+'" style="width:52px;background:#111;border:1px solid #222;border-radius:4px;color:#888;font-size:11px;padding:2px 4px;margin-top:3px;text-align:center" oninput="document.getElementById('stk-post-'+'+c.id+').innerHTML=stockEl(this.value)" onblur="updateEstoque('+c.id+',this.value)" onkeydown="if(event.key==='Enter'){updateEstoque('+c.id+',this.value);}"></td>';
+      const estoqueCell='<td style="padding:6px 8px"><div id="stk-post-'+c.id+'">'+stockEl(c.estoque_videos)+'</div><input type="number" min="0" value="'+Number(c.estoque_videos||0)+'" style="width:52px;background:#111;border:1px solid #222;border-radius:4px;color:#888;font-size:11px;padding:2px 4px;margin-top:3px;text-align:center" data-stk-id="'+c.id+'" onkeydown="if(event.key===\'Enter\'){this.blur();}"></td>';
 
       const sitHdrCls=sec.sit==='Aquecimento'?'aq':sec.sit==='Crescimento'?'cr':sec.sit==='Venda'?'vd':'cfg';
 
