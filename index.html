@@ -540,6 +540,8 @@ td.iec select{cursor:pointer}
       <div class="f"><label>Link venda IG</label><input id="ct-lig" placeholder="link..."></div>
       <div class="f"><label>Link venda FB</label><input id="ct-lfb" placeholder="link..."></div>
       <div class="f"><label>ID pasta Drive</label><input id="ct-drv" placeholder="ID da pasta Google Drive"></div>
+      <div class="f"><label>YouTube e-mail</label><input id="ct-yt-email" placeholder="email@gmail.com"></div>
+      <div class="f"><label>YouTube senha</label><input id="ct-yt-senha" placeholder="senha do canal"></div>
     </div>
     <button class="btn bp bsm" onclick="addConta()">Salvar</button>
     <button class="btn bsm" style="margin-left:6px" onclick="tog('padd-ct')">Cancelar</button>
@@ -556,6 +558,7 @@ td.iec select{cursor:pointer}
       <th style="width:60px">FB Page</th>
       <th style="width:60px">MB Suite</th>
       <th style="width:80px">Automação</th>
+      <th style="width:70px">YouTube</th>
       <th style="min-width:80px"><div class="th-inner">Estoque<div class="flt-wrap"><button class="flt-btn" id="fbt-est" onclick="toggleFlt('est',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-est"></div></div><button class="sort-btn" onclick="sortContas('estoque_videos',event)" id="srt-estoque_videos" title="Ordenar">↕</button></div></th>
       <th style="min-width:150px">Observações</th>
       <th style="width:40px"></th>
@@ -1892,7 +1895,7 @@ async function savePrompt(avId,val){
 // ── CONTAS — add ──
 async function addConta(){
   const avId=g('ct-av')||null;
-  const o={user_ig:g('ct-u'),senha_ig:g('ct-si'),email:g('ct-e'),senha_email:g('ct-se'),dispositivo:g('ct-d'),situacao:g('ct-sit'),proxy:g('ct-px')||null,avatar_id:avId?Number(avId):null,cluster:g('ct-cluster'),grupo_avatar:g('ct-grupo'),voz:g('ct-vz'),mb_suite:g('ct-mb'),automacao:g('ct-au'),fb_page_status:g('ct-fp'),fb_page:g('ct-fbpg'),conta_fb:g('ct-fbconta'),fb_perfil:g('ct-fbpr'),link_venda_ig:g('ct-lig'),link_venda_fb:g('ct-lfb'),drive_folder_id:g('ct-drv')||null,estoque_videos:0,aquecimento_dias:0,crescimento_posts:0,obs_conta:''};
+  const o={user_ig:g('ct-u'),senha_ig:g('ct-si'),email:g('ct-e'),senha_email:g('ct-se'),dispositivo:g('ct-d'),situacao:g('ct-sit'),proxy:g('ct-px')||null,avatar_id:avId?Number(avId):null,cluster:g('ct-cluster'),grupo_avatar:g('ct-grupo'),voz:g('ct-vz'),mb_suite:g('ct-mb'),automacao:g('ct-au'),fb_page_status:g('ct-fp'),fb_page:g('ct-fbpg'),conta_fb:g('ct-fbconta'),fb_perfil:g('ct-fbpr'),link_venda_ig:g('ct-lig'),link_venda_fb:g('ct-lfb'),drive_folder_id:g('ct-drv')||null,estoque_videos:0,aquecimento_dias:0,crescimento_posts:0,obs_conta:'',youtube:'',youtube_email:g('ct-yt-email')||'',youtube_senha:g('ct-yt-senha')||''};
   if(!o.fb_perfil&&!o.user_ig)return;
   try{const r=await api('contas','POST',o);Contas.unshift(r[0]);clr(['ct-u','ct-si','ct-e','ct-se','ct-d','ct-vz','ct-fbpg','ct-fbpr','ct-lig','ct-lfb','ct-drv']);tog('padd-ct');renderContas();renderProxies();renderAvatares();}
   catch(e){alert('Erro: '+e.message);}
@@ -2329,6 +2332,7 @@ function renderContas(){
       ${stateBtn(c.id,'automacao',c.automacao)}
       <input type="text" value="${esc(c.desc_automacao||'')}" placeholder="qual automação?" style="width:100%;background:transparent;border:none;border-top:1px solid #1e1e1e;color:#666;font-size:10px;padding:3px 4px;outline:none;text-align:center;margin-top:3px" onblur="ctPatch(${c.id},'desc_automacao',this.value)" onkeydown="if(event.key==='Enter')this.blur()">
     </td>
+    <td style="text-align:center;padding:4px 8px">${stateBtn(c.id,'youtube',c.youtube)}</td>
     <td style="padding:6px 8px">
       <div id="stk-el-${c.id}">${stockEl(c.estoque_videos)}</div>
       <input type="number" min="0" value="${Number(c.estoque_videos||0)}" style="width:54px;background:#111;border:1px solid #222;border-radius:4px;color:#888;font-size:11px;padding:2px 4px;margin-top:3px"
@@ -2638,6 +2642,9 @@ function openContaModal(id){
       ${mField(id,'Link venda FB','link_venda_fb',c.link_venda_fb,'text')}
       ${mField(id,'ID pasta Drive','drive_folder_id',c.drive_folder_id,'text')}
       ${mField(id,'Observações','obs_conta',c.obs_conta,'text')}
+      ${mField(id,'YouTube (status)','youtube',c.youtube,'select',['','alerta','ok'])}
+      ${mField(id,'YouTube e-mail','youtube_email',c.youtube_email,'text')}
+      ${mField(id,'YouTube senha','youtube_senha',c.youtube_senha,'text')}
     </div>
     <div style="padding-top:12px;border-top:1px solid #222;display:flex;justify-content:space-between;align-items:center">
       <button class="btn bd bsm" onclick="delConta(${id});closeModal()"><i class="ti ti-trash"></i> Excluir conta</button>
@@ -2943,6 +2950,7 @@ function renderPostagens(){
         '<td style="padding:2px 6px"><input value="'+esc(c.conta_fb||'')+'" placeholder="—" style="background:transparent;border:none;color:#666;font-size:11px;width:100%;outline:none;min-width:80px" data-ct-patch-id="'+c.id+'" data-ct-patch-field="conta_fb" onkeydown="if(event.key===\'Enter\')this.blur()"></td>'+
         '<td style="text-align:center;padding:4px 6px">'+igStatusBtn(c)+'</td>'+
         '<td style="text-align:center;padding:4px 6px">'+stateBtn(c.id,'mb_suite',c.mb_suite)+'</td>'+
+        '<td style="text-align:center;padding:4px 6px">'+stateBtn(c.id,'youtube',c.youtube)+'</td>'+
         '<td style="color:#666;font-size:11px">'+esc(c.dispositivo||'—')+'</td>'+
         estoqueCell+
         '<td>'+progHtml+'</td>'+
