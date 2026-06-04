@@ -677,7 +677,14 @@ async function api(tbl,method='GET',body=null,qs=''){
 }
 
 let Emails=[],Proxies=[],Avatares=[],Contas=[],Checks=[],ConfigsIniciais=[],NotasDia=[],gCalendarEvents=[],TodosJessica=[],TodosFilipe=[];
-let HojePessoa='jessica',VisionItems=[],MetasEmpresa={},HojeFrases=[
+let hojePessoa='jessica',hojeMinhaFrase='',VisionItems=[],MetasEmpresa={},FrasesDestaque=[],Lembretes=[],PrioridadesSemana=[];
+const PRIO_PESSOAS=[
+  {key:'',label:'—',color:'#555'},
+  {key:'jessica',label:'Jessica',color:'#f472b6'},
+  {key:'filipe',label:'Filipe',color:'#a78bfa'},
+  {key:'ambos',label:'Ambos',color:'#60a5fa'},
+];
+const HojeFrases=[
   'A consistência é a mãe do sucesso.',
   'Cada vídeo postado é um passo mais perto da meta.',
   'O sucesso não é um evento, é um hábito diário.',
@@ -688,8 +695,7 @@ let HojePessoa='jessica',VisionItems=[],MetasEmpresa={},HojeFrases=[
   'Cada conta no ar é uma semente plantada.',
   'A diferença está no que você faz quando ninguém está vendo.',
   'Progresso, não perfeição.',
-];
-let KzDiario={},KzTarefas=[],KzDesempenho=[],KzFocus={},Ideias=[],DiarioEntries=[],Ferramentas=[];
+];let KzDiario={},KzTarefas=[],KzDesempenho=[],KzFocus={},Ideias=[],DiarioEntries=[],Ferramentas=[];
 let ferrTipoFilter='';
 let FbProfiles=[],FbPages=[];
 const FB_APP_ID='1499689168525266';
@@ -3284,36 +3290,6 @@ async function addNota(){
 }
 
 
-// ══════════════════════════════════════
-// DASHBOARD HOJE
-// ══════════════════════════════════════
-
-const HojeFrases=[
-  'A consistência é a mãe do sucesso.',
-  'Cada vídeo postado é um passo mais perto da meta.',
-  'O sucesso não é um evento, é um hábito diário.',
-  'Pequenas ações todos os dias criam grandes resultados.',
-  'Foco, execução e consistência — essa é a fórmula.',
-  'O que você faz hoje define onde estará amanhã.',
-  'Disciplina é liberdade.',
-  'Cada conta no ar é uma semente plantada.',
-  'A diferença está no que você faz quando ninguém está vendo.',
-  'Progresso, não perfeição.',
-];
-
-let hojeMinhaFrase='';
-let hojePessoa='jessica';
-let VisionItems=[];
-let MetasEmpresa={};
-let FrasesDestaque=[];
-let Lembretes=[];
-let PrioridadesSemana=[];
-const PRIO_PESSOAS=[
-  {key:'',label:'—',color:'#555'},
-  {key:'jessica',label:'Jessica',color:'#f472b6'},
-  {key:'filipe',label:'Filipe',color:'#a78bfa'},
-  {key:'ambos',label:'Ambos',color:'#60a5fa'},
-];
 
 function renderHoje(){
   renderHojeHeader();
