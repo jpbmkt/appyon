@@ -2843,14 +2843,116 @@ function renderPostagens(){
     {sit:'Aquecimento',cls:'b-aquecimento',prog:'pf-aq',max:2,label:'dias de aquecimento',getCount:c=>new Set(Checks.filter(x=>x.conta_id===c.id&&(x.on_ig||x.on_fb||(x.on_ig==null))).map(x=>x.data)).size,showQtd:false,showConfig:false},
     {sit:'Configuração Inicial',cls:'b-config',prog:'pf-config',max:null,label:'configuração',getCount:()=>0,showQtd:false,showConfig:true},
     {sit:'Crescimento',cls:'b-crescimento',prog:'pf-cr',max:10,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).reduce((a,x)=>a+Number(x.qtd_ig||0),0),getCountFB:c=>Checks.filter(x=>x.conta_id===c.id).reduce((a,x)=>a+Number(x.qtd_fb||0),0),showQtd:false,showConfig:false},
-    {sit:'Venda',cls:'b-venda',prog:'pf-vd',max:null,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).reduce((a,ch)=>a+(Number(ch.qtd_videos)||0),0),showQtd:true,showConfig:false}
+    {sit:'Venda',cls:'b-venda',prog:'pf-vd',max:null,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).reduce((a,ch)=>a+(Number(ch.qtd_ig||0)+Number(ch.qtd_fb||0)),0),showQtd:false,showConfig:false},
+    {sit:'Criar Perfil',cls:'b-criar',prog:'pf-criar',max:null,label:'',getCount:()=>0,showQtd:false,showConfig:false},
+    {sit:'SMS e Análise Selfie',cls:'b-sms',prog:'pf-sms',max:null,label:'',getCount:()=>0,showQtd:false,showConfig:false},
+    {sit:'Banida',cls:'b-banida',prog:'pf-ban',max:null,label:'',getCount:()=>0,showQtd:false,showConfig:false},
+    {sit:'Bugada',cls:'b-bugada',prog:'pf-bug',max:null,label:'',getCount:()=>0,showQtd:false,showConfig:false},
   ];
   const el=document.getElementById('post-sections');
+  if(!el)return;
   const ativas=Contas.filter(x=>x.situacao);
-  if(!ativas.length){el.innerHTML='<div class="empty">Nenhuma conta cadastrada.</div>';return;
-  const total=Contas.filter(c=>c.cluster===cluster).length;
-  el.innerHTML='<span style="color:#555;font-size:11px">'+total+' contas no cluster <b style="color:#aaa">'+esc(cluster)+'</b></span>';
+  if(!ativas.length){el.innerHTML='<div class="empty">Nenhuma conta cadastrada.</div>';return;}
+  el.innerHTML=sections.filter(sec=>!postSit||sec.sit===postSit).map(sec=>{
+    let contas=Contas.filter(x=>x.situacao===sec.sit);
+    if(postPrio)contas=contas.filter(x=>x.prioridade_perfil===postPrio);
+    if(postFavOnly)contas=contas.filter(x=>x.favorito);
+    if(postCluster)contas=contas.filter(x=>(x.cluster||'').toLowerCase().includes(postCluster.toLowerCase()));
+    if(postQ)contas=contas.filter(x=>((x.fb_perfil||'')+(x.user_ig||'')).toLowerCase().includes(postQ.toLowerCase()));
+    if(!contas.length)return'';
+    const tableRows=contas.map(c=>{
+      const checked=checkedDays(c.id);
+      const count=sec.getCount(c);
+      const pct=sec.max?Math.min(100,Math.round(count/sec.max*100)):null;
+
+      // Progresso
+      let progHtml='';
+      if(sec.showConfig){
+        const cfg=ConfigsIniciais.find(x=>x.conta_id===c.id)||{};
+        const grupos=[
+          {label:null, items:[{key:'pasta_drive',label:'Pasta Drive'},{key:'id_pasta',label:'ID Pasta'}]},
+          {label:'Instagram', items:[{key:'foto_perfil',label:'Foto perfil'},{key:'conta_profissional',label:'Conta profissional'},{key:'descricao_bio',label:'Descrição bio'},{key:'link_bio',label:'Link bio'}]},
+          {label:'Facebook', items:[{key:'fb_foto_perfil',label:'Foto perfil'},{key:'fb_foto_capa',label:'Foto capa'},{key:'fb_restricao',label:'Restrição países'},{key:'fb_automacao',label:'Automação'},{key:'fb_links',label:'Links'}]},
+        ];
+        const allItems=grupos.flatMap(g=>g.items);
+        const allDone=allItems.every(it=>cfg[it.key]);
+        const mkPill=(it)=>'<label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:'+(cfg[it.key]?'#4ade80':'#555')+';cursor:pointer;white-space:nowrap"><input type="checkbox" '+(cfg[it.key]?'checked':'')+' style="accent-color:#4ade80;cursor:pointer" onchange="toggleConfig('+c.id+',''+it.key+'',this.checked)"> '+it.label+'</label>';
+        const grupoRows=grupos.map(g=>'<div style="display:flex;align-items:center;gap:10px;padding:3px 0;border-bottom:1px solid #111">'+(g.label?'<span style="font-size:10px;font-weight:600;color:#444;min-width:64px;flex-shrink:0;text-transform:uppercase">'+g.label+'</span>':'<span style="min-width:64px;flex-shrink:0"></span>')+'<div style="display:flex;flex-wrap:wrap;gap:10px">'+g.items.map(mkPill).join('')+'</div></div>').join('');
+        progHtml='<div style="display:flex;flex-direction:column;gap:0">'+grupoRows+'</div>'+(allDone?'<button class="btn bg bsm" style="margin-top:6px;font-size:11px" onclick="moverParaCrescimento('+c.id+')"><i class="ti ti-arrow-right"></i> Mover para Crescimento</button>':'');
+      } else if(sec.max){
+        if(sec.getCountFB!==undefined){
+          const countFB=sec.getCountFB(c);
+          const pctIG=Math.min(100,Math.round(count/sec.max*100));
+          const pctFB=Math.min(100,Math.round(countFB/sec.max*100));
+          progHtml='<div style="font-size:10px;color:#60a5fa;margin-bottom:1px">IG: '+count+'/'+sec.max+'</div>'+
+            '<div class="prog-bar" style="margin-bottom:4px"><div class="prog-fill" style="width:'+pctIG+'%;background:#60a5fa"></div></div>'+
+            '<div style="font-size:10px;color:#1877f2;margin-bottom:1px">FB: '+countFB+'/'+sec.max+'</div>'+
+            '<div class="prog-bar"><div class="prog-fill" style="width:'+pctFB+'%;background:#1877f2"></div></div>';
+        } else {
+          progHtml='<div style="font-size:10px;color:#555;margin-bottom:2px">'+count+'/'+sec.max+'</div><div class="prog-bar"><div class="prog-fill '+sec.prog+'" style="width:'+pct+'%"></div></div>';
+        }
+      } else {
+        progHtml='<span style="font-size:11px;color:#555">'+count+' vídeos</span>';
+      }
+
+      const dayCells=sec.showConfig?'':wk.map((d,i)=>{
+        const isToday=d===today;
+        const chk=Checks.find(x=>x.conta_id===c.id&&x.data===d);
+        const onIG=chk&&chk.on_ig;
+        const onFB=chk&&chk.on_fb;
+        const qtdIG=chk&&chk.qtd_ig!=null?chk.qtd_ig:'';
+        const qtdFB=chk&&chk.qtd_fb!=null?chk.qtd_fb:'';
+        const clsIG=onIG?(Number(chk.qtd_ig||0)>=2?' on2':' on1'):'';
+        const clsFB=onFB?(Number(chk.qtd_fb||0)>=2?' on2':' on1'):'';
+        const todayCls=isToday?' today':'';
+        const bg=isToday?'background:#0a140a':'';
+        return buildDayCell(c.id,d,onIG,onFB,qtdIG,qtdFB,clsIG,clsFB,todayCls,bg);
+      }).join('');
+
+      const estoqueCell='<td style="padding:6px 8px"><div id="stk-post-'+c.id+'">'+stockEl(c.estoque_videos)+'</div><input type="number" min="0" value="'+Number(c.estoque_videos||0)+'" style="width:52px;background:#111;border:1px solid #222;border-radius:4px;color:#888;font-size:11px;padding:2px 4px;margin-top:3px;text-align:center" oninput="document.getElementById('stk-post-'+'+c.id+').innerHTML=stockEl(this.value)" onblur="updateEstoque('+c.id+',this.value)" onkeydown="if(event.key==='Enter'){updateEstoque('+c.id+',this.value);}"></td>';
+
+      const sitHdrCls=sec.sit==='Aquecimento'?'aq':sec.sit==='Crescimento'?'cr':sec.sit==='Venda'?'vd':'cfg';
+
+      return'<tr>'+
+        '<td style="text-align:center;padding:4px 6px">'+prioBtn(c)+'</td>'+
+        '<td style="font-size:11px;color:#666;padding:4px 8px">'+esc(c.cluster||'—')+'</td>'+
+        '<td style="padding:6px 8px"><div style="display:flex;align-items:center;gap:8px">'+avatarThumb(c.avatar_id,c.user_ig)+'<div style="min-width:0"><div style="font-size:12px;font-weight:500;color:#e8e8e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(c.fb_perfil||c.user_ig)+'</div><div style="font-size:10px;color:#444;margin-top:1px">@'+esc(c.user_ig)+'</div></div></div></td>'+
+        '<td style="padding:2px 6px"><input value="'+esc(c.conta_fb||'')+'" placeholder="—" style="background:transparent;border:none;color:#666;font-size:11px;width:100%;outline:none;min-width:80px" onblur="ctPatch('+c.id+','conta_fb',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></td>'+
+        '<td style="text-align:center;padding:4px 6px">'+igStatusBtn(c)+'</td>'+
+        '<td style="text-align:center;padding:4px 6px">'+stateBtn(c.id,'mb_suite',c.mb_suite)+'</td>'+
+        '<td style="color:#666;font-size:11px">'+esc(c.dispositivo||'—')+'</td>'+
+        estoqueCell+
+        '<td>'+progHtml+'</td>'+
+        (sec.showConfig?'':dayCells)+
+      '</tr>';
+    }).join('');
+
+    const sitHdrCls=sec.sit==='Aquecimento'?'aq':sec.sit==='Crescimento'?'cr':sec.sit==='Venda'?'vd':'cfg';
+    return'<div class="sit-block">'+
+      '<div class="sit-hdr '+sitHdrCls+'">'+
+        '<span class="badge '+sec.cls+'">'+sec.sit+'</span>'+
+        '<span class="sit-title">'+contas.length+' conta'+(contas.length!==1?'s':'')+'</span>'+
+        '<span class="sit-count">'+(sec.max?'Meta: '+sec.max+' '+sec.label:sec.label)+'</span>'+
+      '</div>'+
+      '<div class="tw"><table class="pt">'+
+        '<thead><tr>'+
+          '<th style="width:70px">Prioridade</th>'+
+          '<th style="min-width:90px">Cluster</th>'+
+          '<th style="min-width:160px">Perfil</th>'+
+          '<th style="min-width:110px">Conta FB</th>'+
+          '<th style="width:60px">IG</th>'+
+          '<th style="width:80px">MB Suite</th>'+
+          '<th style="min-width:90px">Dispositivo</th>'+
+          '<th style="min-width:80px">Estoque</th>'+
+          '<th>'+(sec.showConfig?'Configuração Inicial':'Progresso')+'</th>'+
+          (sec.showConfig?'':dayNames.map((d,i)=>{const isT=wk[i]===today;return'<th style="text-align:center;'+(isT?'background:#1a2a1a;':'')+'"><span style="'+(isT?'color:#4ade80;font-weight:700':'color:#555')+'">'+d+'</span><br><span style="font-size:9px;'+(isT?'color:#4ade80':'color:#333')+'">'+wk[i].slice(5)+'</span>'+(isT?'<div style="width:4px;height:4px;border-radius:50%;background:#4ade80;margin:2px auto 0"></div>':'')+'</th>';}).join(''))+
+        '</tr></thead>'+
+        '<tbody>'+tableRows+'</tbody>'+
+      '</table></div>'+
+    '</div>';
+  }).join('');
 }
+
 function renderPostStats(){
   const el=document.getElementById('stats-post');
   if(!el)return;
@@ -3092,8 +3194,7 @@ function renderTodos(pessoa){
         </div>`).join('')}
       </div>
     </div>`;
-  }).join('')
-};
+  }).join('');
 
   el.innerHTML=`<div class="dash-section" style="padding:10px">
     ${blocks}
