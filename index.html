@@ -914,7 +914,9 @@ function renderKaizen(){
   const tarefasHtml=KzTarefas.map(t=>{
     const andCls=t.andamento==='concluida'?'and-concluida':t.andamento==='andamento'?'and-andamento':'and-pendente';
     const prioCls='prio-'+(t.prioridade||'media')+'-tag';
-    return '<div class="kz-row" style="gap:8px">'+
+    const jIdx=KzTarefas.indexOf(t);
+    return '<div class="kz-row drag-item" draggable="true" data-drag-list="kzj" data-drag-idx="'+jIdx+'" style="gap:8px">'+
+      '<span class="drag-handle" style="color:#252525;cursor:grab;font-size:14px;flex-shrink:0;user-select:none">⠿</span>'+
       '<select class="andamento-sel '+andCls+'" onchange="updateKzTarefa('+t.id+',\'andamento\',this.value);this.className=\'andamento-sel \'+(this.value===\'concluida\'?\'and-concluida\':this.value===\'andamento\'?\'and-andamento\':\'and-pendente\')">'+
       AND_OPTS.map(a=>'<option value="'+a[0]+'" '+(t.andamento===a[0]?'selected':'')+'>'+a[1]+'</option>').join('')+'</select>'+
       '<input class="kz-input" value="'+esc(t.texto||'')+'" placeholder="Tarefa..." style="flex:1" onblur="updateKzTarefa('+t.id+',\'texto\',this.value)" onkeydown="if(event.key===\'Enter\')this.blur()">'+
@@ -953,6 +955,7 @@ function renderKaizen(){
       '<div class="kz-section"><div class="kz-header" style="color:#38bdf8"><i class="ti ti-confetti"></i> 4 Coisas Boas que Aconteceram Ontem</div><div class="kz-body">'+coisasHtml+'</div></div>'+
     '</div>'+
     '</div>';
+  initDragKz('kz-content','kzj',KzTarefas);
 }
 
 async function saveKzDiario(field,value){
@@ -1063,25 +1066,21 @@ function renderKaizenFilipe(){
 
   const AND_OPTS=[['pendente','Pendente','and-pendente'],['andamento','Em andamento','and-andamento'],['concluida','Concluída','and-concluida']];
   const PRIO_OPTS=['alta','media','baixa'];
-  const tarefasHtml=KzTarefasF.map(t=>{
+  const tarefasHtml=KzTarefasF.map(function(t){
     const andCls=t.andamento==='concluida'?'and-concluida':t.andamento==='andamento'?'and-andamento':'and-pendente';
     const prioCls='prio-'+(t.prioridade||'media')+'-tag';
-    const andOpts=AND_OPTS.map(a=>{const sel=t.andamento===a[0]?' selected':'';return'<option value="'+a[0]+'"'+sel+'>'+a[1]+'</option>';}).join('');
-    const curPrio=t.prioridade||'media';
-    const prioOpts=PRIO_OPTS.map(p=>{const sel=curPrio===p?' selected':'';return'<option value="'+p+'"'+sel+'>'+p.charAt(0).toUpperCase()+p.slice(1)+'</option>';}).join('');
-    const row=document.createElement('div');
     const fIdx=KzTarefasF.indexOf(t);
-    row.className='kz-row drag-item';row.setAttribute('draggable','true');row.dataset.dragList='kzf';row.dataset.dragIdx=String(fIdx);row.style.gap='8px';
-    const dragHF=document.createElement('span');dragHF.className='drag-handle';dragHF.style.cssText='color:#252525;cursor:grab;font-size:14px;flex-shrink:0;user-select:none';dragHF.textContent='⠿';
-    row.innerHTML=
+    const andOpts=AND_OPTS.map(function(a){const sel=t.andamento===a[0]?' selected':'';return'<option value="'+a[0]+'"'+sel+'>'+a[1]+'</option>';}).join('');
+    const curPrio=t.prioridade||'media';
+    const prioOpts=PRIO_PESSOAS.length?'':PRIO_OPTS.map(function(p){const sel=curPrio===p?' selected':'';return'<option value="'+p+'"'+sel+'>'+p.charAt(0).toUpperCase()+p.slice(1)+'</option>';}).join('');
+    const pOpts=PRIO_OPTS.map(function(p){const sel=curPrio===p?' selected':'';return'<option value="'+p+'"'+sel+'>'+p.charAt(0).toUpperCase()+p.slice(1)+'</option>';}).join('');
+    return '<div class="kz-row drag-item" draggable="true" data-drag-list="kzf" data-drag-idx="'+fIdx+'" style="gap:8px">'+
+      '<span class="drag-handle" style="color:#252525;cursor:grab;font-size:14px;flex-shrink:0;user-select:none">⠿</span>'+
       '<select class="andamento-sel '+andCls+'" data-kzf-id="'+t.id+'" data-kzf-field="andamento" data-kzf-cls="and">'+andOpts+'</select>'+
       '<input class="kz-input" value="'+esc(t.texto||'')+'" placeholder="Tarefa..." style="flex:1" data-kzf-id="'+t.id+'" data-kzf-field="texto">'+
-      '<select class="andamento-sel '+prioCls+'" data-kzf-id="'+t.id+'" data-kzf-field="prioridade" data-kzf-cls="prio">'+prioOpts+'</select>'+
-      '<button class="btn bd bsm" data-kzf-del="'+t.id+'"><i class="ti ti-x"></i></button>';
-    // Inserir drag handle antes do conteúdo
-    const tmp=document.createElement('div');tmp.innerHTML=row.outerHTML;
-    const r2=tmp.firstChild;r2.insertBefore(dragHF,r2.firstChild);
-    return r2.outerHTML;
+      '<select class="andamento-sel '+prioCls+'" data-kzf-id="'+t.id+'" data-kzf-field="prioridade" data-kzf-cls="prio">'+pOpts+'</select>'+
+      '<button class="btn bd bsm" data-kzf-del="'+t.id+'"><i class="ti ti-x"></i></button>'+
+    '</div>';
   }).join('');
 
   const despHtml=KzDesempenhoF.map(d=>{
