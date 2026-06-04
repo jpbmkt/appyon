@@ -2700,29 +2700,36 @@ function buildDayCell(cid,d,onIG,onFB,qtdIG,qtdFB,clsIG,clsFB,todayCls,bg){
 
 async function toggleCheckIG(cid,data,btn){
   let chk=Checks.find(x=>x.conta_id===cid&&x.data===data);
-  const newVal=!chk?.on_ig;
-  if(chk){
-    await api('checks_postagem','PATCH',{on_ig:newVal},'?conta_id=eq.'+cid+'&data=eq.'+data);
-    chk.on_ig=newVal;
-  } else {
-    const r=await api('checks_postagem','POST',{conta_id:cid,data,on_ig:true,on_fb:false,qtd_ig:0,qtd_fb:0});
-    chk=r[0];Checks.push(chk);
-  }
-  renderPostagens();
+  const newVal=chk?!chk.on_ig:true;
+  try{
+    if(chk){
+      const res=await api('checks_postagem','PATCH',{on_ig:newVal},'?conta_id=eq.'+cid+'&data=eq.'+data);
+      if(res&&res[0])Object.assign(chk,res[0]);
+      else chk.on_ig=newVal;
+    } else {
+      const r=await api('checks_postagem','POST',{conta_id:cid,data,on_ig:true,on_fb:false,qtd_ig:0,qtd_fb:0});
+      if(r&&r[0]){Checks.push(r[0]);}
+    }
+    await checkProgression(cid);
+    renderPostagens();
+  }catch(e){console.error('toggleCheckIG error:',e,{cid,data});}
 }
 
 async function toggleCheckFB(cid,data,btn){
   let chk=Checks.find(x=>x.conta_id===cid&&x.data===data);
-  const newVal=!chk?.on_fb;
-  if(chk){
-    await api('checks_postagem','PATCH',{on_fb:newVal},'?conta_id=eq.'+cid+'&data=eq.'+data);
-    chk.on_fb=newVal;
-  } else {
-    const r=await api('checks_postagem','POST',{conta_id:cid,data,on_ig:false,on_fb:true,qtd_ig:0,qtd_fb:0});
-    chk=r[0];Checks.push(chk);
-  }
-  await checkProgression(cid);
-  renderPostagens();
+  const newVal=chk?!chk.on_fb:true;
+  try{
+    if(chk){
+      const res=await api('checks_postagem','PATCH',{on_fb:newVal},'?conta_id=eq.'+cid+'&data=eq.'+data);
+      if(res&&res[0])Object.assign(chk,res[0]);
+      else chk.on_fb=newVal;
+    } else {
+      const r=await api('checks_postagem','POST',{conta_id:cid,data,on_ig:false,on_fb:true,qtd_ig:0,qtd_fb:0});
+      if(r&&r[0]){Checks.push(r[0]);}
+    }
+    await checkProgression(cid);
+    renderPostagens();
+  }catch(e){console.error('toggleCheckFB error:',e,{cid,data});}
 }
 
 async function saveQtdIG(cid,data,val){
