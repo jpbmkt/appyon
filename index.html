@@ -876,7 +876,7 @@ async function carregarTarefasPendentesJessica(dt){
     const ontem=localDateStr(d);
     // Buscar tarefas do dia anterior não concluídas
     const pendentes=await api('kaizen_tarefas','GET',null,'?data=eq.'+ontem+'&pessoa=eq.jessica&andamento=neq.concluida&order=ordem.asc');
-    if(!pendentes.length){localStorage.setItem(flagKey,'1');return;}
+    if(!pendentes.length){return;}
     // Para cada pendente, criar hoje se ainda não existir (por ID de origem)
     let criou=false;
     for(const t of pendentes){
@@ -2803,8 +2803,8 @@ async function checkProgression(cid){
       ct.situacao='Venda';ct.crescimento_posts=totalIG+totalFB;
       alert('🎉 '+ct.user_ig+' atingiu 10 vídeos no IG e FB → VENDA!');
     } else {
-      await api('contas','PATCH',{crescimento_posts:totalVideos},`?id=eq.${cid}`);
-      ct.crescimento_posts=totalVideos;
+      await api('contas','PATCH',{crescimento_posts:totalIG+totalFB},`?id=eq.${cid}`);
+      ct.crescimento_posts=totalIG+totalFB;
     }
   }
 }
