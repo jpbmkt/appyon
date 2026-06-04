@@ -2227,6 +2227,9 @@ document.addEventListener('blur',(e)=>{
   if(kzfInp){updateKzTarefaF(Number(kzfInp.dataset.kzfId),kzfInp.dataset.kzfField,kzfInp.value);return;}
   const kzfdInp=e.target.closest('input[data-kzfd-id]');
   if(kzfdInp){updateKzDespF(Number(kzfdInp.dataset.kzfdId),kzfdInp.dataset.kzfdField,kzfdInp.value);return;}
+  // Conta FB inline edit (postagens)
+  const ctPatchInp=e.target.closest('[data-ct-patch-id]');
+  if(ctPatchInp){ctPatch(Number(ctPatchInp.dataset.ctPatchId),ctPatchInp.dataset.ctPatchField,ctPatchInp.value);return;}
   // Estoque input
   const stkInp=e.target.closest('[data-stk-id]');
   if(stkInp){const id=Number(stkInp.dataset.stkId);const v=stkInp.value;updateEstoque(id,v);document.getElementById('stk-post-'+id).innerHTML=stockEl(v);return;}
@@ -2931,7 +2934,7 @@ function renderPostagens(){
         '<td style="text-align:center;padding:4px 6px">'+prioBtn(c)+'</td>'+
         '<td style="font-size:11px;color:#666;padding:4px 8px">'+esc(c.cluster||'—')+'</td>'+
         '<td style="padding:6px 8px"><div style="display:flex;align-items:center;gap:8px">'+avatarThumb(c.avatar_id,c.user_ig)+'<div style="min-width:0"><div style="font-size:12px;font-weight:500;color:#e8e8e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(c.fb_perfil||c.user_ig)+'</div><div style="font-size:10px;color:#444;margin-top:1px">@'+esc(c.user_ig)+'</div></div></div></td>'+
-        '<td style="padding:2px 6px"><input value="'+esc(c.conta_fb||'')+'" placeholder="—" style="background:transparent;border:none;color:#666;font-size:11px;width:100%;outline:none;min-width:80px" onblur="ctPatch('+c.id+','conta_fb',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></td>'+
+        '<td style="padding:2px 6px"><input value="'+esc(c.conta_fb||'')+'" placeholder="—" style="background:transparent;border:none;color:#666;font-size:11px;width:100%;outline:none;min-width:80px" data-ct-patch-id="'+c.id+'" data-ct-patch-field="conta_fb" onkeydown="if(event.key===\'Enter\')this.blur()"></td>'+
         '<td style="text-align:center;padding:4px 6px">'+igStatusBtn(c)+'</td>'+
         '<td style="text-align:center;padding:4px 6px">'+stateBtn(c.id,'mb_suite',c.mb_suite)+'</td>'+
         '<td style="color:#666;font-size:11px">'+esc(c.dispositivo||'—')+'</td>'+
