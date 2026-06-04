@@ -2152,6 +2152,9 @@ document.addEventListener('keydown',(e2)=>{
 },true);
 
 document.addEventListener('change',(e)=>{
+  // Config inicial checkboxes
+  const cfgChk=e.target.closest('[data-cfg-cid]');
+  if(cfgChk){toggleConfig(Number(cfgChk.dataset.cfgCid),cfgChk.dataset.cfgKey,cfgChk.checked);return;}
   // Prioridades — trocar pessoa
   const prioPessoa=e.target.closest('[data-prio-pessoa]');
   if(prioPessoa){
@@ -2873,10 +2876,9 @@ function renderPostagens(){
           {label:null, items:[{key:'pasta_drive',label:'Pasta Drive'},{key:'id_pasta',label:'ID Pasta'}]},
           {label:'Instagram', items:[{key:'foto_perfil',label:'Foto perfil'},{key:'conta_profissional',label:'Conta profissional'},{key:'descricao_bio',label:'Descrição bio'},{key:'link_bio',label:'Link bio'}]},
           {label:'Facebook', items:[{key:'fb_foto_perfil',label:'Foto perfil'},{key:'fb_foto_capa',label:'Foto capa'},{key:'fb_restricao',label:'Restrição países'},{key:'fb_automacao',label:'Automação'},{key:'fb_links',label:'Links'}]},
-        ];
+        const mkPill=(it)=>{const col=cfg[it.key]?'#4ade80':'#555';const chk=cfg[it.key]?'checked':'';return '<label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:'+col+';cursor:pointer;white-space:nowrap"><input type="checkbox" '+chk+' style="accent-color:#4ade80;cursor:pointer" data-cfg-cid="'+c.id+'" data-cfg-key="'+it.key+'"> '+it.label+'</label>';};
         const allItems=grupos.flatMap(g=>g.items);
         const allDone=allItems.every(it=>cfg[it.key]);
-        const mkPill=(it)=>'<label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:'+(cfg[it.key]?'#4ade80':'#555')+';cursor:pointer;white-space:nowrap"><input type="checkbox" '+(cfg[it.key]?'checked':'')+' style="accent-color:#4ade80;cursor:pointer" onchange="toggleConfig('+c.id+',''+it.key+'',this.checked)"> '+it.label+'</label>';
         const grupoRows=grupos.map(g=>'<div style="display:flex;align-items:center;gap:10px;padding:3px 0;border-bottom:1px solid #111">'+(g.label?'<span style="font-size:10px;font-weight:600;color:#444;min-width:64px;flex-shrink:0;text-transform:uppercase">'+g.label+'</span>':'<span style="min-width:64px;flex-shrink:0"></span>')+'<div style="display:flex;flex-wrap:wrap;gap:10px">'+g.items.map(mkPill).join('')+'</div></div>').join('');
         progHtml='<div style="display:flex;flex-direction:column;gap:0">'+grupoRows+'</div>'+(allDone?'<button class="btn bg bsm" style="margin-top:6px;font-size:11px" onclick="moverParaCrescimento('+c.id+')"><i class="ti ti-arrow-right"></i> Mover para Crescimento</button>':'');
       } else if(sec.max){
