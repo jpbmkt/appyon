@@ -3931,8 +3931,7 @@ function renderCopies(){
         return '<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:'+(chk?'#4ade80':'#444')+';cursor:pointer;padding:1px 0">'+
           '<input type="checkbox"'+(chk?' checked':'')+' style="accent-color:#4ade80" data-copy-cid="'+c.id+'" data-copy-d="'+d+'" data-copy-key="'+cp.key+'"> '+cp.label+'</label>';
       }).join('');
-      const outroVal=copy&&copy.outro?copy.outro:'';
-      const outro='<input value="'+esc(outroVal)+'" placeholder="Outro..." style="margin-top:3px;width:100%;background:transparent;border:none;border-bottom:1px solid #1e1e1e;color:#555;font-size:10px;outline:none" data-copy-cid="'+c.id+'" data-copy-d="'+d+'" data-copy-key="outro">';
+      const outro='';
       // Custom copies — lista de tarefas
       const customRaw=copy&&copy.custom_copies?copy.custom_copies:'';
       const customLines=customRaw?customRaw.split('\n').filter(function(l){return l.trim();}):[]; 
@@ -3940,9 +3939,12 @@ function renderCopies(){
         const parts=line.split('::');
         const checked=parts[0]==='1';
         const txt=parts[1]||parts[0]||'';
-        return '<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:'+(checked?'#4ade80':'#444')+';cursor:pointer;padding:1px 0">'+
-          '<input type="checkbox"'+(checked?' checked':'')+' style="accent-color:#4ade80" data-custom-cid="'+c.id+'" data-custom-d="'+d+'" data-custom-li="'+li+'"> '+
-          '<span style="'+(checked?'text-decoration:line-through;opacity:.5':'')+'">' +esc(txt)+'</span></label>';
+        return '<div style="display:flex;align-items:center;gap:4px;padding:1px 0">'+
+          '<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:'+(checked?'#4ade80':'#444')+';cursor:pointer;flex:1;min-width:0">'+
+          '<input type="checkbox"'+(checked?' checked':'')+' style="accent-color:#4ade80;flex-shrink:0" data-custom-cid="'+c.id+'" data-custom-d="'+d+'" data-custom-li="'+li+'"> '+
+          '<span style="'+(checked?'text-decoration:line-through;opacity:.5':'')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(txt)+'</span></label>'+
+          '<button style="background:transparent;border:none;color:#252525;cursor:pointer;padding:0;font-size:9px;flex-shrink:0;line-height:1" data-custom-del-cid="'+c.id+'" data-custom-del-d="'+d+'" data-custom-del-li="'+li+'">✕</button>'+
+        '</div>';
       }).join('');
       const customInput='<div style="display:flex;gap:4px;margin-top:4px">'+
         '<input placeholder="Nova opção... (Enter)" style="flex:1;background:transparent;border:none;border-bottom:1px solid #252525;color:#555;font-size:10px;outline:none" data-custom-add-cid="'+c.id+'" data-custom-add-d="'+d+'">'+
@@ -3966,6 +3968,14 @@ function renderCopies(){
   el.querySelectorAll('[data-copy-cid]').forEach(function(inp){
     inp.addEventListener(inp.type==='checkbox'?'change':'blur',function(){
       saveCopy(Number(inp.dataset.copyCid),inp.dataset.copyD,inp.dataset.copyKey,inp.type==='checkbox'?inp.checked:inp.value);
+    });
+  });
+  // Custom copies — excluir linha
+  el.querySelectorAll('[data-custom-del-cid]').forEach(function(btn){
+    btn.addEventListener('click',function(e){
+      e.preventDefault();
+      const cid=Number(btn.dataset.customDelCid),d=btn.dataset.customDelD,li=Number(btn.dataset.customDelLi);
+      deleteCustomCopy(cid,d,li);
     });
   });
   // Custom copies — toggle checkbox
@@ -4012,6 +4022,19 @@ async function toggleCustomCopy(cid,d,li,checked){
     copy.custom_copies=newVal;
     renderCopies();
   }catch(e){console.error('toggleCustomCopy',e);}
+}
+
+async function deleteCustomCopy(cid,d,li){
+  try{
+    const copy=CopiesPostagem.find(function(x){return x.conta_id===cid&&x.data===d;});
+    if(!copy)return;
+    const lines=parseCustomLines(copy.custom_copies||'');
+    lines.splice(li,1);
+    const newVal=serializeCustomLines(lines);
+    await api('copies_postagem','PATCH',{custom_copies:newVal},'?conta_id=eq.'+cid+'&data=eq.'+d);
+    copy.custom_copies=newVal;
+    renderCopies();
+  }catch(e){console.error('deleteCustomCopy',e);}
 }
 
 async function addCustomCopy(cid,d,txt){
