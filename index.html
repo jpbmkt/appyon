@@ -2962,7 +2962,7 @@ function renderPostagens(){
         '<td style="color:#666;font-size:11px">'+esc(c.dispositivo||'—')+'</td>'+
         estoqueCell+
         '<td>'+progHtml+'</td>'+
-        '<td style="padding:2px 4px"><textarea rows="2" placeholder="ex: 10h, 15h, 20h" style="width:100%;background:transparent;border:none;border-bottom:1px solid #1e1e1e;color:#666;font-size:10px;resize:none;outline:none;padding:2px;line-height:1.4" data-ct-patch-id="'+c.id+'" data-ct-patch-field="horarios_publicacao">'+esc(c.horarios_publicacao||'')+'</textarea></td>'+
+        '<td style="padding:2px 4px"><textarea rows="2" placeholder="Horários" style="width:100%;background:transparent;border:none;border-bottom:1px solid #1e1e1e;color:#666;font-size:10px;resize:none;outline:none;padding:2px;line-height:1.4" data-ct-patch-id="'+c.id+'" data-ct-patch-field="horarios_publicacao">'+esc(c.horarios_publicacao||'')+'</textarea></td>'+
         (sec.showConfig?'':dayCells)+
       '</tr>';
     }).join('');
