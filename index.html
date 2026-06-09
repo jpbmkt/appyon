@@ -604,6 +604,7 @@ td.iec select{cursor:pointer}
 <div class="tab" id="tab-copies">
   <div class="stats" id="stats-copies" style="margin-bottom:14px"></div>
   <div class="toolbar" style="margin-bottom:10px">
+    <button class="btn bsm" id="btn-fav-filter-copies" onclick="toggleFavFilterCopies()" style="color:#555"><i class="ti ti-star"></i> Favoritos</button>
     <input type="text" placeholder="Buscar perfil..." oninput="searchCopies(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none;width:160px">
     <select onchange="setCopiesCluster(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none" id="copies-cluster-sel">
       <option value="">Todos os clusters</option>
@@ -731,7 +732,7 @@ let ferrTipoFilter='';
 let FbProfiles=[],FbPages=[];
 const FB_APP_ID='1499689168525266';
 let kzCurrentDate='',projCurrentTab='diario';
-let cQ='',cSit='',cPrio='',cFavOnly=false,cCluster='',postPrio='',postFavOnly=false,postCluster='',postSit='',postQ='',copiesQ='',copiesCluster='',copiesSit='',copiesPrio='',eMailFilter='',proxyFilter='';
+let cQ='',cSit='',cPrio='',cFavOnly=false,cCluster='',postPrio='',postFavOnly=false,postCluster='',postSit='',postQ='',copiesQ='',copiesCluster='',copiesSit='',copiesPrio='',copiesFavOnly=false,eMailFilter='',proxyFilter='';
 const today=localDateStr(new Date());
 
 // days of current week Mon-Sun
@@ -3869,6 +3870,12 @@ function searchCopies(v){copiesQ=v;renderCopies();}
 function setCopiesCluster(v){copiesCluster=v;renderCopies();}
 function setCopiesSit(v){copiesSit=v;renderCopies();}
 function setCopiesPrio(v){copiesPrio=v;renderCopies();}
+function toggleFavFilterCopies(){
+  copiesFavOnly=!copiesFavOnly;
+  const btn=document.getElementById('btn-fav-filter-copies');
+  if(btn){btn.style.color=copiesFavOnly?'#fbbf24':'#555';btn.style.borderColor=copiesFavOnly?'#fbbf24':'#252525';}
+  renderCopies();
+}
 
 async function initCopies(){
   const clusters=[...new Set(Contas.map(c=>c.cluster||'').filter(Boolean))].sort();
@@ -3890,6 +3897,7 @@ function renderCopies(){
   if(copiesCluster)contas=contas.filter(c=>(c.cluster||'')===copiesCluster);
   if(copiesSit)contas=contas.filter(c=>c.situacao===copiesSit);
   if(copiesPrio)contas=contas.filter(c=>c.prioridade_perfil===copiesPrio);
+  if(copiesFavOnly)contas=contas.filter(c=>c.favorito);
   if(!contas.length){el.innerHTML='<div class="empty">Nenhuma conta ativa.</div>';return;}
 
   const wk=weekDays();
@@ -3925,7 +3933,23 @@ function renderCopies(){
       }).join('');
       const outroVal=copy&&copy.outro?copy.outro:'';
       const outro='<input value="'+esc(outroVal)+'" placeholder="Outro..." style="margin-top:3px;width:100%;background:transparent;border:none;border-bottom:1px solid #1e1e1e;color:#555;font-size:10px;outline:none" data-copy-cid="'+c.id+'" data-copy-d="'+d+'" data-copy-key="outro">';
-      return '<td style="padding:5px 7px;vertical-align:top;border-right:1px solid #141414">'+boxes+outro+'</td>';
+      // Custom copies — lista de tarefas
+      const customRaw=copy&&copy.custom_copies?copy.custom_copies:'';
+      const customLines=customRaw?customRaw.split('\n').filter(function(l){return l.trim();}):[]; 
+      const customBoxes=customLines.map(function(line,li){
+        const parts=line.split('::');
+        const checked=parts[0]==='1';
+        const txt=parts[1]||parts[0]||'';
+        return '<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:'+(checked?'#4ade80':'#444')+';cursor:pointer;padding:1px 0">'+
+          '<input type="checkbox"'+(checked?' checked':'')+' style="accent-color:#4ade80" data-custom-cid="'+c.id+'" data-custom-d="'+d+'" data-custom-li="'+li+'"> '+
+          '<span style="'+(checked?'text-decoration:line-through;opacity:.5':'')+'">' +esc(txt)+'</span></label>';
+      }).join('');
+      const customInput='<div style="display:flex;gap:4px;margin-top:4px">'+
+        '<input placeholder="Nova opção... (Enter)" style="flex:1;background:transparent;border:none;border-bottom:1px solid #252525;color:#555;font-size:10px;outline:none" data-custom-add-cid="'+c.id+'" data-custom-add-d="'+d+'">'+
+        '</div>';
+      return '<td style="padding:5px 7px;vertical-align:top;border-right:1px solid #141414">'+boxes+outro+
+        (customBoxes?'<div style="margin-top:5px;border-top:1px solid #141414;padding-top:4px">'+customBoxes+'</div>':'')+
+        customInput+'</td>';
     }).join('');
     return '<tr>'+
       '<td style="padding:6px 8px"><div style="display:flex;align-items:center;gap:6px">'+avatarThumb(c.avatar_id,c.user_ig)+
@@ -3944,6 +3968,66 @@ function renderCopies(){
       saveCopy(Number(inp.dataset.copyCid),inp.dataset.copyD,inp.dataset.copyKey,inp.type==='checkbox'?inp.checked:inp.value);
     });
   });
+  // Custom copies — toggle checkbox
+  el.querySelectorAll('[data-custom-cid]').forEach(function(chk){
+    chk.addEventListener('change',function(){
+      const cid=Number(chk.dataset.customCid),d=chk.dataset.customD,li=Number(chk.dataset.customLi);
+      toggleCustomCopy(cid,d,li,chk.checked);
+    });
+  });
+  // Custom copies — adicionar nova linha com Enter
+  el.querySelectorAll('[data-custom-add-cid]').forEach(function(inp){
+    inp.addEventListener('keydown',function(e){
+      if(e.key==='Enter'&&inp.value.trim()){
+        e.preventDefault();
+        const cid=Number(inp.dataset.customAddCid),d=inp.dataset.customAddD;
+        addCustomCopy(cid,d,inp.value.trim());
+        inp.value='';
+      }
+    });
+  });
+}
+
+function parseCustomLines(raw){
+  if(!raw)return[];
+  return raw.split('\n').filter(function(l){return l.trim();});
+}
+function serializeCustomLines(lines){return lines.join('\n');}
+
+async function toggleCustomCopy(cid,d,li,checked){
+  try{
+    let copy=CopiesPostagem.find(function(x){return x.conta_id===cid&&x.data===d;});
+    if(!copy){
+      const r=await api('copies_postagem','POST',{conta_id:cid,data:d,copy_validada_nossa:false,copy_validada_mercado:false,copy_data:false,hook_duplo:false,outro:'',custom_copies:''});
+      if(r&&r[0]){CopiesPostagem.push(r[0]);copy=r[0];}
+    }
+    const lines=parseCustomLines(copy.custom_copies||'');
+    if(lines[li]!==undefined){
+      const parts=lines[li].split('::');
+      const txt=parts[1]||parts[0]||'';
+      lines[li]=(checked?'1':'0')+'::'+txt;
+    }
+    const newVal=serializeCustomLines(lines);
+    await api('copies_postagem','PATCH',{custom_copies:newVal},'?conta_id=eq.'+cid+'&data=eq.'+d);
+    copy.custom_copies=newVal;
+    renderCopies();
+  }catch(e){console.error('toggleCustomCopy',e);}
+}
+
+async function addCustomCopy(cid,d,txt){
+  try{
+    let copy=CopiesPostagem.find(function(x){return x.conta_id===cid&&x.data===d;});
+    if(!copy){
+      const r=await api('copies_postagem','POST',{conta_id:cid,data:d,copy_validada_nossa:false,copy_validada_mercado:false,copy_data:false,hook_duplo:false,outro:'',custom_copies:''});
+      if(r&&r[0]){CopiesPostagem.push(r[0]);copy=r[0];}
+    }
+    const lines=parseCustomLines(copy.custom_copies||'');
+    lines.push('0::'+txt);
+    const newVal=serializeCustomLines(lines);
+    await api('copies_postagem','PATCH',{custom_copies:newVal},'?conta_id=eq.'+cid+'&data=eq.'+d);
+    copy.custom_copies=newVal;
+    renderCopies();
+  }catch(e){console.error('addCustomCopy',e);}
 }
 
 async function saveCopy(cid,d,key,val){
@@ -3953,7 +4037,7 @@ async function saveCopy(cid,d,key,val){
       await api('copies_postagem','PATCH',{[key]:val},'?conta_id=eq.'+cid+'&data=eq.'+d);
       copy[key]=val;
     } else {
-      const obj={conta_id:cid,data:d,copy_validada_nossa:false,copy_validada_mercado:false,copy_data:false,hook_duplo:false,outro:''};
+      const obj={conta_id:cid,data:d,copy_validada_nossa:false,copy_validada_mercado:false,copy_data:false,hook_duplo:false,outro:'',custom_copies:''};
       obj[key]=val;
       const r=await api('copies_postagem','POST',obj);
       if(r&&r[0])CopiesPostagem.push(r[0]);
