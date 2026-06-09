@@ -1617,11 +1617,11 @@ async function loadAll(){
       api('avatares','GET',null,'?order=id.desc'),
       api('contas','GET',null,'?order=id.desc'),
       api('checks_postagem','GET',null,'?order=data.desc'),
-      api('copies_postagem','GET',null,'?order=data.desc'),
       api('config_inicial','GET',null,''),
       api('notas_dia','GET',null,'?order=created_at.desc&limit=50'),
       api('todo_items','GET',null,'?pessoa=eq.Jessica&order=prioridade.asc,ordem.asc,id.asc'),
-      api('todo_items','GET',null,'?pessoa=eq.Filipe&order=prioridade.asc,ordem.asc,id.asc')
+      api('todo_items','GET',null,'?pessoa=eq.Filipe&order=prioridade.asc,ordem.asc,id.asc'),
+      api('copies_postagem','GET',null,'?order=data.desc')
     ]);
     document.getElementById('cdot').className='dot';
     renderEmails();renderProxies();renderAvatares();renderContas();
