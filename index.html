@@ -350,6 +350,7 @@ td.iec select{cursor:pointer}
     <button class="nb active" onclick="showTab('hoje',this)"><i class="ti ti-layout-dashboard"></i> Hoje</button>
     <button class="nb" onclick="showTab('contas',this)"><i class="ti ti-layout-dashboard"></i> Gestão de Contas</button>
     <button class="nb" onclick="showTab('postagens',this)"><i class="ti ti-calendar-check"></i> Postagens</button>
+    <button class="nb" onclick="showTab('copies',this)"><i class="ti ti-file-text"></i> Copies</button>
     <button class="nb" onclick="showTab('ferramentas',this)"><i class="ti ti-credit-card"></i> Ferramentas</button>
     <button class="nb" onclick="showTab('emails',this)"><i class="ti ti-mail"></i> E-mails</button>
     <button class="nb" onclick="showTab('proxies',this)"><i class="ti ti-server"></i> Proxies</button>
@@ -599,6 +600,25 @@ td.iec select{cursor:pointer}
   <div id="post-sections"><div class="loading">Carregando...</div></div>
 </div>
 
+<!-- ===== COPIES ===== -->
+<div class="tab" id="tab-copies">
+  <div class="stats" id="stats-copies" style="margin-bottom:14px"></div>
+  <div class="toolbar" style="margin-bottom:10px">
+    <input type="text" placeholder="Buscar perfil..." oninput="searchCopies(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none;width:160px">
+    <select onchange="setCopiesCluster(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none" id="copies-cluster-sel">
+      <option value="">Todos os clusters</option>
+    </select>
+    <select onchange="setCopiesSit(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none">
+      <option value="">Todas as situações</option>
+      <option value="Aquecimento">Aquecimento</option>
+      <option value="Configuração Inicial">Config. Inicial</option>
+      <option value="Crescimento">Crescimento</option>
+      <option value="Venda">Venda</option>
+    </select>
+  </div>
+  <div id="copies-sections"><div class="loading">Carregando...</div></div>
+</div>
+
 <!-- ===== FERRAMENTAS ===== -->
 <div class="tab" id="tab-ferramentas">
   <div class="stats" id="stats-ferr"></div>
@@ -681,7 +701,7 @@ async function api(tbl,method='GET',body=null,qs=''){
   const t=await r.text();return t?JSON.parse(t):null;
 }
 
-let Emails=[],Proxies=[],Avatares=[],Contas=[],Checks=[],ConfigsIniciais=[],NotasDia=[],gCalendarEvents=[],TodosJessica=[],TodosFilipe=[];
+let Emails=[],Proxies=[],Avatares=[],Contas=[],Checks=[],ConfigsIniciais=[],NotasDia=[],CopiesPostagem=[],gCalendarEvents=[],TodosJessica=[],TodosFilipe=[];
 let hojePessoa='jessica',hojeMinhaFrase='',VisionItems=[],MetasEmpresa={},FrasesDestaque=[],Lembretes=[],PrioridadesSemana=[];
 const PRIO_PESSOAS=[
   {key:'',label:'—',color:'#555'},
@@ -705,7 +725,7 @@ let ferrTipoFilter='';
 let FbProfiles=[],FbPages=[];
 const FB_APP_ID='1499689168525266';
 let kzCurrentDate='',projCurrentTab='diario';
-let cQ='',cSit='',cPrio='',cFavOnly=false,cCluster='',postPrio='',postFavOnly=false,postCluster='',postSit='',postQ='',eMailFilter='',proxyFilter='';
+let cQ='',cSit='',cPrio='',cFavOnly=false,cCluster='',postPrio='',postFavOnly=false,postCluster='',postSit='',postQ='',copiesQ='',copiesCluster='',copiesSit='',eMailFilter='',proxyFilter='';
 const today=localDateStr(new Date());
 
 // days of current week Mon-Sun
@@ -1591,12 +1611,13 @@ async function disconnectFbProfile(id){
 
 async function loadAll(){
   try{
-    [Emails,Proxies,Avatares,Contas,Checks,ConfigsIniciais,NotasDia,TodosJessica,TodosFilipe]=await Promise.all([
+    [Emails,Proxies,Avatares,Contas,Checks,ConfigsIniciais,NotasDia,TodosJessica,TodosFilipe,CopiesPostagem]=await Promise.all([
       api('emails','GET',null,'?order=id.desc'),
       api('proxies','GET',null,'?order=id.desc'),
       api('avatares','GET',null,'?order=id.desc'),
       api('contas','GET',null,'?order=id.desc'),
       api('checks_postagem','GET',null,'?order=data.desc'),
+      api('copies_postagem','GET',null,'?order=data.desc'),
       api('config_inicial','GET',null,''),
       api('notas_dia','GET',null,'?order=created_at.desc&limit=50'),
       api('todo_items','GET',null,'?pessoa=eq.Jessica&order=prioridade.asc,ordem.asc,id.asc'),
@@ -1623,6 +1644,7 @@ function showTab(t,btn){
   if(t==='postagens'){populateClusterSelects();renderPostagens();}
   if(t==='hoje'){renderHoje();}
   if(t==='contas')statsContas();
+  if(t==='copies')initCopies();
   if(t==='kaizen-jessica')initKaizen('jessica');
   if(t==='kaizen-filipe')initKaizen('filipe');
   if(t==='projetos')initProjetos();
@@ -3843,4 +3865,110 @@ loadAll();
   <img class="foto-modal-img" id="foto-modal-img" src="" alt="Avatar">
 </div>
 </body>
-</html>
+</html>// ══════════════════════════════════════
+// COPIES
+// ══════════════════════════════════════
+
+function searchCopies(v){copiesQ=v;renderCopies();}
+function setCopiesCluster(v){copiesCluster=v;renderCopies();}
+function setCopiesSit(v){copiesSit=v;renderCopies();}
+
+async function initCopies(){
+  const clusters=[...new Set(Contas.map(c=>c.cluster||'').filter(Boolean))].sort();
+  const sel=document.getElementById('copies-cluster-sel');
+  if(sel){
+    const val=sel.value;
+    sel.innerHTML='<option value="">Todos os clusters</option>'+clusters.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');
+    sel.value=val;
+  }
+  renderCopies();
+}
+
+function renderCopies(){
+  const el=document.getElementById('copies-sections');
+  if(!el)return;
+  const ATIVAS=['Aquecimento','Configuração Inicial','Crescimento','Venda'];
+  let contas=Contas.filter(c=>ATIVAS.includes(c.situacao));
+  if(copiesQ)contas=contas.filter(c=>((c.fb_perfil||'')+(c.user_ig||'')).toLowerCase().includes(copiesQ.toLowerCase()));
+  if(copiesCluster)contas=contas.filter(c=>(c.cluster||'')===copiesCluster);
+  if(copiesSit)contas=contas.filter(c=>c.situacao===copiesSit);
+  if(!contas.length){el.innerHTML='<div class="empty">Nenhuma conta ativa.</div>';return;}
+
+  const wk=weekDays();
+  const dayNames=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+  const COPIES=[
+    {key:'copy_validada_nossa',  label:'Copy validada (nossa)'},
+    {key:'copy_validada_mercado',label:'Copy validada (mercado)'},
+    {key:'copy_data',            label:'Copy com Data'},
+    {key:'hook_duplo',           label:'Hook duplo sentido'},
+  ];
+
+  const thead='<thead><tr>'+
+    '<th style="min-width:160px">Perfil</th>'+
+    '<th style="min-width:90px">Cluster</th>'+
+    '<th style="width:80px">Prior.</th>'+
+    dayNames.map(function(d,i){
+      const isT=wk[i]===today;
+      return '<th style="min-width:130px;text-align:center;'+(isT?'background:#1a2a1a':'')+'">'+
+        '<span style="'+(isT?'color:#4ade80;font-weight:700':'color:#555')+'">'+d+'</span>'+
+        '<br><span style="font-size:9px;'+(isT?'color:#4ade80':'color:#333')+'">'+wk[i].slice(5)+'</span></th>';
+    }).join('')+
+  '</tr></thead>';
+
+  const rows=contas.map(function(c){
+    const prio=c.prioridade_perfil||'';
+    const prioLabel=prio==='alta'?'🔴':prio==='media'?'🟡':prio==='baixa'?'🟢':'—';
+    const dayCols=wk.map(function(d){
+      const copy=CopiesPostagem.find(function(x){return x.conta_id===c.id&&x.data===d;});
+      const boxes=COPIES.map(function(cp){
+        const chk=copy&&copy[cp.key];
+        return '<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:'+(chk?'#4ade80':'#444')+';cursor:pointer;padding:1px 0">'+
+          '<input type="checkbox"'+(chk?' checked':'')+' style="accent-color:#4ade80" data-copy-cid="'+c.id+'" data-copy-d="'+d+'" data-copy-key="'+cp.key+'"> '+cp.label+'</label>';
+      }).join('');
+      const outroVal=copy&&copy.outro?copy.outro:'';
+      const outro='<input value="'+esc(outroVal)+'" placeholder="Outro..." style="margin-top:3px;width:100%;background:transparent;border:none;border-bottom:1px solid #1e1e1e;color:#555;font-size:10px;outline:none" data-copy-cid="'+c.id+'" data-copy-d="'+d+'" data-copy-key="outro">';
+      return '<td style="padding:5px 7px;vertical-align:top;border-right:1px solid #141414">'+boxes+outro+'</td>';
+    }).join('');
+    return '<tr>'+
+      '<td style="padding:6px 8px"><div style="display:flex;align-items:center;gap:6px">'+avatarThumb(c.avatar_id,c.user_ig)+
+      '<div><div style="font-size:12px;font-weight:500;color:#e8e8e8">'+esc(c.fb_perfil||c.user_ig)+'</div>'+
+      '<div style="font-size:10px;color:#444">@'+esc(c.user_ig)+'</div></div></div></td>'+
+      '<td style="font-size:11px;color:#666;padding:4px 8px">'+esc(c.cluster||'—')+'</td>'+
+      '<td style="text-align:center;font-size:13px">'+prioLabel+'</td>'+
+      dayCols+
+    '</tr>';
+  }).join('');
+
+  el.innerHTML='<div class="tw" style="overflow-x:auto"><table class="pt"><thead>'+thead+'</thead><tbody>'+rows+'</tbody></table></div>';
+
+  el.querySelectorAll('[data-copy-cid]').forEach(function(inp){
+    inp.addEventListener(inp.type==='checkbox'?'change':'blur',function(){
+      saveCopy(Number(inp.dataset.copyCid),inp.dataset.copyD,inp.dataset.copyKey,inp.type==='checkbox'?inp.checked:inp.value);
+    });
+  });
+}
+
+async function saveCopy(cid,d,key,val){
+  try{
+    let copy=CopiesPostagem.find(function(x){return x.conta_id===cid&&x.data===d;});
+    if(copy){
+      await api('copies_postagem','PATCH',{[key]:val},'?conta_id=eq.'+cid+'&data=eq.'+d);
+      copy[key]=val;
+    } else {
+      const obj={conta_id:cid,data:d,copy_validada_nossa:false,copy_validada_mercado:false,copy_data:false,hook_duplo:false,outro:''};
+      obj[key]=val;
+      const r=await api('copies_postagem','POST',obj);
+      if(r&&r[0])CopiesPostagem.push(r[0]);
+    }
+    // Atualizar cor do label sem re-renderizar tudo
+    const labels=document.querySelectorAll('[data-copy-cid="'+cid+'"][data-copy-d="'+d+'"][data-copy-key="'+key+'"]');
+    labels.forEach(function(el2){
+      if(el2.type==='checkbox'){
+        const lbl=el2.closest('label');
+        if(lbl)lbl.style.color=el2.checked?'#4ade80':'#444';
+      }
+    });
+  }catch(e){console.error('saveCopy',e);}
+}
+
+
