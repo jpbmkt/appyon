@@ -615,6 +615,12 @@ td.iec select{cursor:pointer}
       <option value="Crescimento">Crescimento</option>
       <option value="Venda">Venda</option>
     </select>
+    <select onchange="setCopiesPrio(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none">
+      <option value="">Todas as prioridades</option>
+      <option value="alta">🔴 Alta</option>
+      <option value="media">🟡 Média</option>
+      <option value="baixa">🟢 Baixa</option>
+    </select>
   </div>
   <div id="copies-sections"><div class="loading">Carregando...</div></div>
 </div>
@@ -725,7 +731,7 @@ let ferrTipoFilter='';
 let FbProfiles=[],FbPages=[];
 const FB_APP_ID='1499689168525266';
 let kzCurrentDate='',projCurrentTab='diario';
-let cQ='',cSit='',cPrio='',cFavOnly=false,cCluster='',postPrio='',postFavOnly=false,postCluster='',postSit='',postQ='',copiesQ='',copiesCluster='',copiesSit='',eMailFilter='',proxyFilter='';
+let cQ='',cSit='',cPrio='',cFavOnly=false,cCluster='',postPrio='',postFavOnly=false,postCluster='',postSit='',postQ='',copiesQ='',copiesCluster='',copiesSit='',copiesPrio='',eMailFilter='',proxyFilter='';
 const today=localDateStr(new Date());
 
 // days of current week Mon-Sun
@@ -3862,6 +3868,7 @@ function initDragList(containerId,listType){
 function searchCopies(v){copiesQ=v;renderCopies();}
 function setCopiesCluster(v){copiesCluster=v;renderCopies();}
 function setCopiesSit(v){copiesSit=v;renderCopies();}
+function setCopiesPrio(v){copiesPrio=v;renderCopies();}
 
 async function initCopies(){
   const clusters=[...new Set(Contas.map(c=>c.cluster||'').filter(Boolean))].sort();
@@ -3882,6 +3889,7 @@ function renderCopies(){
   if(copiesQ)contas=contas.filter(c=>((c.fb_perfil||'')+(c.user_ig||'')).toLowerCase().includes(copiesQ.toLowerCase()));
   if(copiesCluster)contas=contas.filter(c=>(c.cluster||'')===copiesCluster);
   if(copiesSit)contas=contas.filter(c=>c.situacao===copiesSit);
+  if(copiesPrio)contas=contas.filter(c=>c.prioridade_perfil===copiesPrio);
   if(!contas.length){el.innerHTML='<div class="empty">Nenhuma conta ativa.</div>';return;}
 
   const wk=weekDays();
@@ -3896,7 +3904,7 @@ function renderCopies(){
   const thead='<thead><tr>'+
     '<th style="min-width:160px">Perfil</th>'+
     '<th style="min-width:90px">Cluster</th>'+
-    '<th style="width:80px">Prior.</th>'+
+    '<th style="width:80px">Prioridade</th>'+
     dayNames.map(function(d,i){
       const isT=wk[i]===today;
       return '<th style="min-width:130px;text-align:center;'+(isT?'background:#1a2a1a':'')+'">'+
@@ -3906,8 +3914,8 @@ function renderCopies(){
   '</tr></thead>';
 
   const rows=contas.map(function(c){
-    const prio=c.prioridade_perfil||'';
-    const prioLabel=prio==='alta'?'🔴':prio==='media'?'🟡':prio==='baixa'?'🟢':'—';
+
+
     const dayCols=wk.map(function(d){
       const copy=CopiesPostagem.find(function(x){return x.conta_id===c.id&&x.data===d;});
       const boxes=COPIES.map(function(cp){
@@ -3924,7 +3932,7 @@ function renderCopies(){
       '<div><div style="font-size:12px;font-weight:500;color:#e8e8e8">'+esc(c.fb_perfil||c.user_ig)+'</div>'+
       '<div style="font-size:10px;color:#444">@'+esc(c.user_ig)+'</div></div></div></td>'+
       '<td style="font-size:11px;color:#666;padding:4px 8px">'+esc(c.cluster||'—')+'</td>'+
-      '<td style="text-align:center;font-size:13px">'+prioLabel+'</td>'+
+      '<td style="text-align:center;padding:4px 6px">'+prioBtn(c)+'</td>'+
       dayCols+
     '</tr>';
   }).join('');
