@@ -1132,7 +1132,7 @@ function renderKaizenFilipe(){
   const coisasLinhasF=(KzDiarioF.coisas_boas||'').split('\n');
   const coisasHtmlF=[1,2,3,4].map(n=>{
     const val=coisasLinhasF[n-1]||'';
-    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:11px;color:#555;flex-shrink:0">'+n+'.</span><input class="kz-input" value="'+esc(val)+'" placeholder="..." data-coisas-f data-idx="'+(n-1)+'"></div>';
+    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:11px;color:#555;flex-shrink:0">'+n+'.</span><input class="kz-input" value="'+esc(val)+'" placeholder="..." data-coisas-f2 data-idx="'+(n-1)+'"></div>';
   }).join('');
 
   el.innerHTML=
@@ -1188,7 +1188,7 @@ async function flushKzDiario(){
     }
   }
   // 4 coisas boas — múltiplos inputs com data-coisas-f
-  const coisasEls=document.querySelectorAll('[data-coisas-f][data-idx]');
+  const coisasEls=document.querySelectorAll('[data-coisas-f2][data-idx]');
   if(coisasEls.length){
     const lines=[];
     coisasEls.forEach(function(el){lines[Number(el.dataset.idx)]=el.value||'';});
@@ -2258,6 +2258,51 @@ document.addEventListener('change',(e)=>{
     else saveQtdFB(cid,d,qtdEl.value);
   }
 });
+// Autosave Kaizen ao digitar (debounce 1.5s)
+let kzDebounceTimer=null;
+document.addEventListener('input',(e)=>{
+  const kzjInp=e.target.closest('[data-kzj-save]');
+  if(kzjInp){
+    clearTimeout(kzDebounceTimer);
+    kzDebounceTimer=setTimeout(function(){
+      saveKzDiario(kzjInp.dataset.kzjSave,kzjInp.value);
+    },1500);
+    return;
+  }
+  const kzfInp=e.target.closest('[data-kzf-save]');
+  if(kzfInp){
+    clearTimeout(kzDebounceTimer);
+    kzDebounceTimer=setTimeout(function(){
+      saveKzDiarioF(kzfInp.dataset.kzfSave,kzfInp.value);
+    },1500);
+    return;
+  }
+  // 4 coisas boas Jessica
+  const coisasJ=e.target.closest('[data-coisas-f]');
+  if(coisasJ){
+    clearTimeout(kzDebounceTimer);
+    kzDebounceTimer=setTimeout(function(){
+      const inputs=document.querySelectorAll('[data-coisas-f][data-idx]');
+      const lines=[];
+      inputs.forEach(function(inp){lines[Number(inp.dataset.idx)]=inp.value||'';});
+      saveKzDiario('coisas_boas',lines.join('\n'));
+    },1500);
+    return;
+  }
+  // 4 coisas boas Filipe
+  const coisasF=e.target.closest('[data-coisas-f2]');
+  if(coisasF){
+    clearTimeout(kzDebounceTimer);
+    kzDebounceTimer=setTimeout(function(){
+      const inputs=document.querySelectorAll('[data-coisas-f2][data-idx]');
+      const lines=[];
+      inputs.forEach(function(inp){lines[Number(inp.dataset.idx)]=inp.value||'';});
+      saveKzDiarioF('coisas_boas',lines.join('\n'));
+    },1500);
+    return;
+  }
+},true);
+
 document.addEventListener('blur',(e)=>{
   // Lembretes — editar texto
   const lemEdit=e.target.closest('[data-lem-edit]');
