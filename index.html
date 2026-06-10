@@ -810,7 +810,7 @@ async function loadKaizenFilipe(){
   const tag='filipe_'+dt; // usar tag para separar dados por pessoa
   try{
     const [diario,tarefas,desemp,focus]=await Promise.all([
-      api('kaizen_diario','GET',null,'?data=eq.'+dt+'&pessoa=eq.filipe'),
+      api('kaizen_diario','GET',null,'?data=eq.'+dt+'&pessoa=eq.filipe&order=id.asc'),
       api('kaizen_tarefas','GET',null,'?data=eq.'+dt+'&pessoa=eq.filipe&order=ordem.asc,id.asc'),
       api('kaizen_desempenho','GET',null,'?data=eq.'+dt+'&pessoa=eq.filipe&order=ordem.asc,id.asc'),
       api('kaizen_deep_focus','GET',null,'?data=eq.'+dt+'&pessoa=eq.filipe'),
@@ -880,7 +880,7 @@ async function loadKaizen(){
   kzCurrentDate=dt;
   try{
     const [diario,tarefas,desemp,focus]=await Promise.all([
-      api('kaizen_diario','GET',null,'?data=eq.'+dt+'&pessoa=eq.jessica'),
+      api('kaizen_diario','GET',null,'?data=eq.'+dt+'&pessoa=eq.jessica&order=id.asc'),
       api('kaizen_tarefas','GET',null,'?data=eq.'+dt+'&pessoa=eq.jessica&order=ordem.asc,id.asc'),
       api('kaizen_desempenho','GET',null,'?data=eq.'+dt+'&pessoa=eq.jessica&order=ordem.asc,id.asc'),
       api('kaizen_deep_focus','GET',null,'?data=eq.'+dt+'&pessoa=eq.jessica'),
@@ -992,74 +992,39 @@ function renderKaizen(){
 
 async function saveKzDiario(field,value){
   try{
+    if(!KzDiario.id){
+      // Verificar se já existe no banco para este dia
+      const existing=await api('kaizen_diario','GET',null,'?data=eq.'+kzCurrentDate+'&pessoa=eq.jessica');
+      if(existing&&existing[0]){KzDiario=existing[0];}
+    }
     if(KzDiario.id){
       await api('kaizen_diario','PATCH',{[field]:value},'?id=eq.'+KzDiario.id);
       KzDiario[field]=value;
     } else {
-      const r=await api('kaizen_diario','POST',{data:kzCurrentDate,pessoa:'jessica',[field]:value});
-      KzDiario=r[0];
+      const obj={data:kzCurrentDate,pessoa:'jessica'};
+      obj[field]=value;
+      const r=await api('kaizen_diario','POST',obj);
+      if(r&&r[0])KzDiario=r[0];
     }
   }catch(e){console.error('saveKzDiario',e);}
 }
 
 async function saveKzDiarioF(field,value){
   try{
-    if(KzDiario.id){
-      await api('kaizen_diario','PATCH',{[field]:value},'?id=eq.'+KzDiario.id);
+    if(!KzDiarioF.id){
+      const existing=await api('kaizen_diario','GET',null,'?data=eq.'+kzCurrentDateF+'&pessoa=eq.filipe&order=id.asc');
+      if(existing&&existing[0]){KzDiarioF=existing[0];}
+    }
+    if(KzDiarioF.id){
+      await api('kaizen_diario','PATCH',{[field]:value},'?id=eq.'+KzDiarioF.id);
       KzDiarioF[field]=value;
     } else {
-      const r=await api('kaizen_diario','POST',{data:kzCurrentDateF,pessoa:'filipe',[field]:value});
-      KzDiarioF=r[0];
+      const obj={data:kzCurrentDateF,pessoa:'filipe'};
+      obj[field]=value;
+      const r=await api('kaizen_diario','POST',obj);
+      if(r&&r[0])KzDiarioF=r[0];
     }
   }catch(e){console.error('saveKzDiarioF',e);}
-}
-
-async function saveKzCoisasBoasF(){
-  const inputs=document.querySelectorAll('#kz-content-f [data-idx]');
-  const lines=[...inputs].map(i=>i.value);
-  await saveKzDiarioF('coisas_boas',lines.join('\n'));
-}
-
-async function saveKzFocusF(field,value){
-  try{
-    if(KzFocusF.id){
-      await api('kaizen_deep_focus','PATCH',{[field]:value},'?id=eq.'+KzFocusF.id);
-      KzFocusF[field]=value;
-    } else {
-      const r=await api('kaizen_deep_focus','POST',{data:kzCurrentDateF,pessoa:'filipe',[field]:value});
-      KzFocusF=r[0];
-    }
-  }catch(e){console.error('saveKzFocusF',e);}
-}
-
-async function addKzTarefaF(){
-  try{await flushKzDiarioF();
-    const r=await api('kaizen_tarefas','POST',{data:kzCurrentDateF,pessoa:'filipe',texto:'',prioridade:'media',andamento:'pendente',ordem:KzTarefasF.length});
-    KzTarefasF.push(r[0]);renderKaizenFilipe();
-  }catch(e){console.error(e);}
-}
-async function updateKzTarefaF(id,field,value){
-  try{await api('kaizen_tarefas','PATCH',{[field]:value},'?id=eq.'+id);const t=KzTarefasF.find(x=>x.id===id);if(t)t[field]=value;}catch(e){console.error(e);}
-}
-async function delKzTarefaF(id){
-  await api('kaizen_tarefas','DELETE',null,'?id=eq.'+id);KzTarefasF=KzTarefasF.filter(x=>x.id!==id);renderKaizenFilipe();
-}
-async function addKzDespF(){
-  try{await flushKzDiarioF();const r=await api('kaizen_desempenho','POST',{data:kzCurrentDateF,pessoa:'filipe',tarefa:'',nota:0,ordem:KzDesempenhoF.length});KzDesempenhoF.push(r[0]);renderKaizenFilipe();}catch(e){console.error(e);}
-}
-async function updateKzDespF(id,field,value){
-  const val=field==='nota'?Number(value):value;
-  try{await api('kaizen_desempenho','PATCH',{[field]:val},'?id=eq.'+id);const d=KzDesempenhoF.find(x=>x.id===id);if(d)d[field]=val;}catch(e){console.error(e);}
-}
-async function delKzDespF(id){
-  await flushKzDiarioF();
-  await api('kaizen_desempenho','DELETE',null,'?id=eq.'+id);KzDesempenhoF=KzDesempenhoF.filter(x=>x.id!==id);renderKaizenFilipe();
-}
-
-async function saveKzCoisasBoas(){
-  const inputs=document.querySelectorAll('#kz-content [data-idx]');
-  const lines=[...inputs].map(i=>i.value);
-  await saveKzDiario('coisas_boas',lines.join('\n'));
 }
 
 async function saveKzFocus(field,value){
