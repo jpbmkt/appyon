@@ -981,9 +981,9 @@ function renderKaizen(){
       '<div class="kz-section"><div class="kz-header" style="color:#fb923c"><i class="ti ti-chart-line"></i> Desempenho</div><div class="kz-body">'+despHtml+'<button class="btn bsm" style="margin-top:4px;color:#555" data-kzj-add-desp="1"><i class="ti ti-plus"></i> Adicionar</button></div></div>'+
     '</div>'+
     '<div>'+
-      '<div class="kz-section"><div class="kz-header" style="color:#f87171"><i class="ti ti-flame"></i> Prioridade Absoluta</div><div class="kz-body"><p style="font-size:11px;color:#555;margin-bottom:8px">Qual é a ÚNICA coisa que, se feita agora, tornará todo o resto mais fácil?</p><textarea class="kz-textarea" data-kzj-save="prioridade_absoluta" placeholder="Escreva aqui...">'+esc(KzDiarioF.prioridade_absoluta||'')+'</textarea></div></div>'+
-      '<div class="kz-section"><div class="kz-header" style="color:#4ade80"><i class="ti ti-heart"></i> Mentalidade Kaizen</div><div class="kz-body"><p style="font-size:11px;color:#555;margin-bottom:8px">EU SOU GRATO POR:</p><textarea class="kz-textarea" data-kzj-save="gratidao" placeholder="Escreva sua gratidão...">'+esc(KzDiarioF.gratidao||'')+'</textarea></div></div>'+
-      '<div class="kz-section"><div class="kz-header" style="color:#fbbf24"><i class="ti ti-stars"></i> Manifestações Diárias</div><div class="kz-body"><p style="font-size:11px;color:#555;margin-bottom:8px">Visualize enquanto escreve:</p><textarea class="kz-textarea" data-kzj-save="manifestacoes" placeholder="Escreva suas manifestações...">'+esc(KzDiarioF.manifestacoes||'')+'</textarea></div></div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#f87171"><i class="ti ti-flame"></i> Prioridade Absoluta</div><div class="kz-body"><p style="font-size:11px;color:#555;margin-bottom:8px">Qual é a ÚNICA coisa que, se feita agora, tornará todo o resto mais fácil?</p><textarea class="kz-textarea" data-kzj-save="prioridade_absoluta" placeholder="Escreva aqui...">'+esc(KzDiario.prioridade_absoluta||'')+'</textarea></div></div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#4ade80"><i class="ti ti-heart"></i> Mentalidade Kaizen</div><div class="kz-body"><p style="font-size:11px;color:#555;margin-bottom:8px">EU SOU GRATO POR:</p><textarea class="kz-textarea" data-kzj-save="gratidao" placeholder="Escreva sua gratidão...">'+esc(KzDiario.gratidao||'')+'</textarea></div></div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#fbbf24"><i class="ti ti-stars"></i> Manifestações Diárias</div><div class="kz-body"><p style="font-size:11px;color:#555;margin-bottom:8px">Visualize enquanto escreve:</p><textarea class="kz-textarea" data-kzj-save="manifestacoes" placeholder="Escreva suas manifestações...">'+esc(KzDiario.manifestacoes||'')+'</textarea></div></div>'+
       '<div class="kz-section"><div class="kz-header" style="color:#38bdf8"><i class="ti ti-confetti"></i> 4 Coisas Boas que Aconteceram Ontem</div><div class="kz-body">'+coisasHtml+'</div></div>'+
     '</div>'+
     '</div>';
@@ -1004,8 +1004,8 @@ async function saveKzDiario(field,value){
 
 async function saveKzDiarioF(field,value){
   try{
-    if(KzDiarioF.id){
-      await api('kaizen_diario','PATCH',{[field]:value},'?id=eq.'+KzDiarioF.id);
+    if(KzDiario.id){
+      await api('kaizen_diario','PATCH',{[field]:value},'?id=eq.'+KzDiario.id);
       KzDiarioF[field]=value;
     } else {
       const r=await api('kaizen_diario','POST',{data:kzCurrentDateF,pessoa:'filipe',[field]:value});
@@ -1178,14 +1178,23 @@ async function delKzTarefa(id){
   await api('kaizen_tarefas','DELETE',null,'?id=eq.'+id);KzTarefas=KzTarefas.filter(x=>x.id!==id);renderKaizen();
 }
 async function flushKzDiario(){
-  // Salvar campos digitados antes de re-renderizar
-  const fields=['prioridade_absoluta','gratidao','manifestacoes','coisas_boas'];
+  const fields=['prioridade_absoluta','gratidao','manifestacoes'];
   for(const f of fields){
     const el=document.querySelector('[data-kzj-save="'+f+'"]');
-    if(el&&el.value!==undefined){
-      const val=el.value;
-      if(KzDiario[f]!==val)await saveKzDiario(f,val);
+    if(el){
+      const val=el.value||'';
+      KzDiario[f]=val;
+      await saveKzDiario(f,val);
     }
+  }
+  // 4 coisas boas — múltiplos inputs com data-coisas-f
+  const coisasEls=document.querySelectorAll('[data-coisas-f][data-idx]');
+  if(coisasEls.length){
+    const lines=[];
+    coisasEls.forEach(function(el){lines[Number(el.dataset.idx)]=el.value||'';});
+    const val=lines.join('\n');
+    KzDiario.coisas_boas=val;
+    await saveKzDiario('coisas_boas',val);
   }
 }
 
@@ -1193,9 +1202,10 @@ async function flushKzDiarioF(){
   const fields=['prioridade_absoluta','gratidao','manifestacoes','coisas_boas'];
   for(const f of fields){
     const el=document.querySelector('[data-kzf-save="'+f+'"]');
-    if(el&&el.value!==undefined){
-      const val=el.value;
-      if(KzDiarioF[f]!==val)await saveKzDiarioF(f,val);
+    if(el){
+      const val=el.value||'';
+      KzDiarioF[f]=val;
+      await saveKzDiarioF(f,val);
     }
   }
 }
