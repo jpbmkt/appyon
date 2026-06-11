@@ -818,8 +818,9 @@ async function loadKaizenFilipe(){
     if(diario[0]){
       KzDiarioF=diario[0];
     } else {
-      const r=await api('kaizen_diario','POST',{data:dt,pessoa:'filipe'},'','upsert');
-      KzDiarioF=r&&r[0]?r[0]:{data:dt,pessoa:'filipe'};
+      const checkF=await api('kaizen_diario','GET',null,'?data=eq.'+dt+'&pessoa=eq.filipe&order=id.asc');
+      if(checkF&&checkF[0]){KzDiarioF=checkF[0];}
+      else{const r=await api('kaizen_diario','POST',{data:dt,pessoa:'filipe'});KzDiarioF=r&&r[0]?r[0]:{data:dt,pessoa:'filipe'};}
     }
     KzTarefasF=tarefas;
     KzDesempenhoF=desemp;
@@ -894,8 +895,10 @@ async function loadKaizen(){
     if(diario[0]){
       KzDiario=diario[0];
     } else {
-      const r=await api('kaizen_diario','POST',{data:dt,pessoa:'jessica'},'','upsert');
-      KzDiario=r&&r[0]?r[0]:{data:dt,pessoa:'jessica'};
+      // Verificar novamente antes de criar (evitar duplicate key)
+      const check=await api('kaizen_diario','GET',null,'?data=eq.'+dt+'&pessoa=eq.jessica&order=id.asc');
+      if(check&&check[0]){KzDiario=check[0];}
+      else{const r=await api('kaizen_diario','POST',{data:dt,pessoa:'jessica'});KzDiario=r&&r[0]?r[0]:{data:dt,pessoa:'jessica'};}
     }
     KzTarefas=tarefas;
     KzDesempenho=desemp;
