@@ -698,9 +698,9 @@ let gToken=(()=>{
   return null;
 })();
 
-async function api(tbl,method='GET',body=null,qs=''){
+async function api(tbl,method='GET',body=null,qs='',mode=''){
   const h={'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+KEY};
-  if(method==='POST')h['Prefer']='return=representation';
+  if(method==='POST')h['Prefer']=mode==='upsert'?'resolution=merge-duplicates,return=representation':'return=representation';
   if(method==='PATCH')h['Prefer']='return=representation';
   const r=await fetch(`${SB}/rest/v1/${tbl}${qs}`,{method,headers:h,body:body?JSON.stringify(body):null});
   if(!r.ok){const e=await r.text();throw new Error(e);}
@@ -818,7 +818,7 @@ async function loadKaizenFilipe(){
     if(diario[0]){
       KzDiarioF=diario[0];
     } else {
-      const r=await api('kaizen_diario','POST',{data:dt,pessoa:'filipe'});
+      const r=await api('kaizen_diario','POST',{data:dt,pessoa:'filipe'},'','upsert');
       KzDiarioF=r&&r[0]?r[0]:{data:dt,pessoa:'filipe'};
     }
     KzTarefasF=tarefas;
@@ -894,7 +894,7 @@ async function loadKaizen(){
     if(diario[0]){
       KzDiario=diario[0];
     } else {
-      const r=await api('kaizen_diario','POST',{data:dt,pessoa:'jessica'});
+      const r=await api('kaizen_diario','POST',{data:dt,pessoa:'jessica'},'','upsert');
       KzDiario=r&&r[0]?r[0]:{data:dt,pessoa:'jessica'};
     }
     KzTarefas=tarefas;
