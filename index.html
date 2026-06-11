@@ -815,13 +815,7 @@ async function loadKaizenFilipe(){
       api('kaizen_desempenho','GET',null,'?data=eq.'+dt+'&pessoa=eq.filipe&order=ordem.asc,id.asc'),
       api('kaizen_deep_focus','GET',null,'?data=eq.'+dt+'&pessoa=eq.filipe'),
     ]);
-    if(diario[0]){
-      KzDiarioF=diario[0];
-    } else {
-      const checkF=await api('kaizen_diario','GET',null,'?data=eq.'+dt+'&pessoa=eq.filipe&order=id.asc');
-      if(checkF&&checkF[0]){KzDiarioF=checkF[0];}
-      else{const r=await api('kaizen_diario','POST',{data:dt,pessoa:'filipe'});KzDiarioF=r&&r[0]?r[0]:{data:dt,pessoa:'filipe'};}
-    }
+    KzDiarioF=diario[0]||{data:dt,pessoa:'filipe'};
     KzTarefasF=tarefas;
     KzDesempenhoF=desemp;
     KzFocusF=focus[0]||{data:dt,pessoa:'filipe'};
@@ -892,14 +886,7 @@ async function loadKaizen(){
       api('kaizen_deep_focus','GET',null,'?data=eq.'+dt+'&pessoa=eq.jessica'),
     ]);
     // Garantir que KzDiario existe no banco
-    if(diario[0]){
-      KzDiario=diario[0];
-    } else {
-      // Verificar novamente antes de criar (evitar duplicate key)
-      const check=await api('kaizen_diario','GET',null,'?data=eq.'+dt+'&pessoa=eq.jessica&order=id.asc');
-      if(check&&check[0]){KzDiario=check[0];}
-      else{const r=await api('kaizen_diario','POST',{data:dt,pessoa:'jessica'});KzDiario=r&&r[0]?r[0]:{data:dt,pessoa:'jessica'};}
-    }
+    KzDiario=diario[0]||{data:dt,pessoa:'jessica'};
     KzTarefas=tarefas;
     KzDesempenho=desemp;
     KzFocus=focus[0]||{data:dt,pessoa:'jessica'};
