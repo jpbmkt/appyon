@@ -1179,6 +1179,22 @@ async function flushKzDiarioF(){
   }
 }
 
+async function addKzDespF(){
+  try{
+    await flushKzDiarioF();
+    const r=await api('kaizen_desempenho','POST',{data:kzCurrentDateF,pessoa:'filipe',tarefa:'',nota:0,ordem:KzDesempenhoF.length});
+    KzDesempenhoF.push(r[0]);renderKaizenFilipe();
+  }catch(e){console.error('addKzDespF',e);}
+}
+
+async function delKzDespF(id){
+  await flushKzDiarioF();
+  await api('kaizen_desempenho','DELETE',null,'?id=eq.'+id);
+  KzDesempenhoF=KzDesempenhoF.filter(x=>x.id!==id);
+  renderKaizenFilipe();
+}
+
+
 async function updateKzDesp(id,field,value){
   try{
     await api('kaizen_desempenho','PATCH',{[field]:value},'?id=eq.'+id);
