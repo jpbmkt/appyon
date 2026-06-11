@@ -815,7 +815,12 @@ async function loadKaizenFilipe(){
       api('kaizen_desempenho','GET',null,'?data=eq.'+dt+'&pessoa=eq.filipe&order=ordem.asc,id.asc'),
       api('kaizen_deep_focus','GET',null,'?data=eq.'+dt+'&pessoa=eq.filipe'),
     ]);
-    KzDiarioF=diario[0]||{data:dt,pessoa:'filipe'};
+    if(diario[0]){
+      KzDiarioF=diario[0];
+    } else {
+      const r=await api('kaizen_diario','POST',{data:dt,pessoa:'filipe'});
+      KzDiarioF=r&&r[0]?r[0]:{data:dt,pessoa:'filipe'};
+    }
     KzTarefasF=tarefas;
     KzDesempenhoF=desemp;
     KzFocusF=focus[0]||{data:dt,pessoa:'filipe'};
@@ -885,11 +890,16 @@ async function loadKaizen(){
       api('kaizen_desempenho','GET',null,'?data=eq.'+dt+'&pessoa=eq.jessica&order=ordem.asc,id.asc'),
       api('kaizen_deep_focus','GET',null,'?data=eq.'+dt+'&pessoa=eq.jessica'),
     ]);
-    KzDiario=diario[0]||{data:dt,pessoa:'jessica'};
+    // Garantir que KzDiario existe no banco
+    if(diario[0]){
+      KzDiario=diario[0];
+    } else {
+      const r=await api('kaizen_diario','POST',{data:dt,pessoa:'jessica'});
+      KzDiario=r&&r[0]?r[0]:{data:dt,pessoa:'jessica'};
+    }
     KzTarefas=tarefas;
     KzDesempenho=desemp;
     KzFocus=focus[0]||{data:dt,pessoa:'jessica'};
-    // Verificar tarefas do dia anterior não concluídas
     await carregarTarefasPendentesJessica(dt);
     renderKaizen();
   }catch(e){console.error('loadKaizen',e);}
@@ -992,37 +1002,41 @@ function renderKaizen(){
 
 async function saveKzDiario(field,value){
   try{
-    if(!KzDiario.id){
-      // Verificar se já existe no banco para este dia
-      const existing=await api('kaizen_diario','GET',null,'?data=eq.'+kzCurrentDate+'&pessoa=eq.jessica');
-      if(existing&&existing[0]){KzDiario=existing[0];}
-    }
     if(KzDiario.id){
       await api('kaizen_diario','PATCH',{[field]:value},'?id=eq.'+KzDiario.id);
       KzDiario[field]=value;
     } else {
-      const obj={data:kzCurrentDate,pessoa:'jessica'};
-      obj[field]=value;
-      const r=await api('kaizen_diario','POST',obj);
-      if(r&&r[0])KzDiario=r[0];
+      // Fallback: buscar ou criar
+      const ex=await api('kaizen_diario','GET',null,'?data=eq.'+kzCurrentDate+'&pessoa=eq.jessica&order=id.asc');
+      if(ex&&ex[0]){
+        KzDiario=ex[0];
+        await api('kaizen_diario','PATCH',{[field]:value},'?id=eq.'+KzDiario.id);
+        KzDiario[field]=value;
+      } else {
+        const obj={data:kzCurrentDate,pessoa:'jessica'};obj[field]=value;
+        const r=await api('kaizen_diario','POST',obj);
+        if(r&&r[0])KzDiario=r[0];
+      }
     }
   }catch(e){console.error('saveKzDiario',e);}
 }
 
 async function saveKzDiarioF(field,value){
   try{
-    if(!KzDiarioF.id){
-      const existing=await api('kaizen_diario','GET',null,'?data=eq.'+kzCurrentDateF+'&pessoa=eq.filipe&order=id.asc');
-      if(existing&&existing[0]){KzDiarioF=existing[0];}
-    }
     if(KzDiarioF.id){
       await api('kaizen_diario','PATCH',{[field]:value},'?id=eq.'+KzDiarioF.id);
       KzDiarioF[field]=value;
     } else {
-      const obj={data:kzCurrentDateF,pessoa:'filipe'};
-      obj[field]=value;
-      const r=await api('kaizen_diario','POST',obj);
-      if(r&&r[0])KzDiarioF=r[0];
+      const ex=await api('kaizen_diario','GET',null,'?data=eq.'+kzCurrentDateF+'&pessoa=eq.filipe&order=id.asc');
+      if(ex&&ex[0]){
+        KzDiarioF=ex[0];
+        await api('kaizen_diario','PATCH',{[field]:value},'?id=eq.'+KzDiarioF.id);
+        KzDiarioF[field]=value;
+      } else {
+        const obj={data:kzCurrentDateF,pessoa:'filipe'};obj[field]=value;
+        const r=await api('kaizen_diario','POST',obj);
+        if(r&&r[0])KzDiarioF=r[0];
+      }
     }
   }catch(e){console.error('saveKzDiarioF',e);}
 }
@@ -1174,6 +1188,38 @@ async function flushKzDiarioF(){
     }
   }
 }
+
+async function updateKzDesp(id,field,value){
+  try{
+    await api('kaizen_desempenho','PATCH',{[field]:value},'?id=eq.'+id);
+    const item=KzDesempenho.find(x=>x.id===id);
+    if(item)item[field]=value;
+  }catch(e){console.error('updateKzDesp',e);}
+}
+
+async function updateKzDespF(id,field,value){
+  try{
+    await api('kaizen_desempenho','PATCH',{[field]:value},'?id=eq.'+id);
+    const item=KzDesempenhoF.find(x=>x.id===id);
+    if(item)item[field]=value;
+  }catch(e){console.error('updateKzDespF',e);}
+}
+
+async function updateKzTarefaF(id,field,value){
+  try{
+    await api('kaizen_tarefas','PATCH',{[field]:value},'?id=eq.'+id);
+    const item=KzTarefasF.find(x=>x.id===id);
+    if(item)item[field]=value;
+    if(field==='andamento'){
+      const sel=document.querySelector('[data-kzf-id="'+id+'"][data-kzf-field="andamento"]');
+      if(sel){
+        const cls=value==='concluida'?'and-concluida':value==='andamento'?'and-andamento':'and-pendente';
+        sel.className='andamento-sel '+cls;
+      }
+    }
+  }catch(e){console.error('updateKzTarefaF',e);}
+}
+
 
 async function addKzDesemp(){
   try{await flushKzDiario();const r=await api('kaizen_desempenho','POST',{data:kzCurrentDate,pessoa:'jessica',tarefa:'',nota:0,ordem:KzDesempenho.length});KzDesempenho.push(r[0]);renderKaizen();}catch(e){console.error(e);}
