@@ -557,7 +557,7 @@ td.iec select{cursor:pointer}
       <th style="min-width:120px"><div class="th-inner">Grupo Avatar<div class="flt-wrap"><button class="flt-btn" id="fbt-grupo" onclick="toggleFlt('grupo',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-grupo"></div></div><button class="sort-btn" onclick="sortContas('grupo_avatar',event)" id="srt-grupo_avatar" title="Ordenar">↕</button></div></th>
       <th style="min-width:110px"><div class="th-inner">Dispositivo<div class="flt-wrap"><button class="flt-btn" id="fbt-disp" onclick="toggleFlt('disp',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-disp"></div></div><button class="sort-btn" onclick="sortContas('dispositivo',event)" id="srt-dispositivo" title="Ordenar">↕</button></div></th>
       <th style="min-width:110px"><div class="th-inner">Situação<div class="flt-wrap"><button class="flt-btn" id="fbt-sit" onclick="toggleFlt('sit',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-sit"></div></div><button class="sort-btn" onclick="sortContas('situacao',event)" id="srt-situacao" title="Ordenar">↕</button></div></th>
-      <th style="min-width:120px"><div class="th-inner">Conta Facebook<div class="flt-wrap"><button class="flt-btn" id="fbt-fbp" onclick="toggleFlt('fbp',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-fbp"></div></div></div></th>
+      <th style="min-width:120px"><div class="th-inner">Conta Facebook<button id="srt-conta_fb" class="sort-btn" onclick="sortContas('conta_fb',event)" title="Ordenar por Conta FB" style="background:transparent;border:none;color:#555;cursor:pointer;font-size:10px;padding:0 3px">⇅</button><div class="flt-wrap"><button class="flt-btn" id="fbt-fbp" onclick="toggleFlt('fbp',event)"><i class="ti ti-filter" style="font-size:10px"></i></button><div class="flt-drop" id="flt-fbp"></div></div></div></th>
       <th style="width:60px">FB Page</th>
       <th style="width:60px">MB Suite</th>
       <th style="width:80px">Automação</th>
@@ -732,7 +732,7 @@ let ferrTipoFilter='';
 let FbProfiles=[],FbPages=[];
 const FB_APP_ID='1499689168525266';
 let kzCurrentDate='',projCurrentTab='diario';
-let cQ='',cSit='',cPrio='',cFavOnly=false,cCluster='',postPrio='',postFavOnly=false,postCluster='',postSit='',postQ='',copiesQ='',copiesCluster='',copiesSit='',copiesPrio='',copiesFavOnly=false,eMailFilter='',proxyFilter='';
+let cQ='',cSit='',cPrio='',cFavOnly=false,cCluster='',postPrio='',postFavOnly=false,postCluster='',postSit='',postQ='',postSort={field:null,dir:1},copiesQ='',copiesCluster='',copiesSit='',copiesPrio='',copiesFavOnly=false,eMailFilter='',proxyFilter='';
 const today=localDateStr(new Date());
 
 // days of current week Mon-Sun
@@ -3015,6 +3015,7 @@ function renderPostagens(){
     if(postFavOnly)contas=contas.filter(x=>x.favorito);
     if(postCluster)contas=contas.filter(x=>(x.cluster||'').toLowerCase().includes(postCluster.toLowerCase()));
     if(postQ)contas=contas.filter(x=>((x.fb_perfil||'')+(x.user_ig||'')).toLowerCase().includes(postQ.toLowerCase()));
+    if(postSort.field){contas=[...contas].sort(function(a,b){const va=a[postSort.field]||'',vb=b[postSort.field]||'';return String(va).localeCompare(String(vb),'pt')*postSort.dir;});}
     if(!contas.length)return'';
     const tableRows=contas.map(c=>{
       const checked=checkedDays(c.id);
@@ -3105,7 +3106,8 @@ function renderPostagens(){
           '<th style="width:70px">Prioridade</th>'+
           '<th style="min-width:90px">Cluster</th>'+
           '<th style="min-width:160px">Perfil</th>'+
-          '<th style="min-width:110px">Conta FB</th>'+
+          '<th style="min-width:110px" onclick="sortPostagens(\'conta_fb\')" style="cursor:pointer" title="Ordenar por Conta FB">'+
+          'Conta FB <span id="srt-post-conta_fb" style="font-size:9px;color:#555">⇅</span></th>'+
           '<th style="width:60px">IG</th>'+
           '<th style="width:80px">MB Suite</th>'+
           '<th style="width:70px">YouTube</th>'+
@@ -3838,6 +3840,15 @@ function setPrioFilter(v){cPrio=v;renderContas();}
 function setClusterFilter(v){cCluster=v;renderContas();}
 function setPostPrioFilter(v){postPrio=v;renderPostagens();}
 function setPostClusterFilter(v){postCluster=v;renderPostagens();}
+
+function sortPostagens(field){
+  if(postSort.field===field)postSort.dir*=-1;
+  else{postSort.field=field;postSort.dir=1;}
+  const el=document.getElementById('srt-post-'+field);
+  document.querySelectorAll('[id^="srt-post-"]').forEach(e=>e.textContent='⇅');
+  if(el)el.textContent=postSort.dir===1?'↑':'↓';
+  renderPostagens();
+}
 function searchPostagens(v){postQ=v;renderPostagens();}
 function toggleFavFilterPost(){
   postFavOnly=!postFavOnly;
