@@ -3074,7 +3074,7 @@ function renderPostagens(){
         return buildDayCell(c.id,d,onIG,onFB,qtdIG,qtdFB,clsIG,clsFB,todayCls,bg);
       }).join('');
 
-      const estoqueCell='<td style="padding:6px 8px"><div id="stk-post-'+c.id+'">'+stockEl(c.estoque_videos)+'</div><input type="number" min="0" value="'+Number(c.estoque_videos||0)+'" style="width:52px;background:#111;border:1px solid #222;border-radius:4px;color:#888;font-size:11px;padding:2px 4px;margin-top:3px;text-align:center" data-stk-id="'+c.id+'" onkeydown="if(event.key===\'Enter\'){this.blur();}"></td>';
+    const estoqueCell='';
 
       const sitHdrCls=sec.sit==='Aquecimento'?'aq':sec.sit==='Crescimento'?'cr':sec.sit==='Venda'?'vd':'cfg';
 
@@ -3088,7 +3088,7 @@ function renderPostagens(){
         '<td style="text-align:center;padding:4px 6px">'+stateBtn(c.id,'youtube',c.youtube)+'</td>'+
         '<td style="color:#666;font-size:11px">'+esc(c.dispositivo||'—')+'</td>'+
         estoqueCell+
-        '<td>'+progHtml+'</td>'+
+
         '<td style="padding:2px 4px"><textarea rows="2" placeholder="Horários" style="width:100%;background:transparent;border:none;border-bottom:1px solid #1e1e1e;color:#666;font-size:10px;resize:none;outline:none;padding:2px;line-height:1.4" data-ct-patch-id="'+c.id+'" data-ct-patch-field="horarios_publicacao">'+esc(c.horarios_publicacao||'')+'</textarea></td>'+
         (sec.showConfig?'':dayCells)+
       '</tr>';
@@ -3112,8 +3112,6 @@ function renderPostagens(){
           '<th style="width:80px">MB Suite</th>'+
           '<th style="width:70px">YouTube</th>'+
           '<th style="min-width:90px">Dispositivo</th>'+
-          '<th style="min-width:80px">Estoque</th>'+
-          '<th>'+(sec.showConfig?'Configuração Inicial':'Progresso')+'</th>'+
           '<th style="min-width:100px">Horários</th>'+
           (sec.showConfig?'':dayNames.map((d,i)=>{const isT=wk[i]===today;return'<th style="text-align:center;'+(isT?'background:#1a2a1a;':'')+'"><span style="'+(isT?'color:#4ade80;font-weight:700':'color:#555')+'">'+d+'</span><br><span style="font-size:9px;'+(isT?'color:#4ade80':'color:#333')+'">'+wk[i].slice(5)+'</span>'+(isT?'<div style="width:4px;height:4px;border-radius:50%;background:#4ade80;margin:2px auto 0"></div>':'')+'</th>';}).join(''))+
         '</tr></thead>'+
