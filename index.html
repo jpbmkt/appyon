@@ -960,9 +960,9 @@ function renderKaizen(){
   const despHtml=KzDesempenho.map(d=>{
     const stars=[1,2,3,4,5].map(n=>'<span class="nota-star" onclick="updateKzDesemp('+d.id+',\'nota\','+n+');this.parentElement.querySelectorAll(\'.nota-star\').forEach((s,i)=>s.textContent=i<'+n+'?\'⭐\':\'☆\')" title="'+n+'">'+(((d.nota||0)>=n)?'⭐':'☆')+'</span>').join('');
     return '<div class="kz-row" style="gap:8px">'+
-      '<input class="kz-input" value="'+esc(d.tarefa||'')+'" placeholder="Tarefa-chave..." style="flex:1" onblur="updateKzDesemp('+d.id+',\'tarefa\',this.value)" onkeydown="if(event.key===\'Enter\')this.blur()">'+
-      '<input class="kz-input" value="'+esc(d.inicio||'')+'" placeholder="Início" style="width:70px" onblur="updateKzDesemp('+d.id+',\'inicio\',this.value)">'+
-      '<input class="kz-input" value="'+esc(d.fim||'')+'" placeholder="Fim" style="width:70px" onblur="updateKzDesemp('+d.id+',\'fim\',this.value)">'+
+      '<input class="kz-input" value="'+esc(d.tarefa||'')+'" placeholder="Tarefa-chave..." style="flex:1" data-kzd-id="'+d.id+'" data-kzd-field="tarefa" onblur="updateKzDesemp('+d.id+',\'tarefa\',this.value)" onkeydown="if(event.key===\'Enter\')this.blur()">'+
+      '<input class="kz-input" value="'+esc(d.inicio||'')+'" placeholder="Início" style="width:70px" data-kzd-id="'+d.id+'" data-kzd-field="inicio" onblur="updateKzDesemp('+d.id+',\'inicio\',this.value)">'+
+      '<input class="kz-input" value="'+esc(d.fim||'')+'" placeholder="Fim" style="width:70px" data-kzd-id="'+d.id+'" data-kzd-field="fim" onblur="updateKzDesemp('+d.id+',\'fim\',this.value)">'+
       '<div style="display:flex;gap:2px">'+stars+'</div>'+
       '<button class="btn bd bsm" onclick="delKzDesemp('+d.id+')"><i class="ti ti-x"></i></button></div>';
   }).join('');
@@ -1182,6 +1182,7 @@ async function flushKzDiarioF(){
 async function addKzDespF(){
   try{
     await flushKzDiarioF();
+    await flushKzDespF();
     const r=await api('kaizen_desempenho','POST',{data:kzCurrentDateF,pessoa:'filipe',tarefa:'',nota:0,ordem:KzDesempenhoF.length});
     KzDesempenhoF.push(r[0]);renderKaizenFilipe();
   }catch(e){console.error('addKzDespF',e);}
@@ -1189,6 +1190,7 @@ async function addKzDespF(){
 
 async function delKzDespF(id){
   await flushKzDiarioF();
+  await flushKzDespF();
   await api('kaizen_desempenho','DELETE',null,'?id=eq.'+id);
   KzDesempenhoF=KzDesempenhoF.filter(x=>x.id!==id);
   renderKaizenFilipe();
@@ -1227,8 +1229,33 @@ async function updateKzTarefaF(id,field,value){
 }
 
 
+async function flushKzDesemp(){
+  // Salvar campos de texto de cada item de desempenho visível antes de re-renderizar
+  const items=document.querySelectorAll('[data-kzd-id][data-kzd-field]');
+  for(const el of items){
+    const id=Number(el.dataset.kzdId),field=el.dataset.kzdField,val=el.value;
+    const item=KzDesempenho.find(x=>x.id===id);
+    if(item&&item[field]!==val){
+      item[field]=val;
+      await api('kaizen_desempenho','PATCH',{[field]:val},'?id=eq.'+id);
+    }
+  }
+}
+
+async function flushKzDespF(){
+  const items=document.querySelectorAll('[data-kzfd-id][data-kzfd-field]');
+  for(const el of items){
+    const id=Number(el.dataset.kzfdId),field=el.dataset.kzfdField,val=el.value;
+    const item=KzDesempenhoF.find(x=>x.id===id);
+    if(item&&item[field]!==val){
+      item[field]=val;
+      await api('kaizen_desempenho','PATCH',{[field]:val},'?id=eq.'+id);
+    }
+  }
+}
+
 async function addKzDesemp(){
-  try{await flushKzDiario();const r=await api('kaizen_desempenho','POST',{data:kzCurrentDate,pessoa:'jessica',tarefa:'',nota:0,ordem:KzDesempenho.length});KzDesempenho.push(r[0]);renderKaizen();}catch(e){console.error(e);}
+  try{await flushKzDiario();await flushKzDesemp();const r=await api('kaizen_desempenho','POST',{data:kzCurrentDate,pessoa:'jessica',tarefa:'',nota:0,ordem:KzDesempenho.length});KzDesempenho.push(r[0]);renderKaizen();}catch(e){console.error(e);}
 }
 async function updateKzDesemp(id,field,value){
   const val=field==='nota'?Number(value):value;
@@ -1236,6 +1263,7 @@ async function updateKzDesemp(id,field,value){
 }
 async function delKzDesemp(id){
   await flushKzDiario();
+  await flushKzDesemp();
   await api('kaizen_desempenho','DELETE',null,'?id=eq.'+id);KzDesempenho=KzDesempenho.filter(x=>x.id!==id);renderKaizen();
 }
 
@@ -2277,7 +2305,32 @@ document.addEventListener('change',(e)=>{
 });
 // Autosave Kaizen ao digitar (debounce 1.5s)
 let kzDebounceTimer=null;
+let kzDespDebounce=null;
 document.addEventListener('input',(e)=>{
+  // Desempenho Jessica
+  const kzdInp=e.target.closest('[data-kzd-id][data-kzd-field]');
+  if(kzdInp){
+    clearTimeout(kzDespDebounce);
+    const id=Number(kzdInp.dataset.kzdId),field=kzdInp.dataset.kzdField,val=kzdInp.value;
+    kzDespDebounce=setTimeout(function(){
+      const item=KzDesempenho.find(x=>x.id===id);
+      if(item)item[field]=val;
+      api('kaizen_desempenho','PATCH',{[field]:val},'?id=eq.'+id);
+    },1500);
+    return;
+  }
+  // Desempenho Filipe
+  const kzfdInp2=e.target.closest('[data-kzfd-id][data-kzfd-field]');
+  if(kzfdInp2){
+    clearTimeout(kzDespDebounce);
+    const id=Number(kzfdInp2.dataset.kzfdId),field=kzfdInp2.dataset.kzfdField,val=kzfdInp2.value;
+    kzDespDebounce=setTimeout(function(){
+      const item=KzDesempenhoF.find(x=>x.id===id);
+      if(item)item[field]=val;
+      api('kaizen_desempenho','PATCH',{[field]:val},'?id=eq.'+id);
+    },1500);
+    return;
+  }
   const kzjInp=e.target.closest('[data-kzj-save]');
   if(kzjInp){
     clearTimeout(kzDebounceTimer);
