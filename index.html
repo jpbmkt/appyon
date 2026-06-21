@@ -602,26 +602,23 @@ td.iec select{cursor:pointer}
 
 <!-- ===== COPIES ===== -->
 <div class="tab" id="tab-copies">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+    <span style="font-size:11px;color:#555;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Cluster</span>
+    <select id="copies-cluster-sel" onchange="setCopiesCluster(this.value)" style="font-size:12px;padding:5px 10px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none">
+      <option value="">Todos os clusters</option>
+    </select>
+    <span id="cluster-stats-label-copies" style="font-size:11px;color:#444"></span>
+  </div>
   <div class="stats" id="stats-copies" style="margin-bottom:14px"></div>
   <div class="toolbar" style="margin-bottom:10px">
     <button class="btn bsm" id="btn-fav-filter-copies" onclick="toggleFavFilterCopies()" style="color:#555"><i class="ti ti-star"></i> Favoritos</button>
-    <input type="text" placeholder="Buscar perfil..." oninput="searchCopies(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none;width:160px">
-    <select onchange="setCopiesCluster(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none" id="copies-cluster-sel">
-      <option value="">Todos os clusters</option>
-    </select>
-    <select onchange="setCopiesSit(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none">
-      <option value="">Todas as situações</option>
-      <option value="Aquecimento">Aquecimento</option>
-      <option value="Configuração Inicial">Config. Inicial</option>
-      <option value="Crescimento">Crescimento</option>
-      <option value="Venda">Venda</option>
-    </select>
     <select onchange="setCopiesPrio(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none">
       <option value="">Todas as prioridades</option>
       <option value="alta">🔴 Alta</option>
       <option value="media">🟡 Média</option>
       <option value="baixa">🟢 Baixa</option>
     </select>
+    <input type="text" placeholder="Buscar perfil..." oninput="searchCopies(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none;width:160px">
   </div>
   <div id="copies-sections"><div class="loading">Carregando...</div></div>
 </div>
@@ -4040,8 +4037,8 @@ function initDragList(containerId,listType){
 // ══════════════════════════════════════
 
 function searchCopies(v){copiesQ=v;renderCopies();}
-function setCopiesCluster(v){copiesCluster=v;renderCopies();}
-function setCopiesSit(v){copiesSit=v;renderCopies();}
+function setCopiesCluster(v){copiesCluster=v;statsCopies();renderCopies();}
+function setCopiesSit(v){copiesSit=v;statsCopies();renderCopies();}
 function setCopiesPrio(v){copiesPrio=v;renderCopies();}
 function toggleFavFilterCopies(){
   copiesFavOnly=!copiesFavOnly;
@@ -4051,6 +4048,11 @@ function toggleFavFilterCopies(){
 }
 
 async function initCopies(){
+  statsCopies();
+  renderCopies();
+}
+
+function populateCopiesClusterSelect(){
   const clusters=[...new Set(Contas.map(c=>c.cluster||'').filter(Boolean))].sort();
   const sel=document.getElementById('copies-cluster-sel');
   if(sel){
@@ -4058,7 +4060,45 @@ async function initCopies(){
     sel.innerHTML='<option value="">Todos os clusters</option>'+clusters.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');
     sel.value=val;
   }
-  renderCopies();
+}
+
+function statsCopies(){
+  populateCopiesClusterSelect();
+  const groups=[
+    {label:'Todas',         color:'#aaa',    key:''},
+    {label:'Config. Inicial',color:'#38bdf8', key:'Configuração Inicial'},
+    {label:'Aquecimento',    color:'#fb923c', key:'Aquecimento'},
+    {label:'Crescimento',    color:'#60a5fa', key:'Crescimento'},
+    {label:'Venda',          color:'#4ade80', key:'Venda'},
+  ];
+  const el=document.getElementById('stats-copies');
+  if(!el)return;
+  const ATIVAS=['Aquecimento','Configuração Inicial','Crescimento','Venda'];
+  const base=Contas.filter(function(c){
+    if(!ATIVAS.includes(c.situacao))return false;
+    if(copiesCluster&&(c.cluster||'')!==copiesCluster)return false;
+    return true;
+  });
+  el.innerHTML=groups.map(function(g){
+    const count=g.key===''?base.length:base.filter(function(x){return x.situacao===g.key;}).length;
+    const isActive=copiesSit===g.key;
+    return '<div class="stat stat-clickable" data-key="'+g.key+'" style="cursor:pointer;border-color:'+(isActive?g.color:'#2a2a2a')+';box-shadow:'+(isActive?'0 0 0 1px '+g.color:'none')+'">'+
+      '<div class="sl" style="color:'+g.color+'">'+g.label+'</div>'+
+      '<div class="sv">'+count+'</div>'+
+    '</div>';
+  }).join('');
+  el.querySelectorAll('.stat-clickable').forEach(function(div){
+    div.addEventListener('click',function(){setCopiesSit(div.dataset.key);});
+  });
+  // Atualizar label do cluster
+  const labelEl=document.getElementById('cluster-stats-label-copies');
+  if(labelEl){
+    if(!copiesCluster){labelEl.textContent='';}
+    else{
+      const total=Contas.filter(function(c){return c.cluster===copiesCluster;}).length;
+      labelEl.innerHTML='<span style="color:#555;font-size:11px">'+total+' contas no cluster <b style="color:#aaa">'+esc(copiesCluster)+'</b></span>';
+    }
+  }
 }
 
 function renderCopies(){
