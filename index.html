@@ -620,7 +620,14 @@ td.iec select{cursor:pointer}
     </select>
     <input type="text" placeholder="Buscar perfil..." oninput="searchCopies(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none;width:160px">
   </div>
+  <div style="display:flex;gap:8px;margin-bottom:10px">
+    <button class="btn bsm" id="btn-view-table" onclick="setCopiesView('table')" style="color:#e8e8e8;border-color:#3a3a3a"><i class="ti ti-table"></i> Por dia</button>
+    <button class="btn bsm" id="btn-view-ranking" onclick="setCopiesView('ranking')" style="color:#555"><i class="ti ti-chart-bar"></i> Ranking de Copies</button>
+  </div>
   <div id="copies-sections"><div class="loading">Carregando...</div></div>
+  <div id="copies-ranking-wrap" style="display:none">
+    <div id="copies-ranking"></div>
+  </div>
 </div>
 
 <!-- ===== FERRAMENTAS ===== -->
@@ -729,7 +736,7 @@ let ferrTipoFilter='';
 let FbProfiles=[],FbPages=[];
 const FB_APP_ID='1499689168525266';
 let kzCurrentDate='',projCurrentTab='diario';
-let cQ='',cSit='',cPrio='',cFavOnly=false,cCluster='',postPrio='',postFavOnly=false,postCluster='',postSit='',postQ='',postSort={field:null,dir:1},copiesQ='',copiesCluster='',copiesSit='',copiesPrio='',copiesFavOnly=false,eMailFilter='',proxyFilter='';
+let cQ='',cSit='',cPrio='',cFavOnly=false,cCluster='',postPrio='',postFavOnly=false,postCluster='',postSit='',postQ='',postSort={field:null,dir:1},copiesQ='',copiesCluster='',copiesSit='',copiesPrio='',copiesFavOnly=false,copiesView='table',eMailFilter='',proxyFilter='';
 const today=localDateStr(new Date());
 
 // days of current week Mon-Sun
@@ -1747,6 +1754,7 @@ function stockEl(n){
 }
 
 function esc(s){return(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function formatK(n){n=Number(n)||0;if(n>=1000000)return(n/1000000).toFixed(1)+'M';if(n>=1000)return(n/1000).toFixed(1)+'K';return String(n);}
 function yn(v){return v==='Sim'?`<span style="color:#4ade80;font-size:13px">✓</span>`:`<span style="color:#2a2a2a">—</span>`;}
 
 function fillSelects(){
@@ -2871,6 +2879,22 @@ function mFieldSel(cid,label,field,val,opts,labels,isNum){
   return`<div class="f"><label>${label}</label><select style="background:#111;border:1px solid #252525;border-radius:7px;color:#e8e8e8;font-size:13px;padding:6px 9px;width:100%;outline:none" onchange="${onchange}">${optHtml}</select></div>`;
 }
 function closeModal(){document.getElementById('modal-bg').style.display='none';}
+
+function showModal(title,bodyHtml,onSave){
+  const bg=document.getElementById('modal-bg');
+  const inner=document.getElementById('modal-inner');
+  inner.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'+
+      '<h3 style="margin:0;font-size:16px;color:#e8e8e8">'+esc(title)+'</h3>'+
+      '<button onclick="closeModal()" style="background:transparent;border:none;color:#555;cursor:pointer;font-size:18px"><i class="ti ti-x"></i></button>'+
+    '</div>'+
+    bodyHtml+
+    '<div style="display:flex;gap:8px;margin-top:18px;justify-content:flex-end">'+
+      '<button class="btn bsm" onclick="closeModal()">Cancelar</button>'+
+      '<button class="btn bp bsm" id="modal-save-btn">Salvar</button>'+
+    '</div>';
+  bg.style.display='flex';
+  document.getElementById('modal-save-btn').onclick=function(){if(onSave)onSave();};
+}
 
 // special select with label mapping
 function ieSel(val,opts,fn,labels){
@@ -4040,6 +4064,17 @@ function searchCopies(v){copiesQ=v;renderCopies();}
 function setCopiesCluster(v){copiesCluster=v;statsCopies();renderCopies();}
 function setCopiesSit(v){copiesSit=v;statsCopies();renderCopies();}
 function setCopiesPrio(v){copiesPrio=v;renderCopies();}
+function setCopiesView(view){
+  copiesView=view;
+  document.getElementById('copies-sections').style.display=view==='table'?'block':'none';
+  document.getElementById('copies-ranking-wrap').style.display=view==='ranking'?'block':'none';
+  document.getElementById('btn-view-table').style.color=view==='table'?'#e8e8e8':'#555';
+  document.getElementById('btn-view-table').style.borderColor=view==='table'?'#3a3a3a':'#252525';
+  document.getElementById('btn-view-ranking').style.color=view==='ranking'?'#e8e8e8':'#555';
+  document.getElementById('btn-view-ranking').style.borderColor=view==='ranking'?'#3a3a3a':'#252525';
+  if(view==='ranking')renderCopiesRanking();
+}
+
 function toggleFavFilterCopies(){
   copiesFavOnly=!copiesFavOnly;
   const btn=document.getElementById('btn-fav-filter-copies');
@@ -4135,14 +4170,20 @@ function renderCopies(){
       const copy=CopiesPostagem.find(function(x){return x.conta_id===c.id&&x.data===d;});
       const customRaw=copy&&copy.custom_copies?copy.custom_copies:'';
       const customLines=customRaw?customRaw.split('\n').filter(function(l){return l.trim();}):[];
+      const metricsObj=copy&&copy.metrics?copy.metrics:{};
       const customBoxes=customLines.map(function(line,li){
         const parts=line.split('::');
         const checked=parts[0]==='1';
         const txt=parts[1]||parts[0]||'';
+        const m=metricsObj[li]||null;
+        const hasMetrics=m&&(m.views||m.likes||m.comments||m.shares);
+        const metricsBadge=hasMetrics?'<span style="font-size:8px;color:#60a5fa;flex-shrink:0;white-space:nowrap" title="Views: '+(m.views||0)+' · Likes: '+(m.likes||0)+' · Coments: '+(m.comments||0)+' · Shares: '+(m.shares||0)+'">'+formatK(m.views||0)+'👁</span>':'';
         return '<div style="display:flex;align-items:center;gap:4px;padding:1px 0">'+
           '<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:'+(checked?'#4ade80':'#777')+';cursor:pointer;flex:1;min-width:0">'+
           '<input type="checkbox"'+(checked?' checked':'')+' style="accent-color:#4ade80;flex-shrink:0" data-custom-cid="'+c.id+'" data-custom-d="'+d+'" data-custom-li="'+li+'"> '+
           '<span style="'+(checked?'text-decoration:line-through;opacity:.5':'')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(txt)+'</span></label>'+
+          metricsBadge+
+          '<button style="background:transparent;border:none;color:'+(hasMetrics?'#60a5fa':'#333')+';cursor:pointer;padding:0;font-size:10px;flex-shrink:0;line-height:1" data-metrics-cid="'+c.id+'" data-metrics-d="'+d+'" data-metrics-li="'+li+'" data-metrics-txt="'+esc(txt)+'" title="Registrar desempenho"><i class="ti ti-chart-bar"></i></button>'+
           '<button style="background:transparent;border:none;color:#333;cursor:pointer;padding:0;font-size:9px;flex-shrink:0;line-height:1" data-custom-del-cid="'+c.id+'" data-custom-del-d="'+d+'" data-custom-del-li="'+li+'">✕</button>'+
         '</div>';
       }).join('');
@@ -4175,6 +4216,13 @@ function renderCopies(){
         inp.value='';
         bulkAddCustomCopy(contas.map(function(c){return c.id;}),d,txt);
       }
+    });
+  });
+  // Métricas — abrir modal
+  el.querySelectorAll('[data-metrics-cid]').forEach(function(btn){
+    btn.addEventListener('click',function(e){
+      e.preventDefault();
+      openMetricsModal(Number(btn.dataset.metricsCid),btn.dataset.metricsD,Number(btn.dataset.metricsLi),btn.dataset.metricsTxt);
     });
   });
   // Custom copies — excluir linha
@@ -4259,6 +4307,100 @@ async function addCustomCopy(cid,d,txt){
     copy.custom_copies=newVal;
     renderCopies();
   }catch(e){console.error('addCustomCopy',e);}
+}
+
+function openMetricsModal(cid,d,li,txt){
+  const copy=CopiesPostagem.find(function(x){return x.conta_id===cid&&x.data===d;});
+  const m=(copy&&copy.metrics&&copy.metrics[li])||{};
+  const html='<div style="padding:4px 0">'+
+    '<div style="font-size:11px;color:#666;margin-bottom:4px">Copy:</div>'+
+    '<div style="font-size:13px;color:#e8e8e8;margin-bottom:16px;padding:8px 10px;background:#161616;border-radius:8px;border:1px solid #222">'+esc(txt)+'</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'+
+      '<div class="f"><label>Visualizações</label><input type="number" min="0" id="mtr-views" value="'+(m.views||'')+'" placeholder="0"></div>'+
+      '<div class="f"><label>Curtidas</label><input type="number" min="0" id="mtr-likes" value="'+(m.likes||'')+'" placeholder="0"></div>'+
+      '<div class="f"><label>Comentários</label><input type="number" min="0" id="mtr-comments" value="'+(m.comments||'')+'" placeholder="0"></div>'+
+      '<div class="f"><label>Compartilhamentos</label><input type="number" min="0" id="mtr-shares" value="'+(m.shares||'')+'" placeholder="0"></div>'+
+    '</div>'+
+  '</div>';
+  showModal('Desempenho da Copy',html,function(){
+    saveMetrics(cid,d,li,{
+      views:Number(document.getElementById('mtr-views').value)||0,
+      likes:Number(document.getElementById('mtr-likes').value)||0,
+      comments:Number(document.getElementById('mtr-comments').value)||0,
+      shares:Number(document.getElementById('mtr-shares').value)||0,
+    });
+  });
+}
+
+async function saveMetrics(cid,d,li,metrics){
+  try{
+    const copy=await getOrCreateCopy(cid,d);
+    const allMetrics=copy.metrics||{};
+    allMetrics[li]=metrics;
+    await api('copies_postagem','PATCH',{metrics:allMetrics},'?conta_id=eq.'+cid+'&data=eq.'+d);
+    copy.metrics=allMetrics;
+    closeModal();
+    renderCopies();
+  }catch(e){console.error('saveMetrics',e);}
+}
+
+function aggregateCopiesByText(){
+  // Agrupa todas as linhas de custom_copies pelo texto, somando métricas
+  const agg={};
+  CopiesPostagem.forEach(function(copy){
+    const lines=parseCustomLines(copy.custom_copies||'');
+    const metricsObj=copy.metrics||{};
+    lines.forEach(function(line,li){
+      const parts=line.split('::');
+      const txt=(parts[1]||parts[0]||'').trim();
+      if(!txt)return;
+      const m=metricsObj[li]||{};
+      if(!agg[txt])agg[txt]={texto:txt,views:0,likes:0,comments:0,shares:0,usos:0,perfis:new Set()};
+      agg[txt].views+=Number(m.views||0);
+      agg[txt].likes+=Number(m.likes||0);
+      agg[txt].comments+=Number(m.comments||0);
+      agg[txt].shares+=Number(m.shares||0);
+      agg[txt].usos+=1;
+      agg[txt].perfis.add(copy.conta_id);
+    });
+  });
+  return Object.values(agg).map(function(a){a.numPerfis=a.perfis.size;delete a.perfis;return a;})
+    .sort(function(a,b){return b.views-a.views;});
+}
+
+function renderCopiesRanking(){
+  const el=document.getElementById('copies-ranking');
+  if(!el)return;
+  const data=aggregateCopiesByText();
+  if(!data.length){el.innerHTML='<div class="empty">Nenhuma métrica registrada ainda.</div>';return;}
+  const rows=data.map(function(d,i){
+    const engRate=d.views>0?(((d.likes+d.comments+d.shares)/d.views)*100).toFixed(1):'—';
+    return '<tr>'+
+      '<td style="color:#555;font-size:11px;text-align:center">'+(i+1)+'</td>'+
+      '<td style="font-size:12px;color:#e8e8e8;max-width:280px">'+esc(d.texto)+'</td>'+
+      '<td style="text-align:center;font-size:11px;color:#888">'+d.numPerfis+'</td>'+
+      '<td style="text-align:center;font-size:11px;color:#888">'+d.usos+'</td>'+
+      '<td style="text-align:center;font-size:12px;color:#60a5fa;font-weight:600">'+formatK(d.views)+'</td>'+
+      '<td style="text-align:center;font-size:11px;color:#f472b6">'+formatK(d.likes)+'</td>'+
+      '<td style="text-align:center;font-size:11px;color:#fbbf24">'+formatK(d.comments)+'</td>'+
+      '<td style="text-align:center;font-size:11px;color:#4ade80">'+formatK(d.shares)+'</td>'+
+      '<td style="text-align:center;font-size:11px;color:#a78bfa">'+engRate+(engRate!=='—'?'%':'')+'</td>'+
+    '</tr>';
+  }).join('');
+  el.innerHTML='<div class="tw"><table class="pt">'+
+    '<thead><tr>'+
+      '<th style="width:30px">#</th>'+
+      '<th>Copy</th>'+
+      '<th style="width:70px">Perfis</th>'+
+      '<th style="width:60px">Usos</th>'+
+      '<th style="width:80px">Views</th>'+
+      '<th style="width:70px">Likes</th>'+
+      '<th style="width:80px">Coments</th>'+
+      '<th style="width:80px">Shares</th>'+
+      '<th style="width:70px">Engaj.</th>'+
+    '</tr></thead>'+
+    '<tbody>'+rows+'</tbody>'+
+  '</table></div>';
 }
 
 async function bulkAddCustomCopy(cids,d,txt){
