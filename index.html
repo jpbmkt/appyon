@@ -572,12 +572,18 @@ td.iec select{cursor:pointer}
 
 <!-- ===== POSTAGENS ===== -->
 <div class="tab" id="tab-postagens">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
     <span style="font-size:11px;color:#555;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Cluster</span>
     <select id="cluster-select-post" onchange="setClusterSelectPost(this.value)" style="font-size:12px;padding:5px 10px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none">
       <option value="">Todos os clusters</option>
     </select>
     <span id="cluster-stats-label-post" style="font-size:11px;color:#444"></span>
+    <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
+      <button class="btn bsm" onclick="navPostWeek(-1)" title="Semana anterior" style="padding:5px 9px"><i class="ti ti-chevron-left"></i></button>
+      <button class="btn bsm" onclick="navPostToday()" title="Voltar para hoje" style="padding:5px 10px">Hoje</button>
+      <span id="post-week-label" style="font-size:12px;color:#888;min-width:120px;text-align:center"></span>
+      <button class="btn bsm" onclick="navPostWeek(1)" title="Próxima semana" style="padding:5px 9px"><i class="ti ti-chevron-right"></i></button>
+    </div>
   </div>
   <div class="stats" id="stats-post" style="margin-bottom:14px"></div>
   <div class="toolbar" style="margin-bottom:10px">
@@ -602,12 +608,18 @@ td.iec select{cursor:pointer}
 
 <!-- ===== COPIES ===== -->
 <div class="tab" id="tab-copies">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
     <span style="font-size:11px;color:#555;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Cluster</span>
     <select id="copies-cluster-sel" onchange="setCopiesCluster(this.value)" style="font-size:12px;padding:5px 10px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none">
       <option value="">Todos os clusters</option>
     </select>
     <span id="cluster-stats-label-copies" style="font-size:11px;color:#444"></span>
+    <div id="copies-week-nav" style="display:flex;align-items:center;gap:6px;margin-left:auto">
+      <button class="btn bsm" onclick="navCopiesWeek(-1)" title="Semana anterior" style="padding:5px 9px"><i class="ti ti-chevron-left"></i></button>
+      <button class="btn bsm" onclick="navCopiesToday()" title="Voltar para hoje" style="padding:5px 10px">Hoje</button>
+      <span id="copies-week-label" style="font-size:12px;color:#888;min-width:120px;text-align:center"></span>
+      <button class="btn bsm" onclick="navCopiesWeek(1)" title="Próxima semana" style="padding:5px 9px"><i class="ti ti-chevron-right"></i></button>
+    </div>
   </div>
   <div class="stats" id="stats-copies" style="margin-bottom:14px"></div>
   <div class="toolbar" style="margin-bottom:10px">
@@ -626,6 +638,13 @@ td.iec select{cursor:pointer}
   </div>
   <div id="copies-sections"><div class="loading">Carregando...</div></div>
   <div id="copies-ranking-wrap" style="display:none">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <span style="font-size:11px;color:#555;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Período</span>
+      <input type="date" id="ranking-date-from" onchange="setRankingDateFilter()" style="font-size:12px;padding:5px 8px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none">
+      <span style="color:#444;font-size:11px">até</span>
+      <input type="date" id="ranking-date-to" onchange="setRankingDateFilter()" style="font-size:12px;padding:5px 8px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none">
+      <button class="btn bsm" onclick="clearRankingDateFilter()" style="color:#555">Limpar</button>
+    </div>
     <div id="copies-ranking"></div>
   </div>
 </div>
@@ -746,8 +765,8 @@ function localDateStr(d){
   const day=String(d.getDate()).padStart(2,'0');
   return`${y}-${m}-${day}`;
 }
-function weekDays(){
-  const d=new Date();
+function weekDays(refDate){
+  const d=refDate?new Date(refDate+'T12:00:00'):new Date();
   const dow=d.getDay(); // 0=Dom,1=Seg...6=Sab
   const mon=new Date(d);
   mon.setDate(d.getDate()-(dow===0?6:dow-1));
@@ -757,6 +776,42 @@ function weekDays(){
     x.setDate(mon.getDate()+i);
     return localDateStr(x);
   });
+}
+
+let postWeekRef=localDateStr(new Date());
+let copiesWeekRef=localDateStr(new Date());
+
+function navPostWeek(dir){
+  const d=new Date(postWeekRef+'T12:00:00');
+  d.setDate(d.getDate()+dir*7);
+  postWeekRef=localDateStr(d);
+  updateWeekLabel('post-week-label',postWeekRef);
+  renderPostagens();
+}
+function navPostToday(){
+  postWeekRef=localDateStr(new Date());
+  updateWeekLabel('post-week-label',postWeekRef);
+  renderPostagens();
+}
+function navCopiesWeek(dir){
+  const d=new Date(copiesWeekRef+'T12:00:00');
+  d.setDate(d.getDate()+dir*7);
+  copiesWeekRef=localDateStr(d);
+  updateWeekLabel('copies-week-label',copiesWeekRef);
+  renderCopies();
+}
+function navCopiesToday(){
+  copiesWeekRef=localDateStr(new Date());
+  updateWeekLabel('copies-week-label',copiesWeekRef);
+  renderCopies();
+}
+function updateWeekLabel(elId,refDate){
+  const el=document.getElementById(elId);
+  if(!el)return;
+  const wk=weekDays(refDate);
+  const a=new Date(wk[0]+'T12:00:00'),b=new Date(wk[6]+'T12:00:00');
+  const meses=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  el.textContent=a.getDate()+' '+meses[a.getMonth()]+' – '+b.getDate()+' '+meses[b.getMonth()];
 }
 
 // ══════════════════════════════════════
@@ -3081,7 +3136,7 @@ async function saveQtdVideos(cid,data,val){
 function renderPostagens(){
   populateClusterSelects();
   renderPostStats();
-  const wk=weekDays();
+  const wk=weekDays(postWeekRef);
   const dayNames=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
   const sections=[
     {sit:'Aquecimento',cls:'b-aquecimento',prog:'pf-aq',max:2,label:'dias de aquecimento',getCount:c=>new Set(Checks.filter(x=>x.conta_id===c.id&&(x.on_ig||x.on_fb||(x.on_ig==null))).map(x=>x.data)).size,showQtd:false,showConfig:false},
@@ -4139,6 +4194,7 @@ function statsCopies(){
 function renderCopies(){
   const el=document.getElementById('copies-sections');
   if(!el)return;
+  updateWeekLabel('copies-week-label',copiesWeekRef);
   const ATIVAS=['Aquecimento','Configuração Inicial','Crescimento','Venda'];
   let contas=Contas.filter(c=>ATIVAS.includes(c.situacao));
   if(copiesQ)contas=contas.filter(c=>((c.fb_perfil||'')+(c.user_ig||'')).toLowerCase().includes(copiesQ.toLowerCase()));
@@ -4148,7 +4204,7 @@ function renderCopies(){
   if(copiesFavOnly)contas=contas.filter(c=>c.favorito);
   if(!contas.length){el.innerHTML='<div class="empty">Nenhuma conta ativa.</div>';return;}
 
-  const wk=weekDays();
+  const wk=weekDays(copiesWeekRef);
   const dayNames=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
 
   const thead='<thead><tr>'+
@@ -4348,6 +4404,8 @@ function aggregateCopiesByText(){
   // Agrupa todas as linhas de custom_copies pelo texto, somando métricas
   const agg={};
   CopiesPostagem.forEach(function(copy){
+    if(rankingDateFrom&&copy.data<rankingDateFrom)return;
+    if(rankingDateTo&&copy.data>rankingDateTo)return;
     const lines=parseCustomLines(copy.custom_copies||'');
     const metricsObj=copy.metrics||{};
     lines.forEach(function(line,li){
@@ -4379,6 +4437,19 @@ function aggregateCopiesByText(){
 }
 
 let rankingSort={field:'views',dir:-1};
+let rankingDateFrom='',rankingDateTo='';
+
+function setRankingDateFilter(){
+  rankingDateFrom=document.getElementById('ranking-date-from').value||'';
+  rankingDateTo=document.getElementById('ranking-date-to').value||'';
+  renderCopiesRanking();
+}
+function clearRankingDateFilter(){
+  rankingDateFrom='';rankingDateTo='';
+  document.getElementById('ranking-date-from').value='';
+  document.getElementById('ranking-date-to').value='';
+  renderCopiesRanking();
+}
 
 function sortRanking(field){
   if(rankingSort.field===field)rankingSort.dir*=-1;
