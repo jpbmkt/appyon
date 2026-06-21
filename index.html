@@ -4075,12 +4075,6 @@ function renderCopies(){
 
   const wk=weekDays();
   const dayNames=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
-  const COPIES=[
-    {key:'copy_validada_nossa',  label:'Copy validada (nossa)'},
-    {key:'copy_validada_mercado',label:'Copy validada (mercado)'},
-    {key:'copy_data',            label:'Copy com Data'},
-    {key:'hook_duplo',           label:'Hook duplo sentido'},
-  ];
 
   const thead='<thead><tr>'+
     '<th style="min-width:160px">Perfil</th>'+
@@ -4088,42 +4082,35 @@ function renderCopies(){
     '<th style="width:80px">Prioridade</th>'+
     dayNames.map(function(d,i){
       const isT=wk[i]===today;
-      return '<th style="min-width:130px;text-align:center;'+(isT?'background:#1a2a1a':'')+'">'+
+      return '<th style="min-width:160px;text-align:center;vertical-align:top;padding:6px 4px;'+(isT?'background:#1a2a1a':'')+'">'+
         '<span style="'+(isT?'color:#4ade80;font-weight:700':'color:#555')+'">'+d+'</span>'+
-        '<br><span style="font-size:9px;'+(isT?'color:#4ade80':'color:#333')+'">'+wk[i].slice(5)+'</span></th>';
+        '<span style="font-size:9px;margin-left:4px;'+(isT?'color:#4ade80':'color:#333')+'">'+wk[i].slice(5)+'</span>'+
+        '<div style="margin-top:5px"><input placeholder="Adicionar p/ todos... (Enter)" style="width:100%;background:#111;border:1px solid #252525;border-radius:5px;color:#888;font-size:10px;outline:none;padding:3px 5px;font-weight:400;text-align:left" data-bulk-add-d="'+wk[i]+'"></div>'+
+      '</th>';
     }).join('')+
   '</tr></thead>';
 
   const rows=contas.map(function(c){
-
-
     const dayCols=wk.map(function(d){
       const copy=CopiesPostagem.find(function(x){return x.conta_id===c.id&&x.data===d;});
-      const boxes=COPIES.map(function(cp){
-        const chk=copy&&copy[cp.key];
-        return '<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:'+(chk?'#4ade80':'#444')+';cursor:pointer;padding:1px 0">'+
-          '<input type="checkbox"'+(chk?' checked':'')+' style="accent-color:#4ade80" data-copy-cid="'+c.id+'" data-copy-d="'+d+'" data-copy-key="'+cp.key+'"> '+cp.label+'</label>';
-      }).join('');
-      const outro='';
-      // Custom copies — lista de tarefas
       const customRaw=copy&&copy.custom_copies?copy.custom_copies:'';
-      const customLines=customRaw?customRaw.split('\n').filter(function(l){return l.trim();}):[]; 
+      const customLines=customRaw?customRaw.split('\n').filter(function(l){return l.trim();}):[];
       const customBoxes=customLines.map(function(line,li){
         const parts=line.split('::');
         const checked=parts[0]==='1';
         const txt=parts[1]||parts[0]||'';
         return '<div style="display:flex;align-items:center;gap:4px;padding:1px 0">'+
-          '<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:'+(checked?'#4ade80':'#444')+';cursor:pointer;flex:1;min-width:0">'+
+          '<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:'+(checked?'#4ade80':'#777')+';cursor:pointer;flex:1;min-width:0">'+
           '<input type="checkbox"'+(checked?' checked':'')+' style="accent-color:#4ade80;flex-shrink:0" data-custom-cid="'+c.id+'" data-custom-d="'+d+'" data-custom-li="'+li+'"> '+
           '<span style="'+(checked?'text-decoration:line-through;opacity:.5':'')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(txt)+'</span></label>'+
-          '<button style="background:transparent;border:none;color:#252525;cursor:pointer;padding:0;font-size:9px;flex-shrink:0;line-height:1" data-custom-del-cid="'+c.id+'" data-custom-del-d="'+d+'" data-custom-del-li="'+li+'">✕</button>'+
+          '<button style="background:transparent;border:none;color:#333;cursor:pointer;padding:0;font-size:9px;flex-shrink:0;line-height:1" data-custom-del-cid="'+c.id+'" data-custom-del-d="'+d+'" data-custom-del-li="'+li+'">✕</button>'+
         '</div>';
       }).join('');
-      const customInput='<div style="display:flex;gap:4px;margin-top:4px">'+
+      const customInput='<div style="display:flex;gap:4px;margin-top:'+(customBoxes?'5px':'0')+'">'+
         '<input placeholder="Nova opção... (Enter)" style="flex:1;background:transparent;border:none;border-bottom:1px solid #252525;color:#555;font-size:10px;outline:none" data-custom-add-cid="'+c.id+'" data-custom-add-d="'+d+'">'+
         '</div>';
-      return '<td style="padding:5px 7px;vertical-align:top;border-right:1px solid #141414">'+boxes+outro+
-        (customBoxes?'<div style="margin-top:5px;border-top:1px solid #141414;padding-top:4px">'+customBoxes+'</div>':'')+
+      return '<td style="padding:5px 7px;vertical-align:top;border-right:1px solid #141414">'+
+        (customBoxes||'<div style="font-size:10px;color:#2a2a2a">—</div>')+
         customInput+'</td>';
     }).join('');
     return '<tr>'+
@@ -4138,9 +4125,16 @@ function renderCopies(){
 
   el.innerHTML='<div class="tw" style="overflow-x:auto"><table class="pt"><thead>'+thead+'</thead><tbody>'+rows+'</tbody></table></div>';
 
-  el.querySelectorAll('[data-copy-cid]').forEach(function(inp){
-    inp.addEventListener(inp.type==='checkbox'?'change':'blur',function(){
-      saveCopy(Number(inp.dataset.copyCid),inp.dataset.copyD,inp.dataset.copyKey,inp.type==='checkbox'?inp.checked:inp.value);
+  // Bulk add — aplica para todos os perfis filtrados visíveis naquele dia
+  el.querySelectorAll('[data-bulk-add-d]').forEach(function(inp){
+    inp.addEventListener('keydown',function(e){
+      if(e.key==='Enter'&&inp.value.trim()){
+        e.preventDefault();
+        const d=inp.dataset.bulkAddD;
+        const txt=inp.value.trim();
+        inp.value='';
+        bulkAddCustomCopy(contas.map(function(c){return c.id;}),d,txt);
+      }
     });
   });
   // Custom copies — excluir linha
@@ -4158,7 +4152,7 @@ function renderCopies(){
       toggleCustomCopy(cid,d,li,chk.checked);
     });
   });
-  // Custom copies — adicionar nova linha com Enter
+  // Custom copies — adicionar nova linha individual com Enter
   el.querySelectorAll('[data-custom-add-cid]').forEach(function(inp){
     inp.addEventListener('keydown',function(e){
       if(e.key==='Enter'&&inp.value.trim()){
@@ -4177,13 +4171,18 @@ function parseCustomLines(raw){
 }
 function serializeCustomLines(lines){return lines.join('\n');}
 
+async function getOrCreateCopy(cid,d){
+  let copy=CopiesPostagem.find(function(x){return x.conta_id===cid&&x.data===d;});
+  if(!copy){
+    const r=await api('copies_postagem','POST',{conta_id:cid,data:d,custom_copies:''});
+    if(r&&r[0]){CopiesPostagem.push(r[0]);copy=r[0];}
+  }
+  return copy;
+}
+
 async function toggleCustomCopy(cid,d,li,checked){
   try{
-    let copy=CopiesPostagem.find(function(x){return x.conta_id===cid&&x.data===d;});
-    if(!copy){
-      const r=await api('copies_postagem','POST',{conta_id:cid,data:d,copy_validada_nossa:false,copy_validada_mercado:false,copy_data:false,hook_duplo:false,outro:'',custom_copies:''});
-      if(r&&r[0]){CopiesPostagem.push(r[0]);copy=r[0];}
-    }
+    const copy=await getOrCreateCopy(cid,d);
     const lines=parseCustomLines(copy.custom_copies||'');
     if(lines[li]!==undefined){
       const parts=lines[li].split('::');
@@ -4212,11 +4211,7 @@ async function deleteCustomCopy(cid,d,li){
 
 async function addCustomCopy(cid,d,txt){
   try{
-    let copy=CopiesPostagem.find(function(x){return x.conta_id===cid&&x.data===d;});
-    if(!copy){
-      const r=await api('copies_postagem','POST',{conta_id:cid,data:d,copy_validada_nossa:false,copy_validada_mercado:false,copy_data:false,hook_duplo:false,outro:'',custom_copies:''});
-      if(r&&r[0]){CopiesPostagem.push(r[0]);copy=r[0];}
-    }
+    const copy=await getOrCreateCopy(cid,d);
     const lines=parseCustomLines(copy.custom_copies||'');
     lines.push('0::'+txt);
     const newVal=serializeCustomLines(lines);
@@ -4226,6 +4221,19 @@ async function addCustomCopy(cid,d,txt){
   }catch(e){console.error('addCustomCopy',e);}
 }
 
+async function bulkAddCustomCopy(cids,d,txt){
+  try{
+    for(const cid of cids){
+      const copy=await getOrCreateCopy(cid,d);
+      const lines=parseCustomLines(copy.custom_copies||'');
+      lines.push('0::'+txt);
+      const newVal=serializeCustomLines(lines);
+      await api('copies_postagem','PATCH',{custom_copies:newVal},'?conta_id=eq.'+cid+'&data=eq.'+d);
+      copy.custom_copies=newVal;
+    }
+    renderCopies();
+  }catch(e){console.error('bulkAddCustomCopy',e);}
+}
 async function saveCopy(cid,d,key,val){
   try{
     let copy=CopiesPostagem.find(function(x){return x.conta_id===cid&&x.data===d;});
