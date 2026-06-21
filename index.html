@@ -4527,13 +4527,33 @@ function renderCopiesRanking(){
       renderCopiesRanking();
     });
   });
+  // Bind filtro de perfil dentro do detalhe expandido
+  el.querySelectorAll('[data-detail-perfil-filter]').forEach(function(sel){
+    sel.addEventListener('click',function(e){e.stopPropagation();});
+    sel.addEventListener('change',function(e){
+      e.stopPropagation();
+      setDetailPerfilFiltro(sel.dataset.detailPerfilFilter,sel.value);
+    });
+  });
 }
 
 let copiesRankingExpanded=null;
 let detailSort={field:'views',dir:-1};
 
+let detailPerfilFiltro={};  // chave = texto da copy, valor = conta_id filtrado
+
+function setDetailPerfilFiltro(copyTexto,contaId){
+  detailPerfilFiltro[copyTexto]=contaId?Number(contaId):'';
+  renderCopiesRanking();
+}
+
 function renderCopyDetailInline(d){
   let detalhes=[...d.detalhes];
+
+  // Filtro por perfil
+  const perfilAtivo=detailPerfilFiltro[d.texto]||'';
+  if(perfilAtivo)detalhes=detalhes.filter(function(det){return det.conta_id===perfilAtivo;});
+
   const f=detailSort.field;
   if(f==='nome'){
     detalhes.sort(function(a,b){
@@ -4552,6 +4572,21 @@ function renderCopyDetailInline(d){
   } else {
     detalhes.sort(function(a,b){return (a[f]-b[f])*detailSort.dir;});
   }
+
+  // Lista de perfis únicos que usaram essa copy (para o dropdown)
+  const perfisUnicos=[...new Set(d.detalhes.map(function(det){return det.conta_id;}))]
+    .map(function(cid){
+      const c=Contas.find(function(x){return x.id===cid;});
+      return {id:cid,nome:c?(c.fb_perfil||c.user_ig):'Conta #'+cid};
+    })
+    .sort(function(a,b){return a.nome.localeCompare(b.nome,'pt');});
+
+  const filterSelect='<select data-detail-perfil-filter="'+esc(d.texto)+'" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid #252525;background:#111;color:#ccc;outline:none;margin-bottom:8px">'+
+    '<option value=""'+(perfilAtivo?'':' selected')+'>Todos os perfis ('+d.detalhes.length+')</option>'+
+    perfisUnicos.map(function(p){
+      return '<option value="'+p.id+'"'+(perfilAtivo===p.id?' selected':'')+'>'+esc(p.nome)+'</option>';
+    }).join('')+
+  '</select>';
 
   const dcols=[
     {key:'nome',label:'Perfil',w:''},
@@ -4582,7 +4617,12 @@ function renderCopyDetailInline(d){
     '</tr>';
   }).join('');
 
-  return '<div style="padding:10px 14px"><table style="width:100%;border-collapse:collapse">'+
+  if(!drows){
+    return '<div style="padding:10px 14px">'+filterSelect+'<div style="font-size:11px;color:#444;padding:8px 0">Nenhum registro para este perfil.</div></div>';
+  }
+
+  return '<div style="padding:10px 14px">'+filterSelect+
+    '<table style="width:100%;border-collapse:collapse">'+
     '<thead><tr>'+dthead+'</tr></thead>'+
     '<tbody>'+drows+'</tbody>'+
   '</table></div>';
