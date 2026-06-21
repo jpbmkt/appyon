@@ -4488,8 +4488,9 @@ function renderCopiesRanking(){
 
   const rows=data.map(function(d,i){
     const engStr=d.views>0?d.engRate.toFixed(1)+'%':'—';
-    return '<tr class="copy-rank-row" data-rank-idx="'+i+'" style="cursor:pointer">'+
-      '<td style="font-size:12px;color:#e8e8e8;max-width:320px">'+esc(d.texto)+'</td>'+
+    const isOpen=copiesRankingExpanded===d.texto;
+    const mainRow='<tr class="copy-rank-row" data-rank-idx="'+i+'" style="cursor:pointer'+(isOpen?';background:#161616':'')+'">'+
+      '<td style="font-size:12px;color:#e8e8e8;max-width:320px"><i class="ti ti-chevron-'+(isOpen?'down':'right')+'" style="font-size:11px;color:#555;margin-right:5px"></i>'+esc(d.texto)+'</td>'+
       '<td style="text-align:center;font-size:11px;color:#888">'+d.numPerfis+'</td>'+
       '<td style="text-align:center;font-size:11px;color:#888">'+d.usos+'</td>'+
       '<td style="text-align:center;font-size:12px;color:#60a5fa;font-weight:600">'+formatK(d.views)+'</td>'+
@@ -4498,6 +4499,8 @@ function renderCopiesRanking(){
       '<td style="text-align:center;font-size:11px;color:#4ade80">'+formatK(d.shares)+'</td>'+
       '<td style="text-align:center;font-size:11px;color:#a78bfa">'+engStr+'</td>'+
     '</tr>';
+    const detailRow=isOpen?'<tr><td colspan="8" style="padding:0;background:#0d0d0d">'+renderCopyDetailInline(d)+'</td></tr>':'';
+    return mainRow+detailRow;
   }).join('');
 
   el.innerHTML='<div class="tw"><table class="pt">'+
@@ -4505,53 +4508,86 @@ function renderCopiesRanking(){
     '<tbody>'+rows+'</tbody>'+
   '</table></div>';
 
-  // Guardar dados ordenados para o click abrir o detalhe certo
   el._rankingData=data;
   el.querySelectorAll('.copy-rank-row').forEach(function(tr){
     tr.addEventListener('click',function(){
       const idx=Number(tr.dataset.rankIdx);
-      openCopyDetailModal(el._rankingData[idx]);
+      const txt=el._rankingData[idx].texto;
+      copiesRankingExpanded=copiesRankingExpanded===txt?null:txt;
+      renderCopiesRanking();
+    });
+  });
+  // Bind sort dos detalhes inline
+  el.querySelectorAll('[data-detail-sort]').forEach(function(th){
+    th.addEventListener('click',function(e){
+      e.stopPropagation();
+      const field=th.dataset.detailSort;
+      if(detailSort.field===field)detailSort.dir*=-1;
+      else{detailSort.field=field;detailSort.dir=-1;}
+      renderCopiesRanking();
     });
   });
 }
 
-function openCopyDetailModal(d){
-  const detalhesOrdenados=[...d.detalhes].sort(function(a,b){return b.views-a.views;});
-  const rows=detalhesOrdenados.map(function(det){
+let copiesRankingExpanded=null;
+let detailSort={field:'views',dir:-1};
+
+function renderCopyDetailInline(d){
+  let detalhes=[...d.detalhes];
+  const f=detailSort.field;
+  if(f==='nome'){
+    detalhes.sort(function(a,b){
+      const ca=Contas.find(function(c){return c.id===a.conta_id;});
+      const cb=Contas.find(function(c){return c.id===b.conta_id;});
+      const na=ca?(ca.fb_perfil||ca.user_ig||''):'';
+      const nb=cb?(cb.fb_perfil||cb.user_ig||''):'';
+      return na.localeCompare(nb,'pt')*detailSort.dir;
+    });
+  } else if(f==='engRate'){
+    detalhes.sort(function(a,b){
+      const ea=a.views>0?(a.likes+a.comments+a.shares)/a.views:0;
+      const eb=b.views>0?(b.likes+b.comments+b.shares)/b.views:0;
+      return (ea-eb)*detailSort.dir;
+    });
+  } else {
+    detalhes.sort(function(a,b){return (a[f]-b[f])*detailSort.dir;});
+  }
+
+  const dcols=[
+    {key:'nome',label:'Perfil',w:''},
+    {key:'data',label:'Data',w:'90px'},
+    {key:'views',label:'Views',w:'70px'},
+    {key:'likes',label:'Likes',w:'60px'},
+    {key:'comments',label:'Coments',w:'75px'},
+    {key:'shares',label:'Shares',w:'70px'},
+    {key:'engRate',label:'Engaj.',w:'65px'},
+  ];
+  const dthead=dcols.map(function(c){
+    const arrow=detailSort.field===c.key?(detailSort.dir===1?' ↑':' ↓'):'';
+    return '<th data-detail-sort="'+c.key+'" style="'+(c.w?'width:'+c.w+';':'')+'cursor:pointer;font-size:10px;color:#666;padding:6px 8px">'+c.label+arrow+'</th>';
+  }).join('');
+
+  const drows=detalhes.map(function(det){
     const conta=Contas.find(function(c){return c.id===det.conta_id;});
     const nome=conta?(conta.fb_perfil||conta.user_ig):'Conta #'+det.conta_id;
     const eng=det.views>0?(((det.likes+det.comments+det.shares)/det.views)*100).toFixed(1)+'%':'—';
     return '<tr>'+
-      '<td style="font-size:12px;color:#e8e8e8">'+esc(nome)+'</td>'+
-      '<td style="font-size:11px;color:#666;text-align:center">'+esc(det.data)+'</td>'+
-      '<td style="font-size:11px;color:#60a5fa;text-align:center;font-weight:600">'+(det.hasMetric?formatK(det.views):'—')+'</td>'+
-      '<td style="font-size:11px;color:#f472b6;text-align:center">'+(det.hasMetric?formatK(det.likes):'—')+'</td>'+
-      '<td style="font-size:11px;color:#fbbf24;text-align:center">'+(det.hasMetric?formatK(det.comments):'—')+'</td>'+
-      '<td style="font-size:11px;color:#4ade80;text-align:center">'+(det.hasMetric?formatK(det.shares):'—')+'</td>'+
-      '<td style="font-size:11px;color:#a78bfa;text-align:center">'+(det.hasMetric?eng:'—')+'</td>'+
+      '<td style="font-size:11px;color:#ccc;padding:5px 8px">'+esc(nome)+'</td>'+
+      '<td style="font-size:10px;color:#555;text-align:center;padding:5px 8px">'+esc(det.data)+'</td>'+
+      '<td style="font-size:11px;color:#60a5fa;text-align:center;font-weight:600;padding:5px 8px">'+(det.hasMetric?formatK(det.views):'—')+'</td>'+
+      '<td style="font-size:11px;color:#f472b6;text-align:center;padding:5px 8px">'+(det.hasMetric?formatK(det.likes):'—')+'</td>'+
+      '<td style="font-size:11px;color:#fbbf24;text-align:center;padding:5px 8px">'+(det.hasMetric?formatK(det.comments):'—')+'</td>'+
+      '<td style="font-size:11px;color:#4ade80;text-align:center;padding:5px 8px">'+(det.hasMetric?formatK(det.shares):'—')+'</td>'+
+      '<td style="font-size:11px;color:#a78bfa;text-align:center;padding:5px 8px">'+(det.hasMetric?eng:'—')+'</td>'+
     '</tr>';
   }).join('');
-  const html='<div style="font-size:13px;color:#e8e8e8;margin-bottom:14px;padding:10px 12px;background:#161616;border-radius:8px;border:1px solid #222">'+esc(d.texto)+'</div>'+
-    '<div class="tw" style="max-height:400px"><table class="pt">'+
-      '<thead><tr><th>Perfil</th><th style="width:90px">Data</th><th style="width:70px">Views</th><th style="width:60px">Likes</th><th style="width:75px">Coments</th><th style="width:70px">Shares</th><th style="width:65px">Engaj.</th></tr></thead>'+
-      '<tbody>'+rows+'</tbody>'+
-    '</table></div>';
-  showModalReadOnly('Desempenho por perfil',html);
+
+  return '<div style="padding:10px 14px"><table style="width:100%;border-collapse:collapse">'+
+    '<thead><tr>'+dthead+'</tr></thead>'+
+    '<tbody>'+drows+'</tbody>'+
+  '</table></div>';
 }
 
-function showModalReadOnly(title,bodyHtml){
-  const bg=document.getElementById('modal-bg');
-  const inner=document.getElementById('modal-inner');
-  inner.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'+
-      '<h3 style="margin:0;font-size:16px;color:#e8e8e8">'+esc(title)+'</h3>'+
-      '<button onclick="closeModal()" style="background:transparent;border:none;color:#555;cursor:pointer;font-size:18px"><i class="ti ti-x"></i></button>'+
-    '</div>'+
-    bodyHtml+
-    '<div style="display:flex;gap:8px;margin-top:18px;justify-content:flex-end">'+
-      '<button class="btn bsm" onclick="closeModal()">Fechar</button>'+
-    '</div>';
-  bg.style.display='flex';
-}
 
 async function bulkAddCustomCopy(cids,d,txt){
   try{
