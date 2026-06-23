@@ -154,6 +154,7 @@ td.iec select{cursor:pointer}
 .psc-active{background:#0f1a0f}
 .lembrete-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:#1a1a1a;border:1px solid #222;border-radius:9px;margin-bottom:8px;transition:opacity .2s}
 .drag-item.dragging{opacity:.4;background:#1a1a2a !important}
+.copy-line-wrap:hover .heart-hidden{color:#f43f5e80 !important}
 .drag-item.drag-over{border-top:2px solid #a78bfa}
 .drag-handle:hover{color:#555 !important}
 .lembrete-item.done{opacity:.4}
@@ -4235,8 +4236,9 @@ function renderCopies(){
         const m=metricsObj[li]||null;
         const hasMetrics=m&&(m.views||m.likes||m.comments||m.shares);
         const metricsBadge=hasMetrics?'<span style="font-size:8px;color:#60a5fa;flex-shrink:0;white-space:nowrap" title="Views: '+(m.views||0)+' · Likes: '+(m.likes||0)+' · Coments: '+(m.comments||0)+' · Shares: '+(m.shares||0)+'">'+formatK(m.views||0)+'👁</span>':'';
-        return '<div style="display:flex;align-items:center;gap:4px;padding:1px 0">'+
-          '<button style="background:transparent;border:none;cursor:pointer;padding:0;font-size:12px;flex-shrink:0;line-height:1;color:'+(destaque?'#f43f5e':'#2a2a2a')+'" data-heart-cid="'+c.id+'" data-heart-d="'+d+'" data-heart-li="'+li+'" title="'+(destaque?'Remover destaque':'Marcar como destaque')+'">♥</button>'+
+        return '<div style="display:flex;align-items:center;gap:4px;padding:1px 0" class="copy-line-wrap">'+
+          (destaque?'<button style="background:transparent;border:none;cursor:pointer;padding:0;font-size:12px;flex-shrink:0;line-height:1;color:#f43f5e" data-heart-cid="'+c.id+'" data-heart-d="'+d+'" data-heart-li="'+li+'" title="Remover destaque">♥</button>':
+          '<button style="background:transparent;border:none;cursor:pointer;padding:0;font-size:12px;flex-shrink:0;line-height:1;color:transparent;transition:color .15s" data-heart-cid="'+c.id+'" data-heart-d="'+d+'" data-heart-li="'+li+'" title="Marcar como destaque" class="heart-hidden">♥</button>')+
           '<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:'+(checked?'#4ade80':'#777')+';cursor:pointer;flex:1;min-width:0">'+
           '<input type="checkbox"'+(checked?' checked':'')+' style="accent-color:#4ade80;flex-shrink:0" data-custom-cid="'+c.id+'" data-custom-d="'+d+'" data-custom-li="'+li+'"> '+
           '<span style="'+(checked?'text-decoration:line-through;opacity:.5':'')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(txt)+'</span></label>'+
