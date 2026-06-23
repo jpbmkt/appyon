@@ -4231,10 +4231,12 @@ function renderCopies(){
         const parts=line.split('::');
         const checked=parts[0]==='1';
         const txt=parts[1]||parts[0]||'';
+        const destaque=parts[2]==='1';
         const m=metricsObj[li]||null;
         const hasMetrics=m&&(m.views||m.likes||m.comments||m.shares);
         const metricsBadge=hasMetrics?'<span style="font-size:8px;color:#60a5fa;flex-shrink:0;white-space:nowrap" title="Views: '+(m.views||0)+' · Likes: '+(m.likes||0)+' · Coments: '+(m.comments||0)+' · Shares: '+(m.shares||0)+'">'+formatK(m.views||0)+'👁</span>':'';
         return '<div style="display:flex;align-items:center;gap:4px;padding:1px 0">'+
+          '<button style="background:transparent;border:none;cursor:pointer;padding:0;font-size:12px;flex-shrink:0;line-height:1;color:'+(destaque?'#f43f5e':'#2a2a2a')+'" data-heart-cid="'+c.id+'" data-heart-d="'+d+'" data-heart-li="'+li+'" title="'+(destaque?'Remover destaque':'Marcar como destaque')+'">♥</button>'+
           '<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:'+(checked?'#4ade80':'#777')+';cursor:pointer;flex:1;min-width:0">'+
           '<input type="checkbox"'+(checked?' checked':'')+' style="accent-color:#4ade80;flex-shrink:0" data-custom-cid="'+c.id+'" data-custom-d="'+d+'" data-custom-li="'+li+'"> '+
           '<span style="'+(checked?'text-decoration:line-through;opacity:.5':'')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(txt)+'</span></label>'+
@@ -4272,6 +4274,13 @@ function renderCopies(){
         inp.value='';
         bulkAddCustomCopy(contas.map(function(c){return c.id;}),d,txt);
       }
+    });
+  });
+  // Coração — toggle destaque
+  el.querySelectorAll('[data-heart-cid]').forEach(function(btn){
+    btn.addEventListener('click',function(e){
+      e.preventDefault();
+      toggleCopyDestaque(Number(btn.dataset.heartCid),btn.dataset.heartD,Number(btn.dataset.heartLi));
     });
   });
   // Métricas — abrir modal
@@ -4324,6 +4333,24 @@ async function getOrCreateCopy(cid,d){
   return copy;
 }
 
+async function toggleCopyDestaque(cid,d,li){
+  try{
+    const copy=await getOrCreateCopy(cid,d);
+    const lines=parseCustomLines(copy.custom_copies||'');
+    if(lines[li]!==undefined){
+      const parts=lines[li].split('::');
+      const checked=parts[0]||'0';
+      const txt=parts[1]||parts[0]||'';
+      const destaque=parts[2]==='1'?'0':'1';  // toggle
+      lines[li]=checked+'::'+txt+'::'+destaque;
+    }
+    const newVal=serializeCustomLines(lines);
+    await api('copies_postagem','PATCH',{custom_copies:newVal},'?conta_id=eq.'+cid+'&data=eq.'+d);
+    copy.custom_copies=newVal;
+    renderCopies();
+  }catch(e){console.error('toggleCopyDestaque',e);}
+}
+
 async function toggleCustomCopy(cid,d,li,checked){
   try{
     const copy=await getOrCreateCopy(cid,d);
@@ -4331,7 +4358,8 @@ async function toggleCustomCopy(cid,d,li,checked){
     if(lines[li]!==undefined){
       const parts=lines[li].split('::');
       const txt=parts[1]||parts[0]||'';
-      lines[li]=(checked?'1':'0')+'::'+txt;
+      const dest=parts[2]||'0';
+      lines[li]=(checked?'1':'0')+'::'+txt+'::'+dest;
     }
     const newVal=serializeCustomLines(lines);
     await api('copies_postagem','PATCH',{custom_copies:newVal},'?conta_id=eq.'+cid+'&data=eq.'+d);
@@ -4357,7 +4385,7 @@ async function addCustomCopy(cid,d,txt){
   try{
     const copy=await getOrCreateCopy(cid,d);
     const lines=parseCustomLines(copy.custom_copies||'');
-    lines.push('0::'+txt);
+    lines.push('0::'+txt+'::0');
     const newVal=serializeCustomLines(lines);
     await api('copies_postagem','PATCH',{custom_copies:newVal},'?conta_id=eq.'+cid+'&data=eq.'+d);
     copy.custom_copies=newVal;
@@ -4421,6 +4449,8 @@ function aggregateCopiesByText(){
       agg[txt].usos+=1;
       agg[txt].perfis.add(copy.conta_id);
       const hasAnyMetric=m.views||m.likes||m.comments||m.shares;
+      const isDestaque=parts[2]==='1';
+      if(isDestaque&&!agg[txt].temDestaque)agg[txt].temDestaque=true;
       agg[txt].detalhes.push({
         conta_id:copy.conta_id,
         data:copy.data,
@@ -4429,6 +4459,7 @@ function aggregateCopiesByText(){
         comments:Number(m.comments||0),
         shares:Number(m.shares||0),
         hasMetric:!!hasAnyMetric,
+        destaque:isDestaque,
       });
     });
   });
@@ -4490,7 +4521,8 @@ function renderCopiesRanking(){
     const engStr=d.views>0?d.engRate.toFixed(1)+'%':'—';
     const isOpen=copiesRankingExpanded===d.texto;
     const mainRow='<tr class="copy-rank-row" data-rank-idx="'+i+'" style="cursor:pointer'+(isOpen?';background:#161616':'')+'">'+
-      '<td style="font-size:12px;color:#e8e8e8;max-width:320px"><i class="ti ti-chevron-'+(isOpen?'down':'right')+'" style="font-size:11px;color:#555;margin-right:5px"></i>'+esc(d.texto)+'</td>'+
+      '<td style="font-size:12px;color:#e8e8e8;max-width:320px">'+(d.temDestaque?'<span style="color:#f43f5e;margin-right:4px">♥</span>':'')+
+      '<i class="ti ti-chevron-'+(isOpen?'down':'right')+'" style="font-size:11px;color:#555;margin-right:5px"></i>'+esc(d.texto)+'</td>'+
       '<td style="text-align:center;font-size:11px;color:#888">'+d.numPerfis+'</td>'+
       '<td style="text-align:center;font-size:11px;color:#888">'+d.usos+'</td>'+
       '<td style="text-align:center;font-size:12px;color:#60a5fa;font-weight:600">'+formatK(d.views)+'</td>'+
@@ -4607,7 +4639,7 @@ function renderCopyDetailInline(d){
     const nome=conta?(conta.fb_perfil||conta.user_ig):'Conta #'+det.conta_id;
     const eng=det.views>0?(((det.likes+det.comments+det.shares)/det.views)*100).toFixed(1)+'%':'—';
     return '<tr>'+
-      '<td style="font-size:11px;color:#ccc;padding:5px 8px">'+esc(nome)+'</td>'+
+      '<td style="font-size:11px;color:#ccc;padding:5px 8px">'+(det.destaque?'<span style="color:#f43f5e;margin-right:3px;font-size:10px">♥</span>':'')+esc(nome)+'</td>'+
       '<td style="font-size:10px;color:#555;text-align:center;padding:5px 8px">'+esc(det.data)+'</td>'+
       '<td style="font-size:11px;color:#60a5fa;text-align:center;font-weight:600;padding:5px 8px">'+(det.hasMetric?formatK(det.views):'—')+'</td>'+
       '<td style="font-size:11px;color:#f472b6;text-align:center;padding:5px 8px">'+(det.hasMetric?formatK(det.likes):'—')+'</td>'+
@@ -4634,7 +4666,7 @@ async function bulkAddCustomCopy(cids,d,txt){
     for(const cid of cids){
       const copy=await getOrCreateCopy(cid,d);
       const lines=parseCustomLines(copy.custom_copies||'');
-      lines.push('0::'+txt);
+      lines.push('0::'+txt+'::0');
       const newVal=serializeCustomLines(lines);
       await api('copies_postagem','PATCH',{custom_copies:newVal},'?conta_id=eq.'+cid+'&data=eq.'+d);
       copy.custom_copies=newVal;
