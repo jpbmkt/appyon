@@ -1019,7 +1019,9 @@ function renderKaizen(){
 
   const despHtml=KzDesempenho.map(d=>{
     const stars=[1,2,3,4,5].map(n=>'<span class="nota-star" onclick="updateKzDesemp('+d.id+',\'nota\','+n+');this.parentElement.querySelectorAll(\'.nota-star\').forEach((s,i)=>s.textContent=i<'+n+'?\'⭐\':\'☆\')" title="'+n+'">'+(((d.nota||0)>=n)?'⭐':'☆')+'</span>').join('');
-    return '<div class="kz-row" style="gap:8px">'+
+    const dIdx=KzDesempenho.indexOf(d);
+    return '<div class="kz-row drag-item" draggable="true" data-drag-list="kzd" data-drag-idx="'+dIdx+'" style="gap:8px">'+
+      '<span class="drag-handle" style="color:#252525;cursor:grab;font-size:14px;flex-shrink:0;user-select:none">⠿</span>'+
       '<input class="kz-input" value="'+esc(d.tarefa||'')+'" placeholder="Tarefa-chave..." style="flex:1" data-kzd-id="'+d.id+'" data-kzd-field="tarefa" onblur="updateKzDesemp('+d.id+',\'tarefa\',this.value)" onkeydown="if(event.key===\'Enter\')this.blur()">'+
       '<input class="kz-input" value="'+esc(d.inicio||'')+'" placeholder="Início" style="width:70px" data-kzd-id="'+d.id+'" data-kzd-field="inicio" onblur="updateKzDesemp('+d.id+',\'inicio\',this.value)">'+
       '<input class="kz-input" value="'+esc(d.fim||'')+'" placeholder="Fim" style="width:70px" data-kzd-id="'+d.id+'" data-kzd-field="fim" onblur="updateKzDesemp('+d.id+',\'fim\',this.value)">'+
@@ -1048,6 +1050,7 @@ function renderKaizen(){
     '</div>'+
     '</div>';
   initDragKz('kz-content','kzj',KzTarefas);
+  initDragKz('kz-content','kzd',KzDesempenho);
 }
 
 async function saveKzDiario(field,value){
