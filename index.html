@@ -1025,6 +1025,7 @@ function renderKaizen(){
       '<input class="kz-input" value="'+esc(d.tarefa||'')+'" placeholder="Tarefa-chave..." style="flex:1" data-kzd-id="'+d.id+'" data-kzd-field="tarefa" onblur="updateKzDesemp('+d.id+',\'tarefa\',this.value)" onkeydown="if(event.key===\'Enter\')this.blur()">'+
       '<input class="kz-input" value="'+esc(d.inicio||'')+'" placeholder="Início" style="width:70px" data-kzd-id="'+d.id+'" data-kzd-field="inicio" onblur="updateKzDesemp('+d.id+',\'inicio\',this.value)">'+
       '<input class="kz-input" value="'+esc(d.fim||'')+'" placeholder="Fim" style="width:70px" data-kzd-id="'+d.id+'" data-kzd-field="fim" onblur="updateKzDesemp('+d.id+',\'fim\',this.value)">'+
+      (calcDuration(d.inicio,d.fim)?'<span style="font-size:10px;color:#a78bfa;background:#1a1228;border-radius:5px;padding:2px 7px;white-space:nowrap;flex-shrink:0">⏱ '+calcDuration(d.inicio,d.fim)+'</span>':'')+
       '<div style="display:flex;gap:2px">'+stars+'</div>'+
       '<button class="btn bd bsm" onclick="delKzDesemp('+d.id+')"><i class="ti ti-x"></i></button></div>';
   }).join('');
@@ -1156,6 +1157,7 @@ function renderKaizenFilipe(){
       '<input class="kz-input" value="'+esc(d.tarefa||'')+'" placeholder="Tarefa-chave..." style="flex:1" data-kzfd-id="'+d.id+'" data-kzfd-field="tarefa">'+
       '<input class="kz-input" value="'+esc(d.inicio||'')+'" placeholder="Início" style="width:70px" data-kzfd-id="'+d.id+'" data-kzfd-field="inicio">'+
       '<input class="kz-input" value="'+esc(d.fim||'')+'" placeholder="Fim" style="width:70px" data-kzfd-id="'+d.id+'" data-kzfd-field="fim">'+
+      (calcDuration(d.inicio,d.fim)?'<span id="durf-'+d.id+'" style="font-size:10px;color:#a78bfa;background:#1a1228;border-radius:5px;padding:2px 7px;white-space:nowrap;flex-shrink:0">⏱ '+calcDuration(d.inicio,d.fim)+'</span>':'')+
       '<div style="display:flex;gap:2px">'+stars+'</div>'+
       '<button class="btn bd bsm" data-kzfd-del="'+d.id+'"><i class="ti ti-x"></i></button>'+
     '</div>';
@@ -1273,7 +1275,19 @@ async function updateKzDespF(id,field,value){
   try{
     await api('kaizen_desempenho','PATCH',{[field]:value},'?id=eq.'+id);
     const item=KzDesempenhoF.find(x=>x.id===id);
-    if(item)item[field]=value;
+    if(item){
+      item[field]=value;
+      if(field==='inicio'||field==='fim'){
+        const dur=calcDuration(item.inicio,item.fim);
+        const span=document.getElementById('durf-'+id);
+        if(dur){if(span){span.textContent='⏱ '+dur;}}
+        else if(span){span.remove();}
+        if(dur&&!span){
+          const row=document.querySelector('[data-drag-list="kzfd"][data-drag-idx="'+KzDesempenhoF.indexOf(item)+'"]');
+          if(row){const s=document.createElement('span');s.id='durf-'+id;s.style.cssText='font-size:10px;color:#a78bfa;background:#1a1228;border-radius:5px;padding:2px 7px;white-space:nowrap;flex-shrink:0';s.textContent='⏱ '+dur;const stars=row.querySelector('div[style*="flex"]');if(stars)row.insertBefore(s,stars);}
+        }
+      }
+    }
   }catch(e){console.error('updateKzDespF',e);}
 }
 
@@ -1323,7 +1337,25 @@ async function addKzDesemp(){
 }
 async function updateKzDesemp(id,field,value){
   const val=field==='nota'?Number(value):value;
-  try{await api('kaizen_desempenho','PATCH',{[field]:val},'?id=eq.'+id);const d=KzDesempenho.find(x=>x.id===id);if(d)d[field]=val;}catch(e){console.error(e);}
+  try{
+    await api('kaizen_desempenho','PATCH',{[field]:val},'?id=eq.'+id);
+    const d=KzDesempenho.find(x=>x.id===id);
+    if(d){
+      d[field]=val;
+      // Atualizar box de duração inline sem re-renderizar
+      if(field==='inicio'||field==='fim'){
+        const dur=calcDuration(d.inicio,d.fim);
+        const span=document.getElementById('dur-'+id);
+        if(dur){
+          if(span){span.textContent='⏱ '+dur;}
+          else{
+            const row=document.querySelector('[data-drag-list="kzd"][data-drag-idx="'+KzDesempenho.indexOf(d)+'"]');
+            if(row){const s=document.createElement('span');s.id='dur-'+id;s.style.cssText='font-size:10px;color:#a78bfa;background:#1a1228;border-radius:5px;padding:2px 7px;white-space:nowrap;flex-shrink:0';s.textContent='⏱ '+dur;const stars=row.querySelector('div');if(stars)row.insertBefore(s,stars);}
+          }
+        } else if(span){span.remove();}
+      }
+    }
+  }catch(e){console.error(e);}
 }
 async function delKzDesemp(id){
   await flushKzDiario();
@@ -1814,6 +1846,16 @@ function stockEl(n){
 }
 
 function esc(s){return(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function calcDuration(inicio,fim){
+  if(!inicio||!fim)return'';
+  const toMin=function(s){const p=s.trim().split(':');if(p.length===2)return Number(p[0])*60+Number(p[1]);return Number(p[0])*60;};
+  const a=toMin(inicio),b=toMin(fim);
+  if(isNaN(a)||isNaN(b)||b<=a)return'';
+  const diff=b-a;
+  const h=Math.floor(diff/60),m=diff%60;
+  return h>0?(h+'h'+(m>0?' '+m+'min':'')):(m+'min');
+}
+
 function formatK(n){n=Number(n)||0;if(n>=1000000)return(n/1000000).toFixed(1)+'M';if(n>=1000)return(n/1000).toFixed(1)+'K';return String(n);}
 function yn(v){return v==='Sim'?`<span style="color:#4ade80;font-size:13px">✓</span>`:`<span style="color:#2a2a2a">—</span>`;}
 
@@ -2377,11 +2419,7 @@ document.addEventListener('input',(e)=>{
   if(kzdInp){
     clearTimeout(kzDespDebounce);
     const id=Number(kzdInp.dataset.kzdId),field=kzdInp.dataset.kzdField,val=kzdInp.value;
-    kzDespDebounce=setTimeout(function(){
-      const item=KzDesempenho.find(x=>x.id===id);
-      if(item)item[field]=val;
-      api('kaizen_desempenho','PATCH',{[field]:val},'?id=eq.'+id);
-    },1500);
+    kzDespDebounce=setTimeout(function(){updateKzDesemp(id,field,val);},1500);
     return;
   }
   // Desempenho Filipe
@@ -2389,11 +2427,7 @@ document.addEventListener('input',(e)=>{
   if(kzfdInp2){
     clearTimeout(kzDespDebounce);
     const id=Number(kzfdInp2.dataset.kzfdId),field=kzfdInp2.dataset.kzfdField,val=kzfdInp2.value;
-    kzDespDebounce=setTimeout(function(){
-      const item=KzDesempenhoF.find(x=>x.id===id);
-      if(item)item[field]=val;
-      api('kaizen_desempenho','PATCH',{[field]:val},'?id=eq.'+id);
-    },1500);
+    kzDespDebounce=setTimeout(function(){updateKzDespF(id,field,val);},1500);
     return;
   }
   const kzjInp=e.target.closest('[data-kzj-save]');
