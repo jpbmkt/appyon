@@ -1155,7 +1155,13 @@ function renderKaizenFilipe(){
       '<input class="kz-input" value="'+esc(d.fim||'')+'" placeholder="Fim" style="width:70px" data-kzfd-id="'+d.id+'" data-kzfd-field="fim">'+
       '<div style="display:flex;gap:2px">'+starHtml+'</div>'+
       '<button class="btn bd bsm" data-kzfd-del="'+d.id+'"><i class="ti ti-x"></i></button>';
-    return row.outerHTML;
+    const dragHD=document.createElement('span');
+    dragHD.className='drag-handle';
+    dragHD.style.cssText='color:#252525;cursor:grab;font-size:14px;flex-shrink:0;user-select:none';
+    dragHD.textContent='⠿';
+    const tmpD=document.createElement('div');tmpD.innerHTML=row.outerHTML;
+    const rD=tmpD.firstChild;rD.insertBefore(dragHD,rD.firstChild);
+    return rD.outerHTML;
   }).join('');
 
   const coisasLinhasF=(KzDiarioF.coisas_boas||'').split('\n');
@@ -1179,6 +1185,7 @@ function renderKaizenFilipe(){
     '</div>'+
     '</div>';
   initDragKz('kz-content-f','kzf',KzTarefasF);
+  initDragKz('kz-content-f','kzfd',KzDesempenhoF);
 }
 
 async function addKzTarefa(){
@@ -4065,8 +4072,10 @@ function initDragKz(containerId, listType, lista){
       const moved=lista.splice(dragIdx,1)[0];
       lista.splice(dropIdx,0,moved);
       // Salvar nova ordem
-      Promise.all(lista.map((t,i)=>api('kaizen_tarefas','PATCH',{ordem:i},'?id=eq.'+t.id)));
-      if(listType==='kzj')renderKaizen();
+      const tbl=(listType==='kzj'||listType==='kzd')&&listType!=='kzfd'?'kaizen_tarefas':(listType==='kzf'?'kaizen_tarefas':'kaizen_desempenho');
+      const realTbl=(listType==='kzd'||listType==='kzfd')?'kaizen_desempenho':'kaizen_tarefas';
+      Promise.all(lista.map((t,i)=>api(realTbl,'PATCH',{ordem:i},'?id=eq.'+t.id)));
+      if(listType==='kzj'||listType==='kzd')renderKaizen();
       else renderKaizenFilipe();
       dragIdx=null;
     });
@@ -4236,7 +4245,8 @@ function renderCopies(){
         const m=metricsObj[li]||null;
         const hasMetrics=m&&(m.views||m.likes||m.comments||m.shares);
         const metricsBadge=hasMetrics?'<span style="font-size:8px;color:#60a5fa;flex-shrink:0;white-space:nowrap" title="Views: '+(m.views||0)+' · Likes: '+(m.likes||0)+' · Coments: '+(m.comments||0)+' · Shares: '+(m.shares||0)+'">'+formatK(m.views||0)+'👁</span>':'';
-        return '<div style="display:flex;align-items:center;gap:4px;padding:1px 0" class="copy-line-wrap">'+
+        return '<div style="display:flex;align-items:center;gap:4px;padding:1px 0" class="copy-line-wrap drag-item" draggable="true" data-drag-list="copy-'+c.id+'-'+d+'" data-drag-idx="'+li+'">'+
+          '<span class="drag-handle" style="color:#222;cursor:grab;font-size:12px;flex-shrink:0;user-select:none;opacity:0;transition:opacity .15s" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0">⠿</span>'+
           (destaque?'<button style="background:transparent;border:none;cursor:pointer;padding:0;font-size:12px;flex-shrink:0;line-height:1;color:#f43f5e" data-heart-cid="'+c.id+'" data-heart-d="'+d+'" data-heart-li="'+li+'" title="Remover destaque">♥</button>':
           '<button style="background:transparent;border:none;cursor:pointer;padding:0;font-size:12px;flex-shrink:0;line-height:1;color:transparent;transition:color .15s" data-heart-cid="'+c.id+'" data-heart-d="'+d+'" data-heart-li="'+li+'" title="Marcar como destaque" class="heart-hidden">♥</button>')+
           '<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:'+(checked?'#4ade80':'#777')+';cursor:pointer;flex:1;min-width:0">'+
@@ -4318,6 +4328,38 @@ function renderCopies(){
       }
     });
   });
+  // Drag copies
+  el.querySelectorAll('[data-drag-list^="copy-"]').forEach(function(item){
+    const listKey=item.dataset.dragList;
+    const allItems=[...el.querySelectorAll('[data-drag-list="'+listKey+'"]')];
+    let dragIdx=null;
+    item.addEventListener('dragstart',function(e){
+      dragIdx=Number(item.dataset.dragIdx);
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed='move';
+      e.stopPropagation();
+    });
+    item.addEventListener('dragend',function(){
+      item.classList.remove('dragging');
+      el.querySelectorAll('[data-drag-list^="copy-"].drag-over').forEach(function(i){i.classList.remove('drag-over');});
+    });
+    item.addEventListener('dragover',function(e){
+      e.preventDefault();e.stopPropagation();
+      el.querySelectorAll('[data-drag-list^="copy-"].drag-over').forEach(function(i){i.classList.remove('drag-over');});
+      item.classList.add('drag-over');
+    });
+    item.addEventListener('drop',function(e){
+      e.preventDefault();e.stopPropagation();
+      const dropIdx=Number(item.dataset.dragIdx);
+      if(dragIdx===null||dragIdx===dropIdx)return;
+      // Extrair cid e d do listKey: "copy-123-2024-01-15"
+      const parts=listKey.split('-');
+      const cid=Number(parts[1]);
+      const d=parts.slice(2).join('-');
+      reorderCustomCopy(cid,d,dragIdx,dropIdx);
+      dragIdx=null;
+    });
+  });
 }
 
 function parseCustomLines(raw){
@@ -4333,6 +4375,38 @@ async function getOrCreateCopy(cid,d){
     if(r&&r[0]){CopiesPostagem.push(r[0]);copy=r[0];}
   }
   return copy;
+}
+
+async function reorderCustomCopy(cid,d,fromIdx,toIdx){
+  try{
+    const copy=await getOrCreateCopy(cid,d);
+    const lines=parseCustomLines(copy.custom_copies||'');
+    const moved=lines.splice(fromIdx,1)[0];
+    lines.splice(toIdx,0,moved);
+    // Mesma operação nas métricas
+    const metricsObj=copy.metrics||{};
+    const keys=Object.keys(metricsObj).map(Number).sort();
+    const metricsArr=lines.map(function(_,i){return metricsObj[i]||null;});
+    // Rebuild metrics
+    const newMetrics={};
+    const oldMetrics=Object.assign({},metricsObj);
+    // Reconstruir métricas seguindo a nova ordem
+    const oldLines=parseCustomLines(copy.custom_copies||'');
+    // Inserir moved na nova posição
+    const reordered=[...oldLines];
+    const mov2=reordered.splice(fromIdx,1)[0];
+    reordered.splice(toIdx,0,mov2);
+    const newMetrics2={};
+    reordered.forEach(function(line,newI){
+      const oldI=oldLines.indexOf(line);
+      if(oldI>=0&&metricsObj[oldI])newMetrics2[newI]=metricsObj[oldI];
+    });
+    const newVal=serializeCustomLines(lines);
+    await api('copies_postagem','PATCH',{custom_copies:newVal,metrics:newMetrics2},'?conta_id=eq.'+cid+'&data=eq.'+d);
+    copy.custom_copies=newVal;
+    copy.metrics=newMetrics2;
+    renderCopies();
+  }catch(e){console.error('reorderCustomCopy',e);}
 }
 
 async function toggleCopyDestaque(cid,d,li){
