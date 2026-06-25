@@ -1148,24 +1148,18 @@ function renderKaizenFilipe(){
     '</div>';
   }).join('');
 
-  const despHtml=KzDesempenhoF.map(d=>{
-    const starHtml=[1,2,3,4,5].map(n=>'<span class="nota-star" data-kzfd-id="'+d.id+'" data-kzfd-nota="'+n+'">'+(((d.nota||0)>=n)?'⭐':'☆')+'</span>').join('');
-    const row=document.createElement('div');
-    row.className='kz-row';row.style.gap='8px';
-    row.innerHTML=
+  const despHtml=KzDesempenhoF.map(function(d){
+    const fDIdx=KzDesempenhoF.indexOf(d);
+    const stars=[1,2,3,4,5].map(function(n){return '<span class="nota-star" data-kzfd-id="'+d.id+'" data-kzfd-nota="'+n+'">'+(((d.nota||0)>=n)?'⭐':'☆')+'</span>';}).join('');
+    return '<div class="kz-row drag-item" draggable="true" data-drag-list="kzfd" data-drag-idx="'+fDIdx+'" style="gap:8px">'+
+      '<span class="drag-handle" style="color:#252525;cursor:grab;font-size:14px;flex-shrink:0;user-select:none">⠿</span>'+
       '<input class="kz-input" value="'+esc(d.tarefa||'')+'" placeholder="Tarefa-chave..." style="flex:1" data-kzfd-id="'+d.id+'" data-kzfd-field="tarefa">'+
       '<input class="kz-input" value="'+esc(d.inicio||'')+'" placeholder="Início" style="width:70px" data-kzfd-id="'+d.id+'" data-kzfd-field="inicio">'+
       '<input class="kz-input" value="'+esc(d.fim||'')+'" placeholder="Fim" style="width:70px" data-kzfd-id="'+d.id+'" data-kzfd-field="fim">'+
-      '<div style="display:flex;gap:2px">'+starHtml+'</div>'+
-      '<button class="btn bd bsm" data-kzfd-del="'+d.id+'"><i class="ti ti-x"></i></button>';
-    const dragHD=document.createElement('span');
-    dragHD.className='drag-handle';
-    dragHD.style.cssText='color:#252525;cursor:grab;font-size:14px;flex-shrink:0;user-select:none';
-    dragHD.textContent='⠿';
-    const tmpD=document.createElement('div');tmpD.innerHTML=row.outerHTML;
-    const rD=tmpD.firstChild;rD.insertBefore(dragHD,rD.firstChild);
-    return rD.outerHTML;
-  }).join('');
+      '<div style="display:flex;gap:2px">'+stars+'</div>'+
+      '<button class="btn bd bsm" data-kzfd-del="'+d.id+'"><i class="ti ti-x"></i></button>'+
+    '</div>';
+  }).join('');;
 
   const coisasLinhasF=(KzDiarioF.coisas_boas||'').split('\n');
   const coisasHtmlF=[1,2,3,4].map(n=>{
