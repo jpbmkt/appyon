@@ -4050,37 +4050,39 @@ function doGoogleAuth(cb,includeCalendar=false){
 function initDragKz(containerId, listType, lista){
   const container=document.getElementById(containerId);
   if(!container)return;
-  let dragIdx=null;
+  const items=[...container.querySelectorAll('.drag-item[data-drag-list="'+listType+'"]')];
+  const realTbl=(listType==='kzd'||listType==='kzfd')?'kaizen_desempenho':'kaizen_tarefas';
+  const rerender=(listType==='kzj'||listType==='kzd')?renderKaizen:renderKaizenFilipe;
+  let dragging=null;
 
-  container.querySelectorAll('.drag-item[data-drag-list="'+listType+'"]').forEach(item=>{
-    item.addEventListener('dragstart',e=>{
-      dragIdx=Number(item.dataset.dragIdx);
-      item.classList.add('dragging');
+  items.forEach(function(item){
+    item.addEventListener('dragstart',function(e){
+      dragging=item;
+      setTimeout(function(){item.classList.add('dragging');},0);
       e.dataTransfer.effectAllowed='move';
-      e.stopPropagation();
     });
-    item.addEventListener('dragend',()=>{
+    item.addEventListener('dragend',function(){
       item.classList.remove('dragging');
-      container.querySelectorAll('.drag-item').forEach(i=>i.classList.remove('drag-over'));
+      items.forEach(function(i){i.classList.remove('drag-over');});
+      dragging=null;
     });
-    item.addEventListener('dragover',e=>{
-      e.preventDefault();e.stopPropagation();
-      container.querySelectorAll('.drag-item').forEach(i=>i.classList.remove('drag-over'));
-      item.classList.add('drag-over');
+    item.addEventListener('dragover',function(e){
+      e.preventDefault();
+      if(dragging&&dragging!==item){
+        items.forEach(function(i){i.classList.remove('drag-over');});
+        item.classList.add('drag-over');
+      }
     });
-    item.addEventListener('drop',e=>{
-      e.preventDefault();e.stopPropagation();
-      const dropIdx=Number(item.dataset.dragIdx);
-      if(dragIdx===null||dragIdx===dropIdx)return;
-      const moved=lista.splice(dragIdx,1)[0];
-      lista.splice(dropIdx,0,moved);
-      // Salvar nova ordem
-      const tbl=(listType==='kzj'||listType==='kzd')&&listType!=='kzfd'?'kaizen_tarefas':(listType==='kzf'?'kaizen_tarefas':'kaizen_desempenho');
-      const realTbl=(listType==='kzd'||listType==='kzfd')?'kaizen_desempenho':'kaizen_tarefas';
-      Promise.all(lista.map((t,i)=>api(realTbl,'PATCH',{ordem:i},'?id=eq.'+t.id)));
-      if(listType==='kzj'||listType==='kzd')renderKaizen();
-      else renderKaizenFilipe();
-      dragIdx=null;
+    item.addEventListener('drop',function(e){
+      e.preventDefault();
+      if(!dragging||dragging===item)return;
+      const fromIdx=Number(dragging.dataset.dragIdx);
+      const toIdx=Number(item.dataset.dragIdx);
+      if(fromIdx===toIdx)return;
+      const moved=lista.splice(fromIdx,1)[0];
+      lista.splice(toIdx,0,moved);
+      Promise.all(lista.map(function(t,i){return api(realTbl,'PATCH',{ordem:i},'?id=eq.'+t.id);}));
+      rerender();
     });
   });
 }
@@ -4331,36 +4333,46 @@ function renderCopies(){
       }
     });
   });
-  // Drag copies
+  // Drag copies — agrupar por listKey e iniciar drag por grupo
+  const copyGroups={};
   el.querySelectorAll('[data-drag-list^="copy-"]').forEach(function(item){
-    const listKey=item.dataset.dragList;
-    const allItems=[...el.querySelectorAll('[data-drag-list="'+listKey+'"]')];
-    let dragIdx=null;
-    item.addEventListener('dragstart',function(e){
-      dragIdx=Number(item.dataset.dragIdx);
-      item.classList.add('dragging');
-      e.dataTransfer.effectAllowed='move';
-      e.stopPropagation();
-    });
-    item.addEventListener('dragend',function(){
-      item.classList.remove('dragging');
-      el.querySelectorAll('[data-drag-list^="copy-"].drag-over').forEach(function(i){i.classList.remove('drag-over');});
-    });
-    item.addEventListener('dragover',function(e){
-      e.preventDefault();e.stopPropagation();
-      el.querySelectorAll('[data-drag-list^="copy-"].drag-over').forEach(function(i){i.classList.remove('drag-over');});
-      item.classList.add('drag-over');
-    });
-    item.addEventListener('drop',function(e){
-      e.preventDefault();e.stopPropagation();
-      const dropIdx=Number(item.dataset.dragIdx);
-      if(dragIdx===null||dragIdx===dropIdx)return;
-      // Extrair cid e d do listKey: "copy-123-2024-01-15"
-      const parts=listKey.split('-');
-      const cid=Number(parts[1]);
-      const d=parts.slice(2).join('-');
-      reorderCustomCopy(cid,d,dragIdx,dropIdx);
-      dragIdx=null;
+    const key=item.dataset.dragList;
+    if(!copyGroups[key])copyGroups[key]=[];
+    copyGroups[key].push(item);
+  });
+  Object.keys(copyGroups).forEach(function(listKey){
+    const items=copyGroups[listKey];
+    const parts=listKey.split('-');
+    const cid=Number(parts[1]);
+    const d=parts.slice(2).join('-');
+    let dragging=null;
+    items.forEach(function(item){
+      item.addEventListener('dragstart',function(e){
+        dragging=item;
+        setTimeout(function(){item.classList.add('dragging');},0);
+        e.dataTransfer.effectAllowed='move';
+      });
+      item.addEventListener('dragend',function(){
+        item.classList.remove('dragging');
+        items.forEach(function(i){i.classList.remove('drag-over');});
+        dragging=null;
+      });
+      item.addEventListener('dragover',function(e){
+        e.preventDefault();
+        if(dragging&&dragging!==item){
+          items.forEach(function(i){i.classList.remove('drag-over');});
+          item.classList.add('drag-over');
+        }
+      });
+      item.addEventListener('drop',function(e){
+        e.preventDefault();
+        if(!dragging||dragging===item)return;
+        const fromIdx=Number(dragging.dataset.dragIdx);
+        const toIdx=Number(item.dataset.dragIdx);
+        if(fromIdx===toIdx)return;
+        reorderCustomCopy(cid,d,fromIdx,toIdx);
+        dragging=null;
+      });
     });
   });
 }
