@@ -346,7 +346,8 @@ td.iec select{cursor:pointer}
 <div class="topbar">
   <div class="logo"><i class="ti ti-coin"></i> Gestão Appyon</div>
   <div class="nav">
-    <button class="nb" onclick="showTab('kaizen-jessica',this)"><i class="ti ti-brain"></i> Kaizen Jessica</button>
+    <button class="nb" onclick="showTab('kaizen-ralph',this)"><i class="ti ti-brain"></i> Kaizen Ralph</button>
+  <button class="nb" onclick="showTab('kaizen-jessica',this)"><i class="ti ti-brain"></i> Kaizen Jessica</button>
     <button class="nb" onclick="showTab('kaizen-filipe',this)"><i class="ti ti-brain"></i> Kaizen Filipe</button>
     <button class="nb active" onclick="showTab('hoje',this)"><i class="ti ti-layout-dashboard"></i> Hoje</button>
     <button class="nb" onclick="showTab('contas',this)"><i class="ti ti-layout-dashboard"></i> Gestão de Contas</button>
@@ -413,6 +414,18 @@ td.iec select{cursor:pointer}
       <div id="hoje-notas"></div>
     </div>
   </div>
+</div>
+
+<!-- ===== KAIZEN RALPH ===== -->
+<div class="tab" id="tab-kaizen-ralph">
+  <div class="kz-day-selector">
+    <button class="btn bsm" onclick="kzChangeDayR(-1)"><i class="ti ti-chevron-left"></i></button>
+    <input type="date" id="kz-date-r" onchange="loadKaizenRalph()">
+    <button class="btn bsm" onclick="kzChangeDayR(1)"><i class="ti ti-chevron-right"></i></button>
+    <button class="btn bsm" onclick="kzTodayR()">Hoje</button>
+    <span id="kz-day-label-r" style="font-size:12px;color:#555;margin-left:4px"></span>
+  </div>
+  <div id="kz-content-r"></div>
 </div>
 
 <!-- ===== KAIZEN JESSICA ===== -->
@@ -822,6 +835,7 @@ function updateWeekLabel(elId,refDate){
 // Estado separado para Jessica e Filipe
 let kzCurrentDateF='';
 let KzDiarioF={},KzTarefasF=[],KzDesempenhoF=[],KzFocusF={};
+let KzDiarioR={},KzTarefasR=[],KzDesempenhoR=[],KzFocusR={};
 
 function initKaizen(pessoa){
   pessoa=pessoa||'jessica';
@@ -1187,6 +1201,236 @@ function renderKaizenFilipe(){
   initDragKz('kz-content-f','kzfd',KzDesempenhoF);
 }
 
+// ══════════════════════════════════════
+// KAIZEN RALPH
+// ══════════════════════════════════════
+
+function initKaizenRalph(){
+  if(!kzCurrentDateR)kzCurrentDateR=localDateStr(new Date());
+  const inp=document.getElementById('kz-date-r');
+  if(inp)inp.value=kzCurrentDateR;
+  updateKzLabelR();
+  loadKaizenRalph();
+}
+
+function kzChangeDayR(d){
+  const dt=new Date(kzCurrentDateR+'T12:00:00');
+  dt.setDate(dt.getDate()+d);
+  kzCurrentDateR=localDateStr(dt);
+  document.getElementById('kz-date-r').value=kzCurrentDateR;
+  updateKzLabelR();
+  loadKaizenRalph();
+}
+
+function kzTodayR(){
+  kzCurrentDateR=localDateStr(new Date());
+  document.getElementById('kz-date-r').value=kzCurrentDateR;
+  updateKzLabelR();
+  loadKaizenRalph();
+}
+
+function updateKzLabelR(){
+  const dt=new Date(kzCurrentDateR+'T12:00:00');
+  const labels=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  const el=document.getElementById('kz-day-label-r');
+  if(el)el.textContent=labels[dt.getDay()]+', '+dt.toLocaleDateString('pt-BR');
+}
+
+async function loadKaizenRalph(){
+  const dt=document.getElementById('kz-date-r')?.value||kzCurrentDateR;
+  kzCurrentDateR=dt;
+  try{
+    const [diario,tarefas,desemp,focus]=await Promise.all([
+      api('kaizen_diario','GET',null,'?data=eq.'+dt+'&pessoa=eq.ralph&order=id.asc'),
+      api('kaizen_tarefas','GET',null,'?data=eq.'+dt+'&pessoa=eq.ralph&order=ordem.asc,id.asc'),
+      api('kaizen_desempenho','GET',null,'?data=eq.'+dt+'&pessoa=eq.ralph&order=ordem.asc,id.asc'),
+      api('kaizen_deep_focus','GET',null,'?data=eq.'+dt+'&pessoa=eq.ralph'),
+    ]);
+    KzDiarioR=diario[0]||{data:dt,pessoa:'ralph'};
+    KzTarefasR=tarefas;
+    KzDesempenhoR=desemp;
+    KzFocusR=focus[0]||{data:dt,pessoa:'ralph'};
+    await carregarTarefasPendentesRalph(dt);
+    renderKaizenRalph();
+  }catch(e){console.error('loadKaizenRalph',e);}
+}
+
+async function carregarTarefasPendentesRalph(dt){
+  try{
+    const hoje=localDateStr(new Date());
+    const hora=new Date().getHours();
+    if(dt!==hoje||hora<5)return;
+    const d=new Date(dt+'T12:00:00');
+    d.setDate(d.getDate()-1);
+    const ontem=localDateStr(d);
+    const pendentes=await api('kaizen_tarefas','GET',null,'?data=eq.'+ontem+'&pessoa=eq.ralph&andamento=neq.concluida&order=ordem.asc');
+    for(const t of pendentes){
+      const jaExiste=KzTarefasR.find(x=>x.texto===t.texto);
+      if(!jaExiste&&t.texto&&t.texto.trim()){
+        const r=await api('kaizen_tarefas','POST',{data:dt,pessoa:'ralph',texto:t.texto,prioridade:t.prioridade||'media',andamento:t.andamento||'pendente',ordem:KzTarefasR.length});
+        KzTarefasR.push(r[0]);
+      }
+    }
+  }catch(e){console.error('carregarTarefasPendentesRalph',e);}
+}
+
+function renderKaizenRalph(){
+  const el=document.getElementById('kz-content-r');
+  if(!el)return;
+
+  const focusItems=[
+    {key:'prioridade_absoluta',label:'Prioridade Absoluta',icon:'ti-target',color:'#f87171'},
+    {key:'gratidao',label:'Mentalidade Kaizen',icon:'ti-brain',color:'#60a5fa'},
+    {key:'manifestacoes',label:'Manifestações Diárias',icon:'ti-sparkles',color:'#fbbf24'},
+  ];
+
+  const AND_OPTS=[['pendente','⏳ Pendente'],['andamento','🔄 Em andamento'],['concluida','✅ Concluída']];
+  const PRIO_OPTS=['alta','media','baixa'];
+
+  const tarefasHtml=KzTarefasR.map(function(t){
+    const andCls=t.andamento==='concluida'?'and-concluida':t.andamento==='andamento'?'and-andamento':'and-pendente';
+    const prioCls='prio-'+(t.prioridade||'media')+'-tag';
+    const rIdx=KzTarefasR.indexOf(t);
+    const andOpts=AND_OPTS.map(function(a){const sel=t.andamento===a[0]?' selected':'';return'<option value="'+a[0]+'"'+sel+'>'+a[1]+'</option>';}).join('');
+    const pOpts=PRIO_OPTS.map(function(p){const sel=(t.prioridade||'media')===p?' selected':'';return'<option value="'+p+'"'+sel+'>'+p.charAt(0).toUpperCase()+p.slice(1)+'</option>';}).join('');
+    return '<div class="kz-row drag-item" draggable="true" data-drag-list="kzr" data-drag-idx="'+rIdx+'" style="gap:8px">'+
+      '<span class="drag-handle" style="color:#252525;cursor:grab;font-size:14px;flex-shrink:0;user-select:none">⠿</span>'+
+      '<select class="andamento-sel '+andCls+'" data-kzr-id="'+t.id+'" data-kzr-field="andamento" data-kzr-cls="and">'+andOpts+'</select>'+
+      '<input class="kz-input" value="'+esc(t.texto||'')+'" placeholder="Tarefa..." style="flex:1" data-kzr-id="'+t.id+'" data-kzr-field="texto">'+
+      '<select class="andamento-sel '+prioCls+'" data-kzr-id="'+t.id+'" data-kzr-field="prioridade" data-kzr-cls="prio">'+pOpts+'</select>'+
+      '<button class="btn bd bsm" data-kzr-del="'+t.id+'"><i class="ti ti-x"></i></button>'+
+    '</div>';
+  }).join('');
+
+  const despHtml=KzDesempenhoR.map(function(d){
+    const rDIdx=KzDesempenhoR.indexOf(d);
+    const stars=[1,2,3,4,5].map(function(n){return '<span class="nota-star" data-kzrd-id="'+d.id+'" data-kzrd-nota="'+n+'">'+(((d.nota||0)>=n)?'⭐':'☆')+'</span>';}).join('');
+    const dur=calcDuration(d.inicio,d.fim);
+    return '<div class="kz-row drag-item" draggable="true" data-drag-list="kzrd" data-drag-idx="'+rDIdx+'" style="gap:8px">'+
+      '<span class="drag-handle" style="color:#252525;cursor:grab;font-size:14px;flex-shrink:0;user-select:none">⠿</span>'+
+      '<input class="kz-input" value="'+esc(d.tarefa||'')+'" placeholder="Tarefa-chave..." style="flex:1" data-kzrd-id="'+d.id+'" data-kzrd-field="tarefa">'+
+      '<input class="kz-input" value="'+esc(d.inicio||'')+'" placeholder="Início" style="width:70px" data-kzrd-id="'+d.id+'" data-kzrd-field="inicio">'+
+      '<input class="kz-input" value="'+esc(d.fim||'')+'" placeholder="Fim" style="width:70px" data-kzrd-id="'+d.id+'" data-kzrd-field="fim">'+
+      (dur?'<span id="durr-'+d.id+'" style="font-size:10px;color:#a78bfa;background:#1a1228;border-radius:5px;padding:2px 7px;white-space:nowrap;flex-shrink:0">⏱ '+dur+'</span>':'')+
+      '<div style="display:flex;gap:2px">'+stars+'</div>'+
+      '<button class="btn bd bsm" data-kzrd-del="'+d.id+'"><i class="ti ti-x"></i></button>'+
+    '</div>';
+  }).join('');
+
+  const coisasLinhasR=(KzDiarioR.coisas_boas||'').split('\n');
+  const coisasHtmlR=[1,2,3,4].map(function(n){
+    const val=coisasLinhasR[n-1]||'';
+    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:11px;color:#555;flex-shrink:0">'+n+'.</span><input class="kz-input" value="'+esc(val)+'" placeholder="..." data-coisas-r data-idx="'+(n-1)+'"></div>';
+  }).join('');
+
+  el.innerHTML=
+    '<div class="kz-grid">'+
+    '<div>'+
+      focusItems.map(function(f){return '<div class="kz-section"><div class="kz-header" style="color:'+f.color+'"><i class="ti '+f.icon+'"></i> '+f.label+'</div><div class="kz-body"><textarea class="kz-input kz-textarea" data-kzr-save="'+f.key+'">'+esc(KzDiarioR[f.key]||'')+'</textarea></div></div>';}).join('')+
+      '<div class="kz-section"><div class="kz-header" style="color:#4ade80"><i class="ti ti-heart"></i> 4 Coisas Boas que Aconteceram</div><div class="kz-body">'+coisasHtmlR+'</div></div>'+
+    '</div>'+
+    '<div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#60a5fa"><i class="ti ti-list"></i> Tarefas / Compromissos</div><div class="kz-body">'+
+        tarefasHtml+
+        '<div style="display:flex;gap:6px;margin-top:8px"><input id="kzr-nova-tarefa" class="kz-input" placeholder="Nova tarefa... (Enter para adicionar)" style="flex:1" onkeydown="if(event.key==='Enter'&&this.value.trim()){addKzTarefaTexto('ralph',this.value.trim());this.value='';}"><button class="btn bsm" style="color:#555" onclick="var v=document.getElementById('kzr-nova-tarefa');if(v&&v.value.trim()){addKzTarefaTexto('ralph',v.value.trim());v.value=''}"><i class="ti ti-plus"></i></button></div>'+
+      '</div></div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#fb923c"><i class="ti ti-chart-line"></i> Desempenho</div><div class="kz-body">'+
+        despHtml+
+        '<button class="btn bsm" style="margin-top:4px;color:#555" data-kzr-add-desp="1"><i class="ti ti-plus"></i> Adicionar</button>'+
+      '</div></div>'+
+    '</div>'+
+    '</div>';
+
+  initDragKz('kz-content-r','kzr',KzTarefasR);
+  initDragKz('kz-content-r','kzrd',KzDesempenhoR);
+}
+
+async function saveKzDiarioR(field,value){
+  try{
+    if(KzDiarioR.id){
+      await api('kaizen_diario','PATCH',{[field]:value},'?id=eq.'+KzDiarioR.id);
+      KzDiarioR[field]=value;
+    } else {
+      const ex=await api('kaizen_diario','GET',null,'?data=eq.'+kzCurrentDateR+'&pessoa=eq.ralph&order=id.asc');
+      if(ex&&ex[0]){KzDiarioR=ex[0];await api('kaizen_diario','PATCH',{[field]:value},'?id=eq.'+KzDiarioR.id);KzDiarioR[field]=value;}
+      else{const obj={data:kzCurrentDateR,pessoa:'ralph'};obj[field]=value;const r=await api('kaizen_diario','POST',obj);if(r&&r[0])KzDiarioR=r[0];}
+    }
+  }catch(e){console.error('saveKzDiarioR',e);}
+}
+
+async function addKzDespR(){
+  try{
+    await flushKzDiarioR();
+    await flushKzDespR();
+    const r=await api('kaizen_desempenho','POST',{data:kzCurrentDateR,pessoa:'ralph',tarefa:'',nota:0,ordem:KzDesempenhoR.length});
+    KzDesempenhoR.push(r[0]);renderKaizenRalph();
+  }catch(e){console.error('addKzDespR',e);}
+}
+
+async function delKzDespR(id){
+  await flushKzDiarioR();
+  await flushKzDespR();
+  await api('kaizen_desempenho','DELETE',null,'?id=eq.'+id);
+  KzDesempenhoR=KzDesempenhoR.filter(x=>x.id!==id);
+  renderKaizenRalph();
+}
+
+async function updateKzDespR(id,field,value){
+  try{
+    await api('kaizen_desempenho','PATCH',{[field]:value},'?id=eq.'+id);
+    const item=KzDesempenhoR.find(x=>x.id===id);
+    if(item){
+      item[field]=value;
+      if(field==='inicio'||field==='fim'){
+        const dur=calcDuration(item.inicio,item.fim);
+        const span=document.getElementById('durr-'+id);
+        if(dur){if(span){span.textContent='⏱ '+dur;}}
+        else if(span){span.remove();}
+      }
+    }
+  }catch(e){console.error('updateKzDespR',e);}
+}
+
+async function flushKzDiarioR(){
+  const fields=['prioridade_absoluta','gratidao','manifestacoes'];
+  for(const f of fields){
+    const el=document.querySelector('[data-kzr-save="'+f+'"]');
+    if(el){const val=el.value||'';KzDiarioR[f]=val;await saveKzDiarioR(f,val);}
+  }
+  const coisasEls=document.querySelectorAll('[data-coisas-r][data-idx]');
+  if(coisasEls.length){
+    const lines=[];
+    coisasEls.forEach(function(el){lines[Number(el.dataset.idx)]=el.value||'';});
+    await saveKzDiarioR('coisas_boas',lines.join('\n'));
+  }
+}
+
+async function flushKzDespR(){
+  const items=document.querySelectorAll('[data-kzrd-id][data-kzrd-field]');
+  for(const el of items){
+    const id=Number(el.dataset.kzrdId),field=el.dataset.kzrdField,val=el.value;
+    const item=KzDesempenhoR.find(x=>x.id===id);
+    if(item&&item[field]!==val){item[field]=val;await api('kaizen_desempenho','PATCH',{[field]:val},'?id=eq.'+id);}
+  }
+}
+
+
+async function delKzTarefaR(id){
+  await flushKzDiarioR();
+  await api('kaizen_tarefas','DELETE',null,'?id=eq.'+id);
+  KzTarefasR=KzTarefasR.filter(x=>x.id!==id);
+  renderKaizenRalph();
+}
+
+async function updateKzTarefaR(id,field,value){
+  try{
+    await api('kaizen_tarefas','PATCH',{[field]:value},'?id=eq.'+id);
+    const item=KzTarefasR.find(x=>x.id===id);
+    if(item)item[field]=value;
+  }catch(e){console.error('updateKzTarefaR',e);}
+}
+
+
 async function addKzTarefa(){
   try{await flushKzDiario();
     const r=await api('kaizen_tarefas','POST',{data:kzCurrentDate,pessoa:'jessica',texto:'',prioridade:'media',andamento:'pendente',ordem:KzTarefas.length});
@@ -1196,14 +1440,14 @@ async function addKzTarefa(){
 }
 
 async function addKzTarefaTexto(pessoa,texto){
-  const isPessoa=p=>p==='jessica';
-  const dt=isPessoa(pessoa)?kzCurrentDate:kzCurrentDateF;
-  const lista=isPessoa(pessoa)?KzTarefas:KzTarefasF;
+  const dt=pessoa==='jessica'?kzCurrentDate:pessoa==='filipe'?kzCurrentDateF:kzCurrentDateR;
+  const lista=pessoa==='jessica'?KzTarefas:pessoa==='filipe'?KzTarefasF:KzTarefasR;
   try{
     const r=await api('kaizen_tarefas','POST',{data:dt,pessoa,texto,prioridade:'media',andamento:'pendente',ordem:lista.length});
     lista.push(r[0]);
-    if(isPessoa(pessoa))renderKaizen();
-    else renderKaizenFilipe();
+    if(pessoa==='jessica')renderKaizen();
+    else if(pessoa==='filipe')renderKaizenFilipe();
+    else renderKaizenRalph();
   }catch(e){console.error(e);}
 }
 async function updateKzTarefa(id,field,value){
@@ -1828,6 +2072,7 @@ function showTab(t,btn){
   if(t==='hoje'){renderHoje();}
   if(t==='contas')statsContas();
   if(t==='copies')initCopies();
+  if(t==='kaizen-ralph')initKaizenRalph();
   if(t==='kaizen-jessica')initKaizen('jessica');
   if(t==='kaizen-filipe')initKaizen('filipe');
   if(t==='projetos')initProjetos();
@@ -2330,6 +2575,14 @@ document.addEventListener('click',(e)=>{
   if(kzfDel){delKzTarefaF(Number(kzfDel.dataset.kzfDel));return;}
   const kzfdDel=e.target.closest('[data-kzfd-del]');
   if(kzfdDel){delKzDespF(Number(kzfdDel.dataset.kzfdDel));return;}
+  // Kaizen Ralph nota estrela
+  const kzrdNota=e2.target.closest('[data-kzrd-nota]');
+  if(kzrdNota){
+    const id=Number(kzrdNota.dataset.kzrdId),nota=Number(kzrdNota.dataset.kzrdNota);
+    updateKzDespR(id,'nota',nota);
+    kzrdNota.closest('div').querySelectorAll('[data-kzrd-nota]').forEach(function(s,i){s.textContent=i<nota?'⭐':'☆';});
+    return;
+  }
   // Kaizen Filipe nota estrela
   const kzfdNota=e.target.closest('[data-kzfd-nota]');
   if(kzfdNota){
@@ -2458,6 +2711,33 @@ document.addEventListener('input',(e)=>{
     },1500);
     return;
   }
+  // 4 coisas boas Ralph
+  const coisasR=e.target.closest('[data-coisas-r]');
+  if(coisasR){
+    clearTimeout(kzDebounceTimer);
+    kzDebounceTimer=setTimeout(function(){
+      const inputs=document.querySelectorAll('[data-coisas-r][data-idx]');
+      const lines=[];
+      inputs.forEach(function(inp){lines[Number(inp.dataset.idx)]=inp.value||'';});
+      saveKzDiarioR('coisas_boas',lines.join('\n'));
+    },1500);
+    return;
+  }
+  // Desempenho Ralph
+  const kzrdInp=e.target.closest('[data-kzrd-id][data-kzrd-field]');
+  if(kzrdInp){
+    clearTimeout(kzDespDebounce);
+    const id=Number(kzrdInp.dataset.kzrdId),field=kzrdInp.dataset.kzrdField,val=kzrdInp.value;
+    kzDespDebounce=setTimeout(function(){updateKzDespR(id,field,val);},1500);
+    return;
+  }
+  // Ralph save
+  const kzrInp=e.target.closest('[data-kzr-save]');
+  if(kzrInp){
+    clearTimeout(kzDebounceTimer);
+    kzDebounceTimer=setTimeout(function(){saveKzDiarioR(kzrInp.dataset.kzrSave,kzrInp.value);},1500);
+    return;
+  }
   // 4 coisas boas Filipe
   const coisasF=e.target.closest('[data-coisas-f2]');
   if(coisasF){
@@ -2507,6 +2787,10 @@ document.addEventListener('blur',(e)=>{
   }
   const kzfInp=e.target.closest('input[data-kzf-id]');
   if(kzfInp){updateKzTarefaF(Number(kzfInp.dataset.kzfId),kzfInp.dataset.kzfField,kzfInp.value);return;}
+  const kzrdInp=e.target.closest('input[data-kzr-id]');
+  if(kzrdInp){updateKzTarefaR(Number(kzrdInp.dataset.kzrId),kzrdInp.dataset.kzrField,kzrdInp.value);return;}
+  const kzrdSelectInp=e.target.closest('select[data-kzr-id]');
+  if(kzrdSelectInp)return;  // handled by change
   const kzfdInp=e.target.closest('input[data-kzfd-id]');
   if(kzfdInp){updateKzDespF(Number(kzfdInp.dataset.kzfdId),kzfdInp.dataset.kzfdField,kzfdInp.value);return;}
   // Conta FB inline edit (postagens)
@@ -2515,10 +2799,20 @@ document.addEventListener('blur',(e)=>{
   // Estoque input
   const stkInp=e.target.closest('[data-stk-id]');
   if(stkInp){const id=Number(stkInp.dataset.stkId);const v=stkInp.value;updateEstoque(id,v);document.getElementById('stk-post-'+id).innerHTML=stockEl(v);return;}
+  const kzrSave=e.target.closest('[data-kzr-save]');
+  if(kzrSave){saveKzDiarioR(kzrSave.dataset.kzrSave,kzrSave.value);return;}
   const kzjSave=e.target.closest('[data-kzj-save]');
   if(kzjSave){saveKzDiario(kzjSave.dataset.kzjSave,kzjSave.value);return;}
   const kzfSave=e.target.closest('[data-kzf-save]');
   if(kzfSave){saveKzDiarioF(kzfSave.dataset.kzfSave,kzfSave.value);return;}
+  const coisasIdxR=e.target.closest('[data-coisas-r]');
+  if(coisasIdxR){
+    const inputs=document.querySelectorAll('[data-coisas-r][data-idx]');
+    const lines=[];
+    inputs.forEach(function(inp){lines[Number(inp.dataset.idx)]=inp.value||'';});
+    saveKzDiarioR('coisas_boas',lines.join('\n'));
+    return;
+  }
   const coisasIdxJ=e.target.closest('[data-coisas-f]');
   if(coisasIdxJ){
     const inputs=document.querySelectorAll('[data-coisas-f][data-idx]');
@@ -2540,6 +2834,7 @@ document.addEventListener('blur',(e)=>{
 document.addEventListener('click',(e2)=>{
   if(e2.target.closest('[data-kzj-add-tarefa]')){addKzTarefa();return;}
   if(e2.target.closest('[data-kzj-add-desp]')){addKzDesemp();return;}
+  if(e2.target.closest('[data-kzr-add-desp]')){addKzDespR();return;}
   if(e2.target.closest('[data-kzf-add-tarefa]')){addKzTarefaF();return;}
   if(e2.target.closest('[data-kzf-add-desp]')){addKzDespF();return;}
 },false);
