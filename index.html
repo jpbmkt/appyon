@@ -1326,10 +1326,6 @@ function renderKaizenRalph(){
   el.innerHTML=
     '<div class="kz-grid">'+
     '<div>'+
-      focusItems.map(function(f){return '<div class="kz-section"><div class="kz-header" style="color:'+f.color+'"><i class="ti '+f.icon+'"></i> '+f.label+'</div><div class="kz-body"><textarea class="kz-input kz-textarea" data-kzr-save="'+f.key+'">'+esc(KzDiarioR[f.key]||'')+'</textarea></div></div>';}).join('')+
-      '<div class="kz-section"><div class="kz-header" style="color:#4ade80"><i class="ti ti-heart"></i> 4 Coisas Boas que Aconteceram</div><div class="kz-body">'+coisasHtmlR+'</div></div>'+
-    '</div>'+
-    '<div>'+
       '<div class="kz-section"><div class="kz-header" style="color:#60a5fa"><i class="ti ti-list"></i> Tarefas / Compromissos</div><div class="kz-body">'+
         tarefasHtml+
         '<div style="display:flex;gap:6px;margin-top:8px"><input id="kzr-nova-tarefa" class="kz-input" placeholder="Nova tarefa... (Enter para adicionar)" style="flex:1" data-ralph-add-tarefa="1"><button class="btn bsm" style="color:#555" data-ralph-add-btn="1"><i class="ti ti-plus"></i></button></div>'+
@@ -1338,6 +1334,10 @@ function renderKaizenRalph(){
         despHtml+
         '<button class="btn bsm" style="margin-top:4px;color:#555" data-kzr-add-desp="1"><i class="ti ti-plus"></i> Adicionar</button>'+
       '</div></div>'+
+    '</div>'+
+    '<div>'+
+      focusItems.map(function(f){return '<div class="kz-section"><div class="kz-header" style="color:'+f.color+'"><i class="ti '+f.icon+'"></i> '+f.label+'</div><div class="kz-body"><textarea class="kz-input kz-textarea" data-kzr-save="'+f.key+'">'+esc(KzDiarioR[f.key]||'')+'</textarea></div></div>';}).join('')+
+      '<div class="kz-section"><div class="kz-header" style="color:#4ade80"><i class="ti ti-heart"></i> 4 Coisas Boas que Aconteceram</div><div class="kz-body">'+coisasHtmlR+'</div></div>'+
     '</div>'+
     '</div>';
 
