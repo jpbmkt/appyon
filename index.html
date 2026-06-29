@@ -1278,7 +1278,7 @@ function renderKaizenRalph(){
   const el=document.getElementById('kz-content-r');
   if(!el)return;
 
-  const focusItems=[
+  const diarioItems=[
     {key:'prioridade_absoluta',label:'Prioridade Absoluta',icon:'ti-target',color:'#f87171'},
     {key:'gratidao',label:'Mentalidade Kaizen',icon:'ti-brain',color:'#60a5fa'},
     {key:'manifestacoes',label:'Manifestações Diárias',icon:'ti-sparkles',color:'#fbbf24'},
@@ -1323,20 +1323,33 @@ function renderKaizenRalph(){
     return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:11px;color:#555;flex-shrink:0">'+n+'.</span><input class="kz-input" value="'+esc(val)+'" placeholder="..." data-coisas-r data-idx="'+(n-1)+'"></div>';
   }).join('');
 
+  const deepFocusItems=[
+    {key:'celular_aviao',label:'Celular em modo avião'},
+    {key:'notificacoes',label:'Notificações desligadas'},
+    {key:'ambiente',label:'Ambiente limpo e silencioso'},
+    {key:'clareza',label:'Clareza total da tarefa'},
+    {key:'cronometro',label:'Cronômetro ativado (Pomodoro)'},
+  ];
+  const focusHtmlR=deepFocusItems.map(function(item){
+    const checked=KzFocusR[item.key]?'checked':'';
+    return '<div class="kz-check-row"><input type="checkbox" class="kz-check" id="kzrf-'+item.key+'" '+checked+' data-focus-key="'+item.key+'" data-focus-pessoa="ralph"><label class="kz-label" for="kzrf-'+item.key+'">'+item.label+'</label></div>';
+  }).join('');
+
   el.innerHTML=
-    '<div class="kz-grid">'+
+    '<div class="kz-grid">'++
     '<div>'+
       '<div class="kz-section"><div class="kz-header" style="color:#60a5fa"><i class="ti ti-list"></i> Tarefas / Compromissos</div><div class="kz-body">'+
         tarefasHtml+
         '<div style="display:flex;gap:6px;margin-top:8px"><input id="kzr-nova-tarefa" class="kz-input" placeholder="Nova tarefa... (Enter para adicionar)" style="flex:1" data-ralph-add-tarefa="1"><button class="btn bsm" style="color:#555" data-ralph-add-btn="1"><i class="ti ti-plus"></i></button></div>'+
       '</div></div>'+
+      '<div class="kz-section"><div class="kz-header" style="color:#a78bfa"><i class="ti ti-focus"></i> Deep Focus</div><div class="kz-body">'+focusHtmlR+'</div></div>'+
       '<div class="kz-section"><div class="kz-header" style="color:#fb923c"><i class="ti ti-chart-line"></i> Desempenho</div><div class="kz-body">'+
         despHtml+
         '<button class="btn bsm" style="margin-top:4px;color:#555" data-kzr-add-desp="1"><i class="ti ti-plus"></i> Adicionar</button>'+
       '</div></div>'+
     '</div>'+
     '<div>'+
-      focusItems.map(function(f){return '<div class="kz-section"><div class="kz-header" style="color:'+f.color+'"><i class="ti '+f.icon+'"></i> '+f.label+'</div><div class="kz-body"><textarea class="kz-input kz-textarea" data-kzr-save="'+f.key+'">'+esc(KzDiarioR[f.key]||'')+'</textarea></div></div>';}).join('')+
+      diarioItems.map(function(f){return '<div class="kz-section"><div class="kz-header" style="color:'+f.color+'"><i class="ti '+f.icon+'"></i> '+f.label+'</div><div class="kz-body"><textarea class="kz-input kz-textarea" data-kzr-save="'+f.key+'">'+esc(KzDiarioR[f.key]||'')+'</textarea></div></div>';}).join('')+
       '<div class="kz-section"><div class="kz-header" style="color:#4ade80"><i class="ti ti-heart"></i> 4 Coisas Boas que Aconteceram</div><div class="kz-body">'+coisasHtmlR+'</div></div>'+
     '</div>'+
     '</div>';
@@ -1407,6 +1420,18 @@ async function updateKzDespR(id,field,value){
       }
     }
   }catch(e){console.error('updateKzDespR',e);}
+}
+
+async function saveKzFocusR(field,value){
+  try{
+    if(KzFocusR.id){
+      await api('kaizen_deep_focus','PATCH',{[field]:value},'?id=eq.'+KzFocusR.id);
+      KzFocusR[field]=value;
+    } else {
+      const r=await api('kaizen_deep_focus','POST',{data:kzCurrentDateR,pessoa:'ralph',[field]:value});
+      if(r&&r[0])KzFocusR=r[0];
+    }
+  }catch(e){console.error('saveKzFocusR',e);}
 }
 
 async function flushKzDiarioR(){
@@ -2646,6 +2671,9 @@ document.addEventListener('change',(e)=>{
   // Config inicial checkboxes
   const cfgChk=e.target.closest('[data-cfg-cid]');
   if(cfgChk){toggleConfig(Number(cfgChk.dataset.cfgCid),cfgChk.dataset.cfgKey,cfgChk.checked);return;}
+  // Deep Focus Ralph
+  const focusRChk=e.target.closest('[data-focus-key][data-focus-pessoa="ralph"]');
+  if(focusRChk){saveKzFocusR(focusRChk.dataset.focusKey,focusRChk.checked);return;}
   // Prioridades — trocar pessoa
   const prioPessoa=e.target.closest('[data-prio-pessoa]');
   if(prioPessoa){
