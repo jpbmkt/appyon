@@ -2594,7 +2594,7 @@ document.addEventListener('click',(e)=>{
   const kzfdDel=e.target.closest('[data-kzfd-del]');
   if(kzfdDel){delKzDespF(Number(kzfdDel.dataset.kzfdDel));return;}
   // Kaizen Ralph nota estrela
-  const kzrdNota=e2.target.closest('[data-kzrd-nota]');
+  const kzrdNota=e.target.closest('[data-kzrd-nota]');
   if(kzrdNota){
     const id=Number(kzrdNota.dataset.kzrdId),nota=Number(kzrdNota.dataset.kzrdNota);
     updateKzDespR(id,'nota',nota);
