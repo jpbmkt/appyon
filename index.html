@@ -1332,7 +1332,7 @@ function renderKaizenRalph(){
     '<div>'+
       '<div class="kz-section"><div class="kz-header" style="color:#60a5fa"><i class="ti ti-list"></i> Tarefas / Compromissos</div><div class="kz-body">'+
         tarefasHtml+
-        '<div style="display:flex;gap:6px;margin-top:8px"><input id="kzr-nova-tarefa" class="kz-input" placeholder="Nova tarefa... (Enter para adicionar)" style="flex:1" onkeydown="if(event.key==='Enter'&&this.value.trim()){addKzTarefaTexto('ralph',this.value.trim());this.value='';}"><button class="btn bsm" style="color:#555" onclick="var v=document.getElementById('kzr-nova-tarefa');if(v&&v.value.trim()){addKzTarefaTexto('ralph',v.value.trim());v.value=''}"><i class="ti ti-plus"></i></button></div>'+
+        '<div style="display:flex;gap:6px;margin-top:8px"><input id="kzr-nova-tarefa" class="kz-input" placeholder="Nova tarefa... (Enter para adicionar)" style="flex:1" data-ralph-add-tarefa="1"><button class="btn bsm" style="color:#555" data-ralph-add-btn="1"><i class="ti ti-plus"></i></button></div>'+
       '</div></div>'+
       '<div class="kz-section"><div class="kz-header" style="color:#fb923c"><i class="ti ti-chart-line"></i> Desempenho</div><div class="kz-body">'+
         despHtml+
@@ -1343,6 +1343,24 @@ function renderKaizenRalph(){
 
   initDragKz('kz-content-r','kzr',KzTarefasR);
   initDragKz('kz-content-r','kzrd',KzDesempenhoR);
+  // Bind input de nova tarefa Ralph
+  const kzrInput=document.getElementById('kzr-nova-tarefa');
+  if(kzrInput){
+    kzrInput.addEventListener('keydown',function(e){
+      if(e.key==='Enter'&&kzrInput.value.trim()){
+        e.preventDefault();
+        addKzTarefaTexto('ralph',kzrInput.value.trim());
+        kzrInput.value='';
+      }
+    });
+  }
+  const kzrBtn=document.querySelector('[data-ralph-add-btn]');
+  if(kzrBtn){
+    kzrBtn.addEventListener('click',function(){
+      const v=document.getElementById('kzr-nova-tarefa');
+      if(v&&v.value.trim()){addKzTarefaTexto('ralph',v.value.trim());v.value='';}
+    });
+  }
 }
 
 async function saveKzDiarioR(field,value){
