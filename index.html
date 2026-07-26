@@ -542,7 +542,7 @@ td.iec select{cursor:pointer}
       <div class="f"><label>E-mail</label><input id="ct-e" placeholder="conta@gmail.com"></div>
       <div class="f"><label>Senha e-mail</label><input id="ct-se" placeholder="senha123"></div>
       <div class="f"><label>Dispositivo</label><input id="ct-d" placeholder="iPhone 14 / PC"></div>
-      <div class="f"><label>Situação</label><select id="ct-sit"><option>Criar Perfil</option><option>Configuração Inicial</option><option>Aquecimento</option><option>Crescimento</option><option>Venda</option><option>SMS e Análise Selfie</option><option>Banida</option><option>Bugada</option></select></div>
+      <div class="f"><label>Situação</label><select id="ct-sit"><option>Criar Perfil</option><option>Configuração Inicial</option><option>Aquecimento</option><option>Crescimento</option><option>Venda</option><option>Stand By</option><option>SMS e Análise Selfie</option><option>Banida</option><option>Bugada</option></select></div>
       <div class="f"><label>Cluster</label><input id="ct-cluster" placeholder="ex: Cluster A, B..."></div>
       <div class="f"><label>Grupo do avatar</label><input id="ct-grupo" placeholder="ex: asiática mulher, negro jovem..."></div>
       <div class="f"><label>Voz</label><input id="ct-vz" placeholder="Voz jovem feminina..."></div>
@@ -2942,7 +2942,7 @@ function renderContas(){
   const tb=document.getElementById('tb-ct');
   if(!f.length){tb.innerHTML=`<tr><td colspan="9" class="empty">Nenhuma conta</td></tr>`;return statsContas();}
 
-  const SIT_OPTS=['Criar Perfil','Configuração Inicial','Aquecimento','Crescimento','Venda','SMS e Análise Selfie','Banida','Bugada'];
+  const SIT_OPTS=['Criar Perfil','Configuração Inicial','Aquecimento','Crescimento','Venda','Stand By','SMS e Análise Selfie','Banida','Bugada'];
   const YN=['Não','Sim'];
 
   tb.innerHTML=f.map(c=>`<tr>
@@ -2992,7 +2992,7 @@ const PLAN_COLS=[
   {label:'E-mail',           field:'email',    type:'text', w:170},
   {label:'Senha e-mail',     field:'senha_email',type:'text',w:120},
   {label:'Dispositivo',      field:'dispositivo',type:'text',w:110},
-  {label:'Situação',         field:'situacao', type:'select', opts:['Criar Perfil','Configuração Inicial','Aquecimento','Crescimento','Venda','SMS e Análise Selfie','Banida','Bugada'], w:130},
+  {label:'Situação',         field:'situacao', type:'select', opts:['Criar Perfil','Configuração Inicial','Aquecimento','Crescimento','Venda','Stand By','SMS e Análise Selfie','Banida','Bugada'], w:130},
   {label:'Proxy',            field:'proxy',    type:'text', w:140},
   {label:'Cluster',          field:'cluster',     type:'text',w:110},
   {label:'Grupo avatar',     field:'grupo_avatar',type:'text',w:140},
@@ -3256,7 +3256,7 @@ async function ctPatch(id,field,value){
 function openContaModal(id){
   const c=Contas.find(x=>x.id===id);if(!c)return;
   document.getElementById('modal-bg').style.display='flex';
-  const SIT_OPTS=['Criar Perfil','Configuração Inicial','Aquecimento','Crescimento','Venda','SMS e Análise Selfie','Banida','Bugada'];
+  const SIT_OPTS=['Criar Perfil','Configuração Inicial','Aquecimento','Crescimento','Venda','Stand By','SMS e Análise Selfie','Banida','Bugada'];
   document.getElementById('modal-inner').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <h3 style="color:#fff;font-size:15px"><i class="ti ti-brand-instagram" style="color:#E1306C;margin-right:8px"></i>${esc(c.user_ig)}</h3>
@@ -3654,11 +3654,11 @@ function renderPostStats(){
   if(!el)return;
   const SECS=[
     {sit:'',label:'Todas',color:'#aaa'},
-    {sit:'Stand By',label:'Stand By',color:'#94a3b8'},
     {sit:'Configuração Inicial',label:'Config. Inicial',color:'#38bdf8'},
     {sit:'Aquecimento',label:'Aquecimento',color:'#fbbf24'},
     {sit:'Crescimento',label:'Crescimento',color:'#60a5fa'},
     {sit:'Venda',label:'Venda',color:'#4ade80'},
+    {sit:'Stand By',label:'Stand By',color:'#94a3b8'},
   ];
   const grid=document.createElement('div');
   grid.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px';
@@ -4548,9 +4548,9 @@ function statsCopies(){
     {label:'Todas',         color:'#aaa',    key:''},
     {label:'Config. Inicial',color:'#38bdf8', key:'Configuração Inicial'},
     {label:'Aquecimento',    color:'#fb923c', key:'Aquecimento'},
-    {label:'Stand By',       color:'#94a3b8', key:'Stand By'},
     {label:'Crescimento',    color:'#60a5fa', key:'Crescimento'},
     {label:'Venda',          color:'#4ade80', key:'Venda'},
+    {label:'Stand By',       color:'#94a3b8', key:'Stand By'},
   ];
   const el=document.getElementById('stats-copies');
   if(!el)return;
