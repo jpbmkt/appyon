@@ -586,40 +586,22 @@ td.iec select{cursor:pointer}
 
 <!-- ===== POSTAGENS ===== -->
 <div class="tab" id="tab-postagens">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
     <span style="font-size:11px;color:#555;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Cluster</span>
     <select id="cluster-select-post" onchange="setClusterSelectPost(this.value)" style="font-size:12px;padding:5px 10px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none">
       <option value="">Todos os clusters</option>
     </select>
-    <span id="cluster-stats-label-post" style="font-size:11px;color:#444"></span>
-    <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
-      <button class="btn bsm" onclick="navPostWeek(-1)" title="Semana anterior" style="padding:5px 9px"><i class="ti ti-chevron-left"></i></button>
-      <button class="btn bsm" onclick="navPostToday()" title="Voltar para hoje" style="padding:5px 10px">Hoje</button>
-      <span id="post-week-label" style="font-size:12px;color:#888;min-width:120px;text-align:center"></span>
-      <button class="btn bsm" onclick="navPostWeek(1)" title="Próxima semana" style="padding:5px 9px"><i class="ti ti-chevron-right"></i></button>
-    </div>
+    <select onchange="setPostSit(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none">
+      <option value="">Todas as situações</option>
+      <option value="Crescimento">Crescimento</option>
+      <option value="Venda">Venda</option>
+    </select>
+    <input type="text" placeholder="Buscar perfil..." oninput="searchPostagens(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none;width:160px">
+    <span id="pd-date-label" style="font-size:12px;color:#555;margin-left:auto"></span>
   </div>
   <div class="stats" id="stats-post" style="margin-bottom:14px"></div>
-  <div class="toolbar" style="margin-bottom:10px">
-    <button class="btn bsm" id="btn-fav-filter-post" onclick="toggleFavFilterPost()" style="color:#555"><i class="ti ti-star"></i> Favoritos</button>
-    <select onchange="setPostPrioFilter(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none">
-      <option value="">Todas as prioridades</option>
-      <option value="alta">🔴 Alta</option>
-      <option value="media">🟡 Média</option>
-      <option value="baixa">🟢 Baixa</option>
-    </select>
-
-    <input type="text" placeholder="Buscar perfil..." oninput="searchPostagens(this.value)" style="font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid #252525;background:#111;color:#e8e8e8;outline:none;width:140px">
-    <button class="btn bsm bg" id="btn-sync-drive" onclick="syncDrive()"><i class="ti ti-refresh"></i> Sincronizar</button>
-  </div>
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:8px 12px;background:#161616;border:1px solid #222;border-radius:8px">
-    <i class="ti ti-brand-google-drive" style="color:#4ade80;font-size:18px;flex-shrink:0"></i>
-    <span style="font-size:11px;color:#555;flex:1">Sincronizar estoque via Google Drive</span>
-    <button class="btn bg bsm" id="btn-sync-drive" onclick="syncDrive()"><i class="ti ti-refresh"></i> Sincronizar</button>
-  </div>
-  <div id="post-sections"><div class="loading">Carregando...</div></div>
+  <div id="post-sections"></div>
 </div>
-
 <!-- ===== COPIES ===== -->
 <div class="tab" id="tab-copies">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
@@ -745,7 +727,7 @@ async function api(tbl,method='GET',body=null,qs='',mode=''){
   const t=await r.text();return t?JSON.parse(t):null;
 }
 
-let Emails=[],Proxies=[],Avatares=[],Contas=[],Checks=[],ConfigsIniciais=[],NotasDia=[],CopiesPostagem=[],gCalendarEvents=[],TodosJessica=[],TodosFilipe=[];
+let Emails=[],Proxies=[],Avatares=[],Contas=[],Checks=[],ConfigsIniciais=[],NotasDia=[],CopiesPostagem=[],PostsDiarios=[],gCalendarEvents=[],TodosJessica=[],TodosFilipe=[];
 let hojePessoa='jessica',hojeMinhaFrase='',VisionItems=[],MetasEmpresa={},FrasesDestaque=[],Lembretes=[],PrioridadesSemana=[];
 const PRIO_PESSOAS=[
   {key:'',label:'—',color:'#555'},
@@ -2081,7 +2063,7 @@ async function disconnectFbProfile(id){
 
 async function loadAll(){
   try{
-    [Emails,Proxies,Avatares,Contas,Checks,ConfigsIniciais,NotasDia,TodosJessica,TodosFilipe,CopiesPostagem]=await Promise.all([
+    [Emails,Proxies,Avatares,Contas,Checks,ConfigsIniciais,NotasDia,TodosJessica,TodosFilipe,CopiesPostagem,PostsDiarios]=await Promise.all([
       api('emails','GET',null,'?order=id.desc'),
       api('proxies','GET',null,'?order=id.desc'),
       api('avatares','GET',null,'?order=id.desc'),
@@ -2091,7 +2073,8 @@ async function loadAll(){
       api('notas_dia','GET',null,'?order=created_at.desc&limit=50'),
       api('todo_items','GET',null,'?pessoa=eq.Jessica&order=prioridade.asc,ordem.asc,id.asc'),
       api('todo_items','GET',null,'?pessoa=eq.Filipe&order=prioridade.asc,ordem.asc,id.asc'),
-      api('copies_postagem','GET',null,'?order=data.desc')
+      api('copies_postagem','GET',null,'?order=data.desc'),
+      api('posts_diarios','GET',null,'?order=data.desc,slot.asc')
     ]);
     document.getElementById('cdot').className='dot';
     renderEmails();renderProxies();renderAvatares();renderContas();
@@ -3520,134 +3503,106 @@ async function saveQtdVideos(cid,data,val){
 function renderPostagens(){
   populateClusterSelects();
   renderPostStats();
-  const wk=weekDays(postWeekRef);
-  const dayNames=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
-  const sections=[
-    {sit:'Aquecimento',cls:'b-aquecimento',prog:'pf-aq',max:2,label:'dias de aquecimento',getCount:c=>new Set(Checks.filter(x=>x.conta_id===c.id&&(x.on_ig||x.on_fb||(x.on_ig==null))).map(x=>x.data)).size,showQtd:false,showConfig:false},
-    {sit:'Configuração Inicial',cls:'b-config',prog:'pf-config',max:null,label:'configuração',getCount:()=>0,showQtd:false,showConfig:true},
-    {sit:'Crescimento',cls:'b-crescimento',prog:'pf-cr',max:10,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).reduce((a,x)=>a+Number(x.qtd_ig||0),0),getCountFB:c=>Checks.filter(x=>x.conta_id===c.id).reduce((a,x)=>a+Number(x.qtd_fb||0),0),showQtd:false,showConfig:false},
-    {sit:'Venda',cls:'b-venda',prog:'pf-vd',max:null,label:'vídeos postados',getCount:c=>Checks.filter(x=>x.conta_id===c.id).reduce((a,ch)=>a+(Number(ch.qtd_ig||0)+Number(ch.qtd_fb||0)),0),showQtd:false,showConfig:false},
-    {sit:'Criar Perfil',cls:'b-criar',prog:'pf-criar',max:null,label:'',getCount:()=>0,showQtd:false,showConfig:false},
-    {sit:'Stand By',cls:'b-standby',prog:'pf-sb',max:null,label:'',getCount:()=>0,showQtd:false,showConfig:false},
-    {sit:'SMS e Análise Selfie',cls:'b-sms',prog:'pf-sms',max:null,label:'',getCount:()=>0,showQtd:false,showConfig:false},
-    {sit:'Banida',cls:'b-banida',prog:'pf-ban',max:null,label:'',getCount:()=>0,showQtd:false,showConfig:false},
-    {sit:'Bugada',cls:'b-bugada',prog:'pf-bug',max:null,label:'',getCount:()=>0,showQtd:false,showConfig:false},
-  ];
+  const today=localDateStr(new Date());
   const el=document.getElementById('post-sections');
   if(!el)return;
-  const ativas=Contas.filter(x=>x.situacao);
-  if(!ativas.length){el.innerHTML='<div class="empty">Nenhuma conta cadastrada.</div>';return;}
-  el.innerHTML=sections.filter(sec=>!postSit||sec.sit===postSit).map(sec=>{
-    let contas=Contas.filter(x=>x.situacao===sec.sit);
-    if(postPrio)contas=contas.filter(x=>x.prioridade_perfil===postPrio);
-    if(postFavOnly)contas=contas.filter(x=>x.favorito);
-    if(postCluster)contas=contas.filter(x=>(x.cluster||'').toLowerCase().includes(postCluster.toLowerCase()));
-    if(postQ)contas=contas.filter(x=>((x.fb_perfil||'')+(x.user_ig||'')).toLowerCase().includes(postQ.toLowerCase()));
-    if(postSort.field){contas=[...contas].sort(function(a,b){const va=a[postSort.field]||'',vb=b[postSort.field]||'';return String(va).localeCompare(String(vb),'pt')*postSort.dir;});}
-    if(!contas.length)return'';
-    const tableRows=contas.map(c=>{
-      const checked=checkedDays(c.id);
-      const count=sec.getCount(c);
-      const pct=sec.max?Math.min(100,Math.round(count/sec.max*100)):null;
 
-      // Progresso
-      let progHtml='';
-      if(sec.showConfig){
-        const cfg=ConfigsIniciais.find(x=>x.conta_id===c.id)||{};
-        const grupos=[
-          {label:null, items:[{key:'pasta_drive',label:'Pasta Drive'},{key:'id_pasta',label:'ID Pasta'}]},
-          {label:'Instagram', items:[{key:'foto_perfil',label:'Foto perfil'},{key:'conta_profissional',label:'Conta profissional'},{key:'descricao_bio',label:'Descrição bio'},{key:'link_bio',label:'Link bio'}]},
-          {label:'Facebook', items:[{key:'fb_foto_perfil',label:'Foto perfil'},{key:'fb_foto_capa',label:'Foto capa'},{key:'fb_restricao',label:'Restrição países'},{key:'fb_automacao',label:'Automação'},{key:'fb_links',label:'Links'}]},
-        ];
-        const allItems=grupos.flatMap(function(g){return g.items;});
-        const allDone=allItems.every(function(it){return cfg[it.key];});
-        const grupoRows=grupos.map(function(g){
-          const labelHtml=g.label?'<span style="font-size:10px;font-weight:600;color:#444;min-width:64px;flex-shrink:0;text-transform:uppercase">'+g.label+'</span>':'<span style="min-width:64px;flex-shrink:0"></span>';
-          const pillsHtml=g.items.map(function(it){
-            const col=cfg[it.key]?'#4ade80':'#555';
-            const chk=cfg[it.key]?' checked':'';
-            return '<label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:'+col+';cursor:pointer;white-space:nowrap"><input type="checkbox"'+chk+' style="accent-color:#4ade80;cursor:pointer" data-cfg-cid="'+c.id+'" data-cfg-key="'+it.key+'"> '+it.label+'</label>';
-          }).join('');
-          return '<div style="display:flex;align-items:center;gap:10px;padding:3px 0;border-bottom:1px solid #111">'+labelHtml+'<div style="display:flex;flex-wrap:wrap;gap:10px">'+pillsHtml+'</div></div>';
-        }).join('');
-        const btnAvancar=allDone?'<button class="btn bg bsm" style="margin-top:6px;font-size:11px" onclick="moverParaCrescimento('+c.id+')"><i class="ti ti-arrow-right"></i> Mover para Crescimento</button>':'';
-        progHtml='<div style="display:flex;flex-direction:column;gap:0">'+grupoRows+'</div>'+btnAvancar;
-      } else if(sec.max){
-        if(sec.getCountFB!==undefined){
-          const countFB=sec.getCountFB(c);
-          const pctIG=Math.min(100,Math.round(count/sec.max*100));
-          const pctFB=Math.min(100,Math.round(countFB/sec.max*100));
-          progHtml='<div style="font-size:10px;color:#60a5fa;margin-bottom:1px">IG: '+count+'/'+sec.max+'</div>'+
-            '<div class="prog-bar" style="margin-bottom:4px"><div class="prog-fill" style="width:'+pctIG+'%;background:#60a5fa"></div></div>'+
-            '<div style="font-size:10px;color:#1877f2;margin-bottom:1px">FB: '+countFB+'/'+sec.max+'</div>'+
-            '<div class="prog-bar"><div class="prog-fill" style="width:'+pctFB+'%;background:#1877f2"></div></div>';
-        } else {
-          progHtml='<div style="font-size:10px;color:#555;margin-bottom:2px">'+count+'/'+sec.max+'</div><div class="prog-bar"><div class="prog-fill '+sec.prog+'" style="width:'+pct+'%"></div></div>';
-        }
-      } else {
-        progHtml='<span style="font-size:11px;color:#555">'+count+' vídeos</span>';
-      }
+  // Label da data atual
+  const lbl=document.getElementById('pd-date-label');
+  if(lbl){
+    const d=new Date();
+    const dias=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+    const meses=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+    lbl.textContent=dias[d.getDay()]+', '+d.getDate()+' de '+meses[d.getMonth()];
+  }
 
-      const dayCells=sec.showConfig?'':wk.map((d,i)=>{
-        const isToday=d===today;
-        const chk=Checks.find(x=>x.conta_id===c.id&&x.data===d);
-        const onIG=chk&&chk.on_ig;
-        const onFB=chk&&chk.on_fb;
-        const qtdIG=chk&&chk.qtd_ig!=null?chk.qtd_ig:'';
-        const qtdFB=chk&&chk.qtd_fb!=null?chk.qtd_fb:'';
-        const clsIG=onIG?(Number(chk.qtd_ig||0)>=2?' on2':' on1'):'';
-        const clsFB=onFB?(Number(chk.qtd_fb||0)>=2?' on2':' on1'):'';
-        const todayCls=isToday?' today':'';
-        const bg=isToday?'background:#0a140a':'';
-        return buildDayCell(c.id,d,onIG,onFB,qtdIG,qtdFB,clsIG,clsFB,todayCls,bg);
-      }).join('');
+  // Filtrar contas Crescimento e Venda
+  let contas=Contas.filter(function(c){return c.situacao==='Crescimento'||c.situacao==='Venda';});
+  if(postCluster)contas=contas.filter(function(c){return (c.cluster||'')===postCluster;});
+  if(postSit)contas=contas.filter(function(c){return c.situacao===postSit;});
+  if(postQ)contas=contas.filter(function(c){return ((c.fb_perfil||'')+(c.user_ig||'')).toLowerCase().includes(postQ.toLowerCase());});
 
-    const estoqueCell='';
+  if(!contas.length){
+    el.innerHTML='<div class="empty">Nenhuma conta em Crescimento ou Venda.</div>';
+    return;
+  }
 
-      const sitHdrCls=sec.sit==='Aquecimento'?'aq':sec.sit==='Crescimento'?'cr':sec.sit==='Venda'?'vd':'cfg';
-
-      return'<tr>'+
-        '<td style="text-align:center;padding:4px 6px">'+prioBtn(c)+'</td>'+
-        '<td style="font-size:11px;color:#666;padding:4px 8px">'+esc(c.cluster||'—')+'</td>'+
-        '<td style="padding:6px 8px"><div style="display:flex;align-items:center;gap:8px">'+avatarThumb(c.avatar_id,c.user_ig)+'<div style="min-width:0"><div style="font-size:12px;font-weight:500;color:#e8e8e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(c.fb_perfil||c.user_ig)+'</div><div style="font-size:10px;color:#444;margin-top:1px">@'+esc(c.user_ig)+'</div></div></div></td>'+
-        '<td style="padding:2px 6px"><input value="'+esc(c.conta_fb||'')+'" placeholder="—" style="background:transparent;border:none;color:#666;font-size:11px;width:100%;outline:none;min-width:80px" data-ct-patch-id="'+c.id+'" data-ct-patch-field="conta_fb" onkeydown="if(event.key===\'Enter\')this.blur()"></td>'+
-        '<td style="text-align:center;padding:4px 6px">'+igStatusBtn(c)+'</td>'+
-        '<td style="text-align:center;padding:4px 6px">'+stateBtn(c.id,'mb_suite',c.mb_suite)+'</td>'+
-        '<td style="text-align:center;padding:4px 6px">'+stateBtn(c.id,'youtube',c.youtube)+'</td>'+
-        '<td style="color:#666;font-size:11px">'+esc(c.dispositivo||'—')+'</td>'+
-        estoqueCell+
-
-        '<td style="padding:2px 4px"><textarea rows="2" placeholder="Horários" style="width:100%;background:transparent;border:none;border-bottom:1px solid #1e1e1e;color:#666;font-size:10px;resize:none;outline:none;padding:2px;line-height:1.4" data-ct-patch-id="'+c.id+'" data-ct-patch-field="horarios_publicacao">'+esc(c.horarios_publicacao||'')+'</textarea></td>'+
-        (sec.showConfig?'':dayCells)+
-      '</tr>';
+  const rows=contas.map(function(c){
+    const slots=[1,2,3,4,5,6].map(function(slot){
+      const post=PostsDiarios.find(function(p){return p.conta_id===c.id&&p.data===today&&p.slot===slot;});
+      const postado=post&&post.postado;
+      const videoId=post?post.video_id||'':'';
+      const horario=post?post.horario||'':'';
+      return '<div style="display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:1px solid #111">'+
+        '<span style="font-size:10px;color:#333;min-width:14px;flex-shrink:0">'+slot+'</span>'+
+        '<input type="checkbox"'+( postado?' checked':'')+' style="accent-color:#4ade80;flex-shrink:0;cursor:pointer" data-pd-cid="'+c.id+'" data-pd-slot="'+slot+'" data-pd-date="'+today+'" title="Postado">'+
+        '<input value="'+esc(videoId)+'" placeholder="ID do vídeo..." style="flex:1;background:transparent;border:none;border-bottom:1px solid #1a1a1a;color:#888;font-size:11px;outline:none;min-width:0" data-pd-vid-cid="'+c.id+'" data-pd-vid-slot="'+slot+'" data-pd-vid-date="'+today+'">'+
+        '<input value="'+esc(horario)+'" placeholder="HH:MM" style="width:52px;background:transparent;border:none;border-bottom:1px solid #1a1a1a;color:#555;font-size:10px;outline:none;text-align:center" data-pd-hor-cid="'+c.id+'" data-pd-hor-slot="'+slot+'" data-pd-hor-date="'+today+'">'+
+        (postado?'<i class="ti ti-check" style="font-size:11px;color:#4ade80;flex-shrink:0"></i>':'<span style="width:11px;flex-shrink:0"></span>')+
+      '</div>';
     }).join('');
 
-    const sitHdrCls=sec.sit==='Aquecimento'?'aq':sec.sit==='Crescimento'?'cr':sec.sit==='Venda'?'vd':'cfg';
-    return'<div class="sit-block">'+
-      '<div class="sit-hdr '+sitHdrCls+'">'+
-        '<span class="badge '+sec.cls+'">'+sec.sit+'</span>'+
-        '<span class="sit-title">'+contas.length+' conta'+(contas.length!==1?'s':'')+'</span>'+
-        '<span class="sit-count">'+(sec.max?'Meta: '+sec.max+' '+sec.label:sec.label)+'</span>'+
+    const totalPostados=(PostsDiarios.filter(function(p){return p.conta_id===c.id&&p.data===today&&p.postado;})||[]).length;
+    const progressBar=totalPostados>0?'<div style="width:'+Math.round(totalPostados/6*100)+'%;height:3px;background:#4ade80;border-radius:2px;transition:width .3s"></div>':'';
+    const sitCor=c.situacao==='Venda'?'#4ade80':'#60a5fa';
+
+    return '<div style="background:#161616;border:1px solid #1e1e1e;border-radius:12px;margin-bottom:10px;overflow:hidden">'+
+      '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #1a1a1a">'+
+        avatarThumb(c.avatar_id,c.user_ig)+
+        '<div style="min-width:0;flex:1">'+
+          '<div style="font-size:13px;font-weight:600;color:#e8e8e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(c.fb_perfil||c.user_ig)+'</div>'+
+          '<div style="font-size:10px;color:#444;margin-top:1px">@'+esc(c.user_ig)+' · <span style="color:'+sitCor+'">'+esc(c.situacao)+'</span>'+(c.cluster?' · <span style="color:#555">'+esc(c.cluster)+'</span>':'')+'</div>'+
+        '</div>'+
+        '<div style="text-align:right;flex-shrink:0">'+
+          '<div style="font-size:20px;font-weight:800;color:'+(totalPostados===6?'#4ade80':'#e8e8e8')+'">'+totalPostados+'/6</div>'+
+          '<div style="font-size:9px;color:#333;text-transform:uppercase;letter-spacing:.4px">postados</div>'+
+        '</div>'+
       '</div>'+
-      '<div class="tw"><table class="pt">'+
-        '<thead><tr>'+
-          '<th style="width:70px">Prioridade</th>'+
-          '<th style="min-width:90px">Cluster</th>'+
-          '<th style="min-width:160px">Perfil</th>'+
-          '<th style="min-width:110px" onclick="sortPostagens(\'conta_fb\')" style="cursor:pointer" title="Ordenar por Conta FB">'+
-          'Conta FB <span id="srt-post-conta_fb" style="font-size:9px;color:#555">⇅</span></th>'+
-          '<th style="width:60px">IG</th>'+
-          '<th style="width:80px">MB Suite</th>'+
-          '<th style="width:70px">YouTube</th>'+
-          '<th style="min-width:90px">Dispositivo</th>'+
-          '<th style="min-width:100px">Horários</th>'+
-          (sec.showConfig?'':dayNames.map((d,i)=>{const isT=wk[i]===today;return'<th style="text-align:center;'+(isT?'background:#1a2a1a;':'')+'"><span style="'+(isT?'color:#4ade80;font-weight:700':'color:#555')+'">'+d+'</span><br><span style="font-size:9px;'+(isT?'color:#4ade80':'color:#333')+'">'+wk[i].slice(5)+'</span>'+(isT?'<div style="width:4px;height:4px;border-radius:50%;background:#4ade80;margin:2px auto 0"></div>':'')+'</th>';}).join(''))+
-        '</tr></thead>'+
-        '<tbody>'+tableRows+'</tbody>'+
-      '</table></div>'+
+      '<div style="height:3px;background:#111"><div style="width:'+Math.round(totalPostados/6*100)+'%;height:3px;background:#4ade80;border-radius:0 2px 2px 0;transition:width .3s"></div></div>'+
+      slots+
     '</div>';
   }).join('');
+
+  el.innerHTML=rows;
+
+  // Bind checkbox postado
+  el.querySelectorAll('[data-pd-cid]').forEach(function(chk){
+    chk.addEventListener('change',function(){
+      savePdPost(Number(chk.dataset.pdCid),chk.dataset.pdDate,Number(chk.dataset.pdSlot),{postado:chk.checked});
+    });
+  });
+  // Bind ID do vídeo
+  el.querySelectorAll('[data-pd-vid-cid]').forEach(function(inp){
+    inp.addEventListener('blur',function(){
+      savePdPost(Number(inp.dataset.pdVidCid),inp.dataset.pdVidDate,Number(inp.dataset.pdVidSlot),{video_id:inp.value});
+    });
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter')inp.blur();});
+  });
+  // Bind horário
+  el.querySelectorAll('[data-pd-hor-cid]').forEach(function(inp){
+    inp.addEventListener('blur',function(){
+      savePdPost(Number(inp.dataset.pdHorCid),inp.dataset.pdHorDate,Number(inp.dataset.pdHorSlot),{horario:inp.value});
+    });
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter')inp.blur();});
+  });
 }
+
+async function savePdPost(cid,data,slot,fields){
+  try{
+    let post=PostsDiarios.find(function(p){return p.conta_id===cid&&p.data===data&&p.slot===slot;});
+    if(post){
+      await api('posts_diarios','PATCH',fields,'?conta_id=eq.'+cid+'&data=eq.'+data+'&slot=eq.'+slot);
+      Object.assign(post,fields);
+    } else {
+      const obj={conta_id:cid,data:data,slot:slot,video_id:'',postado:false,horario:''};
+      Object.assign(obj,fields);
+      const r=await api('posts_diarios','POST',obj);
+      if(r&&r[0])PostsDiarios.push(r[0]);
+    }
+    renderPostagens();
+  }catch(e){console.error('savePdPost',e);}
+}
+
 
 function renderPostStats(){
   const el=document.getElementById('stats-post');
