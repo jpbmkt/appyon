@@ -592,7 +592,10 @@ td.iec select{cursor:pointer}
       <option value="">Todos os clusters</option>
     </select>
     <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
-      <span id="pd-date-label" style="font-size:12px;color:#555"></span>
+      <button class="btn bsm" onclick="navPostDay(-1)" style="padding:5px 9px"><i class="ti ti-chevron-left"></i></button>
+      <button class="btn bsm" onclick="navPostDayToday()" style="padding:5px 10px">Hoje</button>
+      <span id="pd-date-label" style="font-size:12px;color:#888;min-width:140px;text-align:center"></span>
+      <button class="btn bsm" onclick="navPostDay(1)" style="padding:5px 9px"><i class="ti ti-chevron-right"></i></button>
     </div>
   </div>
   <div class="stats" id="stats-post" style="margin-bottom:10px"></div>
@@ -786,7 +789,19 @@ function weekDays(refDate){
 }
 
 let postWeekRef=localDateStr(new Date());
+let postDayRef=localDateStr(new Date());
 let copiesWeekRef=localDateStr(new Date());
+
+function navPostDay(dir){
+  const d=new Date(postDayRef+'T12:00:00');
+  d.setDate(d.getDate()+dir);
+  postDayRef=localDateStr(d);
+  renderPostagens();
+}
+function navPostDayToday(){
+  postDayRef=localDateStr(new Date());
+  renderPostagens();
+}
 
 function navPostWeek(dir){
   const d=new Date(postWeekRef+'T12:00:00');
@@ -3516,15 +3531,19 @@ function renderPostagens(){
   renderPostStats();
 
   const today=localDateStr(new Date());
+  const refDate=postDayRef||today;
   const el=document.getElementById('post-sections');
   if(!el)return;
 
+  // Label da data
   const lbl=document.getElementById('pd-date-label');
   if(lbl){
-    const d=new Date();
-    const dias=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+    const d=new Date(refDate+'T12:00:00');
+    const dias=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
     const meses=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+    const isToday=refDate===today;
     lbl.textContent=dias[d.getDay()]+', '+d.getDate()+' '+meses[d.getMonth()];
+    lbl.style.color=isToday?'#4ade80':'#888';
   }
 
   let contas=Contas.filter(function(c){return c.situacao==='Crescimento'||c.situacao==='Venda';});
@@ -3533,35 +3552,59 @@ function renderPostagens(){
   if(postFavOnly)contas=contas.filter(function(c){return c.favorito;});
   if(postCluster)contas=contas.filter(function(c){return (c.cluster||'')===postCluster;});
   if(postQ)contas=contas.filter(function(c){return ((c.fb_perfil||'')+(c.user_ig||'')).toLowerCase().includes(postQ.toLowerCase());});
-  contas=contas.sort(function(a,b){
-    const po={alta:0,media:1,baixa:2};
-    const pa=po[a.prioridade_perfil||'baixa']??2,pb=po[b.prioridade_perfil||'baixa']??2;
-    if(a.favorito&&!b.favorito)return -1;if(!a.favorito&&b.favorito)return 1;
-    return pa-pb;
-  });
+  if(postSort&&postSort.field){
+    contas=[...contas].sort(function(a,b){
+      const va=a[postSort.field]||'',vb=b[postSort.field]||'';
+      return String(va).localeCompare(String(vb),'pt')*postSort.dir;
+    });
+  } else {
+    contas=contas.sort(function(a,b){
+      const po={alta:0,media:1,baixa:2};
+      const pa=po[a.prioridade_perfil||'baixa']??2,pb=po[b.prioridade_perfil||'baixa']??2;
+      if(a.favorito&&!b.favorito)return -1;if(!a.favorito&&b.favorito)return 1;
+      return pa-pb;
+    });
+  }
 
   if(!contas.length){el.innerHTML='<div class="empty">Nenhuma conta em Crescimento ou Venda.</div>';return;}
 
   const SLOTS=[1,2,3,4,5,6];
 
-  // Linha de cabeçalho com IDs dos vídeos (compartilhados)
+  // Status: ciclo de 4 estados
+  const STATUS_CYCLE={vazio:'ok',ok:'alerta',alerta:'nao',nao:'vazio'};
+  const STATUS_STYLE={
+    vazio:{icon:'○',color:'#333',bg:'transparent',border:'#252525'},
+    ok:   {icon:'✓',color:'#4ade80',bg:'#0d2016',border:'#4ade80'},
+    alerta:{icon:'⚠',color:'#fbbf24',bg:'#1a1400',border:'#fbbf24'},
+    nao:  {icon:'✕',color:'#f87171',bg:'#200d0d',border:'#f87171'},
+  };
+
+  // Linha de cabeçalho com IDs dos vídeos (compartilhados por todos)
   const headerCols=SLOTS.map(function(slot){
-    const existingVid=PostsDiarios.find(function(p){return p.data===today&&p.slot===slot&&p.video_id;});
+    const existingVid=PostsDiarios.find(function(p){return p.data===refDate&&p.slot===slot&&p.video_id;});
     const val=existingVid?existingVid.video_id:'';
-    return '<th style="padding:4px 6px;min-width:120px;font-weight:400">'+
-      '<input value="'+esc(val)+'" placeholder="ID vídeo '+slot+'" style="width:100%;background:#111;border:1px solid #252525;border-radius:5px;color:#888;font-size:10px;padding:3px 6px;outline:none;text-align:center" data-pd-global-vid-slot="'+slot+'" data-pd-global-date="'+today+'">'+
+    return '<th style="padding:4px 6px;min-width:110px;font-weight:400">'+
+      '<input value="'+esc(val)+'" placeholder="ID '+slot+'" style="width:100%;background:#111;border:1px solid #252525;border-radius:5px;color:#888;font-size:10px;padding:3px 5px;outline:none;text-align:center" data-pd-global-slot="'+slot+'" data-pd-global-date="'+refDate+'">'+
     '</th>';
   }).join('');
+
+  // Helper sort button
+  function sortBtn(field,label){
+    const active=postSort&&postSort.field===field;
+    const arrow=active?(postSort.dir===1?' ↑':' ↓'):'';
+    return '<span style="cursor:pointer;white-space:nowrap" onclick="sortPostagens(''+field+'')">'+label+arrow+'</span>';
+  }
 
   const thead='<thead>'+
     '<tr style="border-bottom:2px solid #1e1e1e">'+
       '<th style="width:70px;padding:6px 8px;text-align:center">Prior.</th>'+
-      '<th style="min-width:180px;padding:6px 8px">Perfil</th>'+
-      '<th style="min-width:110px;padding:6px 8px">Conta FB</th>'+
-      SLOTS.map(function(s){return '<th style="width:40px;text-align:center;color:#555;font-size:10px;padding:4px 2px">'+s+'</th>';}).join('')+
+      '<th style="min-width:170px;padding:6px 8px">'+sortBtn('fb_perfil','Perfil')+'</th>'+
+      '<th style="min-width:90px;padding:6px 8px">'+sortBtn('cluster','Cluster')+'</th>'+
+      '<th style="min-width:110px;padding:6px 8px">'+sortBtn('conta_fb','Conta FB')+'</th>'+
+      SLOTS.map(function(s){return '<th style="width:44px;text-align:center;color:#555;font-size:10px;padding:4px 2px">'+s+'</th>';}).join('')+
     '</tr>'+
     '<tr style="background:#0d0d0d;border-bottom:1px solid #1a1a1a">'+
-      '<th></th><th style="font-size:10px;color:#333;padding:4px 8px">ID do vídeo (para todos)</th><th></th>'+
+      '<th colspan="4" style="font-size:10px;color:#333;padding:5px 8px;text-align:right">ID do vídeo ↓</th>'+
       headerCols+
     '</tr>'+
   '</thead>';
@@ -3572,28 +3615,26 @@ function renderPostagens(){
     const sitCor=c.situacao==='Venda'?'#4ade80':'#60a5fa';
 
     const slots=SLOTS.map(function(slot){
-      const post=PostsDiarios.find(function(p){return p.conta_id===c.id&&p.data===today&&p.slot===slot;});
-      const status=post?post.status||'vazio':'vazio';
-      const icon=status==='ok'?'✓':status==='alerta'?'⚠':'○';
-      const color=status==='ok'?'#4ade80':status==='alerta'?'#fbbf24':'#333';
-      const bg=status==='ok'?'#0d2016':status==='alerta'?'#1a1400':'transparent';
+      const post=PostsDiarios.find(function(p){return p.conta_id===c.id&&p.data===refDate&&p.slot===slot;});
+      const status=post?(post.status||'vazio'):'vazio';
+      const st=STATUS_STYLE[status]||STATUS_STYLE.vazio;
       return '<td style="text-align:center;padding:4px 2px">'+
-        '<button data-pd-status-cid="'+c.id+'" data-pd-status-slot="'+slot+'" data-pd-status-date="'+today+'" data-pd-status-val="'+status+'" '+
-        'style="width:28px;height:28px;border-radius:6px;border:1.5px solid '+color+';background:'+bg+';cursor:pointer;font-size:12px;color:'+color+';line-height:1;transition:all .15s">'+icon+'</button>'+
+        '<button data-pd-status-cid="'+c.id+'" data-pd-status-slot="'+slot+'" data-pd-status-date="'+refDate+'" data-pd-status-val="'+status+'" '+
+        'style="width:30px;height:30px;border-radius:6px;border:1.5px solid '+st.border+';background:'+st.bg+';cursor:pointer;font-size:12px;color:'+st.color+';line-height:1;transition:all .15s">'+st.icon+'</button>'+
       '</td>';
     }).join('');
 
     return '<tr style="border-bottom:1px solid #141414">'+
-      '<td style="text-align:center;padding:6px 8px">'+prioDot+(c.favorito?' ⭐':'')+'</td>'+
+      '<td style="text-align:center;padding:6px 8px;font-size:13px">'+prioDot+(c.favorito?' ⭐':'')+'</td>'+
       '<td style="padding:6px 8px">'+
-        '<div style="display:flex;align-items:center;gap:6px">'+
-          avatarThumb(c.avatar_id,c.user_ig)+
+        '<div style="display:flex;align-items:center;gap:6px">'+avatarThumb(c.avatar_id,c.user_ig)+
           '<div>'+
             '<div style="font-size:12px;font-weight:500;color:#e8e8e8">'+esc(c.fb_perfil||c.user_ig)+'</div>'+
             '<div style="font-size:10px;color:#444">@'+esc(c.user_ig)+' · <span style="color:'+sitCor+'">'+esc(c.situacao)+'</span></div>'+
           '</div>'+
         '</div>'+
       '</td>'+
+      '<td style="font-size:11px;color:#555;padding:6px 8px">'+esc(c.cluster||'—')+'</td>'+
       '<td style="font-size:11px;color:#555;padding:6px 8px">'+esc(c.conta_fb||'—')+'</td>'+
       slots+
     '</tr>';
@@ -3601,24 +3642,30 @@ function renderPostagens(){
 
   el.innerHTML='<div class="tw" style="overflow-x:auto"><table class="pt">'+thead+'<tbody>'+tbody+'</tbody></table></div>';
 
-  // Bind status (cicla ok→alerta→vazio)
+  // Bind botão de status (cicla 4 estados)
   el.querySelectorAll('[data-pd-status-cid]').forEach(function(btn){
     btn.addEventListener('click',function(){
       const cur=btn.dataset.pdStatusVal;
-      const next=cur==='vazio'?'ok':cur==='ok'?'alerta':'vazio';
+      const next=STATUS_CYCLE[cur]||'ok';
       savePdPost(Number(btn.dataset.pdStatusCid),btn.dataset.pdStatusDate,Number(btn.dataset.pdStatusSlot),{status:next});
     });
   });
 
-  // Bind ID global do vídeo (aplica para todos os perfis naquele slot)
-  el.querySelectorAll('[data-pd-global-vid-slot]').forEach(function(inp){
-    inp.addEventListener('blur',function(){
-      const slot=Number(inp.dataset.pdGlobalVidSlot),date=inp.dataset.pdGlobalDate,val=inp.value;
-      contas.forEach(function(c){savePdPost(c.id,date,slot,{video_id:val},true);});
-    });
+  // Bind ID global do vídeo
+  el.querySelectorAll('[data-pd-global-slot]').forEach(function(inp){
+    const applyVid=function(){
+      const slot=Number(inp.dataset.pdGlobalSlot),date=inp.dataset.pdGlobalDate,val=inp.value;
+      let pending=contas.length;
+      contas.forEach(function(c){
+        savePdPost(c.id,date,slot,{video_id:val},pending>1);
+        pending--;
+      });
+    };
+    inp.addEventListener('blur',applyVid);
     inp.addEventListener('keydown',function(e){if(e.key==='Enter')inp.blur();});
   });
 }
+
 
 async function savePdPost(cid,data,slot,fields,silent){
   try{
