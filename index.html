@@ -3592,7 +3592,7 @@ function renderPostagens(){
   function sortBtn(field,label){
     const active=postSort&&postSort.field===field;
     const arrow=active?(postSort.dir===1?' ↑':' ↓'):'';
-    return '<span style="cursor:pointer;white-space:nowrap" onclick="sortPostagens(''+field+'')">'+label+arrow+'</span>';
+    return '<span style="cursor:pointer;white-space:nowrap" data-post-sort-field="'+field+'">'+label+arrow+'</span>';
   }
 
   const thead='<thead>'+
@@ -3642,6 +3642,12 @@ function renderPostagens(){
 
   el.innerHTML='<div class="tw" style="overflow-x:auto"><table class="pt">'+thead+'<tbody>'+tbody+'</tbody></table></div>';
 
+  // Bind sort columns
+  el.querySelectorAll('[data-post-sort-field]').forEach(function(span){
+    span.addEventListener('click',function(){
+      sortPostagens(span.dataset.postSortField);
+    });
+  });
   // Bind botão de status (cicla 4 estados)
   el.querySelectorAll('[data-pd-status-cid]').forEach(function(btn){
     btn.addEventListener('click',function(){
